@@ -218,3 +218,6 @@ backend/storage/images/*
 # Backend virtual env
 backend/.venv/
 
+# SQLite dev database
+backend/*.db
+
