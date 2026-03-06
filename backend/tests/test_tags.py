@@ -13,7 +13,9 @@ async def test_list_tags_empty(client: AsyncClient) -> None:
 
 @pytest.mark.asyncio
 async def test_create_tag(client: AsyncClient) -> None:
-    response = await client.post("/api/tags", json={"name": "cat", "category": "animal"})
+    response = await client.post(
+        "/api/tags", json={"name": "cat", "category": "animal"}
+    )
     assert response.status_code == 201
     data = response.json()
     assert data["name"] == "cat"

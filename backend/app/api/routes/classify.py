@@ -1,12 +1,12 @@
 """Classify API route."""
 
+import tempfile
+from pathlib import Path
+
 from fastapi import APIRouter, HTTPException, UploadFile, status
 from pydantic import BaseModel
 
 from app.services.classifier import classify_image
-
-import tempfile
-from pathlib import Path
 
 router = APIRouter(prefix="/classify", tags=["classify"])
 

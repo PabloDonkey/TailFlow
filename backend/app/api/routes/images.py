@@ -13,7 +13,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import db_session
 from app.core.config import settings
 from app.models.image import Image
-from app.schemas.image import ImageRead, ImageSummary, ImageTagUpdate, ImageUploadResponse
+from app.schemas.image import (
+    ImageRead,
+    ImageSummary,
+    ImageTagUpdate,
+    ImageUploadResponse,
+)
 from app.services.classifier import classify_image
 from app.services.tagging import add_tags_to_image, remove_tags_from_image
 
@@ -22,7 +27,9 @@ router = APIRouter(prefix="/images", tags=["images"])
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
 
 
-@router.post("", response_model=ImageUploadResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "", response_model=ImageUploadResponse, status_code=status.HTTP_201_CREATED
+)
 async def upload_image(
     file: UploadFile,
     session: AsyncSession = Depends(db_session),
@@ -61,7 +68,7 @@ async def upload_image(
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Could not read image dimensions.",
-        )
+        ) from None
 
     image = Image(
         id=image_id,
@@ -108,7 +115,9 @@ async def get_image(
     """Return full image metadata including tags."""
     image = await session.get(Image, image_id)
     if image is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Image not found."
+        )
     return ImageRead.model_validate(image)
 
 
@@ -120,7 +129,9 @@ async def get_image_file(
     """Return the raw image file."""
     image = await session.get(Image, image_id)
     if image is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Image not found."
+        )
     path = Path(settings.storage_path) / image.filename
     if not path.exists():
         raise HTTPException(
@@ -139,7 +150,9 @@ async def update_image_tags(
     """Add or remove tags from an image."""
     image = await session.get(Image, image_id)
     if image is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Image not found.")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Image not found."
+        )
 
     if body.add:
         await add_tags_to_image(session, image, body.add)

@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 from httpx import AsyncClient
-from PIL import Image as PILImage
 
 from tests.conftest import make_png_bytes
 
@@ -25,7 +24,9 @@ async def test_upload_image(client: AsyncClient, tmp_path: Path, monkeypatch) ->
 
 
 @pytest.mark.asyncio
-async def test_upload_invalid_type(client: AsyncClient, tmp_path: Path, monkeypatch) -> None:
+async def test_upload_invalid_type(
+    client: AsyncClient, tmp_path: Path, monkeypatch
+) -> None:
     monkeypatch.setattr("app.core.config.settings.storage_path", str(tmp_path))
     response = await client.post(
         "/api/images",
@@ -50,7 +51,9 @@ async def test_get_image_not_found(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_upload_and_get_image(client: AsyncClient, tmp_path: Path, monkeypatch) -> None:
+async def test_upload_and_get_image(
+    client: AsyncClient, tmp_path: Path, monkeypatch
+) -> None:
     monkeypatch.setattr("app.core.config.settings.storage_path", str(tmp_path))
     png = make_png_bytes(20, 30)
     upload = await client.post(
@@ -71,7 +74,9 @@ async def test_upload_and_get_image(client: AsyncClient, tmp_path: Path, monkeyp
 
 
 @pytest.mark.asyncio
-async def test_add_tags_to_image(client: AsyncClient, tmp_path: Path, monkeypatch) -> None:
+async def test_add_tags_to_image(
+    client: AsyncClient, tmp_path: Path, monkeypatch
+) -> None:
     monkeypatch.setattr("app.core.config.settings.storage_path", str(tmp_path))
     png = make_png_bytes()
     upload = await client.post(
@@ -92,7 +97,9 @@ async def test_add_tags_to_image(client: AsyncClient, tmp_path: Path, monkeypatc
 
 
 @pytest.mark.asyncio
-async def test_remove_tags_from_image(client: AsyncClient, tmp_path: Path, monkeypatch) -> None:
+async def test_remove_tags_from_image(
+    client: AsyncClient, tmp_path: Path, monkeypatch
+) -> None:
     monkeypatch.setattr("app.core.config.settings.storage_path", str(tmp_path))
     png = make_png_bytes()
     upload = await client.post(
