@@ -1,26 +1,51 @@
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
+import { useProjectStore } from '../stores/projects'
 import { useImageStore } from '../stores/images'
-import { getImageFileUrl } from '../api'
+import { getProjectImageFileUrl } from '../api'
 
 const imageStore = useImageStore()
+const projectStore = useProjectStore()
 const router = useRouter()
 
-onMounted(() => {
-  imageStore.fetchImages()
+onMounted(async () => {
+  if (!projectStore.projects.length) {
+    await projectStore.fetchProjects()
+  }
+  if (projectStore.selectedProjectId) {
+    await imageStore.fetchImages(projectStore.selectedProjectId)
+  }
 })
 
 function goToImage(id: string) {
-  router.push(`/image/${id}`)
+  if (!projectStore.selectedProjectId) {
+    return
+  }
+  router.push({ path: `/image/${id}`, query: { project: projectStore.selectedProjectId } })
 }
+
+watch(
+  () => projectStore.selectedProjectId,
+  async (projectId) => {
+    if (!projectId) {
+      imageStore.images = []
+      return
+    }
+    await imageStore.fetchImages(projectId)
+  },
+)
 </script>
 
 <template>
   <div class="gallery-page">
     <h1>Gallery</h1>
 
-    <p v-if="imageStore.loading">Loading…</p>
+    <p v-if="!projectStore.selectedProjectId" class="empty">
+      Select a project in <RouterLink to="/projects">Projects</RouterLink> first.
+    </p>
+
+    <p v-else-if="imageStore.loading">Loading…</p>
     <p v-else-if="imageStore.error" class="error">{{ imageStore.error }}</p>
     <p v-else-if="!imageStore.images.length" class="empty">
       No images yet. <RouterLink to="/projects">Select a project first.</RouterLink>
@@ -33,10 +58,15 @@ function goToImage(id: string) {
         class="card"
         @click="goToImage(img.id)"
       >
-        <img :src="getImageFileUrl(img.id)" :alt="img.original_name" class="thumb" loading="lazy" />
+        <img
+          :src="getProjectImageFileUrl(projectStore.selectedProjectId!, img.id)"
+          :alt="img.filename"
+          class="thumb"
+          loading="lazy"
+        />
         <div class="card-info">
-          <span class="name" :title="img.original_name">{{ img.original_name }}</span>
-          <span class="tag-count">{{ img.tag_count }} tag{{ img.tag_count !== 1 ? 's' : '' }}</span>
+          <span class="name" :title="img.filename">{{ img.filename }}</span>
+          <span class="tag-count">{{ img.relative_path }}</span>
         </div>
       </div>
     </div>

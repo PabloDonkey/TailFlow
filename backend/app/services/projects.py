@@ -1,5 +1,6 @@
 from datetime import UTC, datetime
 from pathlib import Path
+import uuid
 
 import aiofiles
 from fastapi import HTTPException, UploadFile, status
@@ -7,12 +8,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.models.dataset_image import DatasetImage
+from app.models.dataset_image import DatasetImage, DatasetImageTag, ProjectTag
 from app.models.project import Project
 from app.schemas.project import (
     ProjectCreate,
     ProjectDiscoverResponse,
     ProjectImageUploadResponse,
+    ProjectUpdate,
     ProjectSyncResponse,
 )
 
@@ -185,6 +187,105 @@ async def upload_images_to_project(
         created_records=created_records,
         restored_records=restored_records,
     )
+
+
+async def update_project_metadata(
+    session: AsyncSession,
+    project: Project,
+    payload: ProjectUpdate,
+) -> Project:
+    if payload.trigger_tag is not None:
+        trigger_tag = payload.trigger_tag.strip()
+        if not trigger_tag:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="trigger_tag must not be empty.",
+            )
+        project.trigger_tag = trigger_tag
+
+    if payload.class_tag is not None:
+        class_tag = payload.class_tag.strip()
+        if not class_tag:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="class_tag must not be empty.",
+            )
+        project.class_tag = class_tag
+
+    await session.commit()
+    await session.refresh(project)
+    return project
+
+
+async def get_or_create_project_tag(
+    session: AsyncSession,
+    project_id: uuid.UUID,
+    name: str,
+) -> ProjectTag:
+    result = await session.execute(
+        select(ProjectTag).where(
+            ProjectTag.project_id == project_id,
+            ProjectTag.name == name,
+        )
+    )
+    tag = result.scalar_one_or_none()
+    if tag is None:
+        tag = ProjectTag(project_id=project_id, name=name)
+        session.add(tag)
+        await session.flush()
+    return tag
+
+
+async def update_project_image_tags(
+    session: AsyncSession,
+    project: Project,
+    image: DatasetImage,
+    add: list[str],
+    remove: list[str],
+) -> None:
+    existing_links_result = await session.execute(
+        select(DatasetImageTag).where(
+            DatasetImageTag.project_id == project.id,
+            DatasetImageTag.image_id == image.id,
+        )
+    )
+    existing_links = existing_links_result.scalars().all()
+
+    tag_ids_by_name: dict[str, str] = {}
+    if existing_links:
+        existing_tag_ids = [link.tag_id for link in existing_links]
+        existing_tags_result = await session.execute(
+            select(ProjectTag).where(ProjectTag.id.in_(existing_tag_ids))
+        )
+        for tag in existing_tags_result.scalars().all():
+            tag_ids_by_name[tag.name] = str(tag.id)
+
+    add_set = {name.strip() for name in add if name.strip()}
+    remove_set = {name.strip() for name in remove if name.strip()}
+
+    for name in add_set:
+        tag = await get_or_create_project_tag(session, project.id, name)
+        link_exists = any(
+            link.tag_id == tag.id and link.image_id == image.id for link in existing_links
+        )
+        if not link_exists:
+            session.add(
+                DatasetImageTag(project_id=project.id, image_id=image.id, tag_id=tag.id)
+            )
+
+    if remove_set:
+        remove_tags_result = await session.execute(
+            select(ProjectTag).where(
+                ProjectTag.project_id == project.id,
+                ProjectTag.name.in_(remove_set),
+            )
+        )
+        remove_tag_ids = {tag.id for tag in remove_tags_result.scalars().all()}
+        for link in existing_links:
+            if link.tag_id in remove_tag_ids:
+                await session.delete(link)
+
+    await session.commit()
 
 
 async def discover_projects(session: AsyncSession) -> ProjectDiscoverResponse:

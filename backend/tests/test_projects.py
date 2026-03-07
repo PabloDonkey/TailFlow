@@ -179,3 +179,81 @@ async def test_upload_project_images_writes_into_project_dataset(
     sync_payload = sync_response.json()
     assert sync_payload["added_images"] == 0
     assert sync_payload["removed_images"] == 0
+
+
+@pytest.mark.asyncio
+async def test_update_project_tags_metadata(client: AsyncClient, tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+    created = await client.post(
+        "/api/projects",
+        json={"folder_name": "meta-project", "class_tag": "base"},
+    )
+    project_id = created.json()["project"]["id"]
+
+    updated = await client.patch(
+        f"/api/projects/{project_id}",
+        json={"trigger_tag": "new-trigger", "class_tag": "new-class"},
+    )
+    assert updated.status_code == 200
+    payload = updated.json()
+    assert payload["trigger_tag"] == "new-trigger"
+    assert payload["class_tag"] == "new-class"
+
+
+@pytest.mark.asyncio
+async def test_project_image_tagging_and_tag_preservation_across_sync(
+    client: AsyncClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+    create_response = await client.post(
+        "/api/projects",
+        json={"folder_name": "tag-project", "class_tag": "subject"},
+    )
+    assert create_response.status_code == 201
+    project_id = create_response.json()["project"]["id"]
+
+    image_bytes = make_png_bytes(10, 10)
+    uploaded = await client.post(
+        f"/api/projects/{project_id}/images",
+        files=[("files", ("face.png", io.BytesIO(image_bytes), "image/png"))],
+    )
+    assert uploaded.status_code == 200
+
+    listed = await client.get(f"/api/projects/{project_id}/images")
+    assert listed.status_code == 200
+    images = listed.json()
+    assert len(images) == 1
+    image_id = images[0]["id"]
+
+    add_tags = await client.post(
+        f"/api/projects/{project_id}/images/{image_id}/tags",
+        json={"add": ["portrait", "style-a"], "remove": []},
+    )
+    assert add_tags.status_code == 200
+    tag_names = sorted(tag["name"] for tag in add_tags.json()["tags"])
+    assert tag_names == ["portrait", "style-a"]
+
+    remove_tag = await client.post(
+        f"/api/projects/{project_id}/images/{image_id}/tags",
+        json={"add": [], "remove": ["portrait"]},
+    )
+    assert remove_tag.status_code == 200
+    tag_names_after_remove = [tag["name"] for tag in remove_tag.json()["tags"]]
+    assert tag_names_after_remove == ["style-a"]
+
+    dataset_file = tmp_path / "tag-project" / "dataset" / "face.png"
+    dataset_file.unlink()
+
+    remove_sync = await client.post(f"/api/projects/{project_id}/sync")
+    assert remove_sync.status_code == 200
+    assert remove_sync.json()["removed_images"] == 1
+
+    dataset_file.write_bytes(image_bytes)
+    restore_sync = await client.post(f"/api/projects/{project_id}/sync")
+    assert restore_sync.status_code == 200
+    assert restore_sync.json()["restored_images"] == 1
+
+    restored_image = await client.get(f"/api/projects/{project_id}/images/{image_id}")
+    assert restored_image.status_code == 200
+    restored_tag_names = [tag["name"] for tag in restored_image.json()["tags"]]
+    assert restored_tag_names == ["style-a"]

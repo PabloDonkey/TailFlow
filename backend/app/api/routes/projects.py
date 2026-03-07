@@ -1,23 +1,33 @@
 import uuid
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import db_session
+from app.models.dataset_image import DatasetImage, DatasetImageTag, ProjectTag
 from app.models.project import Project
 from app.schemas.project import (
     ProjectCreate,
     ProjectCreateResponse,
     ProjectDiscoverResponse,
+    ProjectImageRead,
+    ProjectImageSummary,
+    ProjectImageTagUpdate,
     ProjectImageUploadResponse,
     ProjectRead,
     ProjectSyncResponse,
+    ProjectTagRead,
+    ProjectUpdate,
 )
 from app.services.projects import (
     create_project,
     discover_projects,
     sync_project,
+    update_project_image_tags,
+    update_project_metadata,
     upload_images_to_project,
 )
 
@@ -52,6 +62,23 @@ async def list_projects(
     return [ProjectRead.model_validate(project) for project in projects]
 
 
+@router.patch("/{project_id}", response_model=ProjectRead)
+async def update_project_route(
+    project_id: uuid.UUID,
+    body: ProjectUpdate,
+    session: AsyncSession = Depends(db_session),
+) -> ProjectRead:
+    project = await session.get(Project, project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
+
+    updated_project = await update_project_metadata(session, project, body)
+    return ProjectRead.model_validate(updated_project)
+
+
 @router.post("/{project_id}/sync", response_model=ProjectSyncResponse)
 async def sync_project_route(
     project_id: uuid.UUID,
@@ -83,3 +110,144 @@ async def upload_project_images_route(
         )
 
     return await upload_images_to_project(session, project, files)
+
+
+@router.get("/{project_id}/images", response_model=list[ProjectImageSummary])
+async def list_project_images_route(
+    project_id: uuid.UUID,
+    session: AsyncSession = Depends(db_session),
+) -> list[ProjectImageSummary]:
+    project = await session.get(Project, project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
+
+    result = await session.execute(
+        select(DatasetImage)
+        .where(DatasetImage.project_id == project.id, DatasetImage.removed_at.is_(None))
+        .order_by(DatasetImage.discovered_at.desc())
+    )
+    images = result.scalars().all()
+    return [ProjectImageSummary.model_validate(image) for image in images]
+
+
+@router.get("/{project_id}/images/{image_id}", response_model=ProjectImageRead)
+async def get_project_image_route(
+    project_id: uuid.UUID,
+    image_id: uuid.UUID,
+    session: AsyncSession = Depends(db_session),
+) -> ProjectImageRead:
+    project = await session.get(Project, project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
+
+    image = await session.get(DatasetImage, image_id)
+    if image is None or image.project_id != project.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project image not found.",
+        )
+
+    tag_link_result = await session.execute(
+        select(DatasetImageTag).where(
+            DatasetImageTag.project_id == project.id,
+            DatasetImageTag.image_id == image.id,
+        )
+    )
+    links = tag_link_result.scalars().all()
+    tags: list[ProjectTagRead] = []
+    if links:
+        tag_ids = [link.tag_id for link in links]
+        tag_result = await session.execute(select(ProjectTag).where(ProjectTag.id.in_(tag_ids)))
+        tags = [ProjectTagRead.model_validate(tag) for tag in tag_result.scalars().all()]
+
+    return ProjectImageRead(
+        id=image.id,
+        project_id=image.project_id,
+        relative_path=image.relative_path,
+        filename=image.filename,
+        discovered_at=image.discovered_at,
+        removed_at=image.removed_at,
+        tags=tags,
+    )
+
+
+@router.get("/{project_id}/images/{image_id}/file")
+async def get_project_image_file_route(
+    project_id: uuid.UUID,
+    image_id: uuid.UUID,
+    session: AsyncSession = Depends(db_session),
+) -> FileResponse:
+    project = await session.get(Project, project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
+
+    image = await session.get(DatasetImage, image_id)
+    if image is None or image.project_id != project.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project image not found.",
+        )
+
+    path = Path(project.dataset_path) / image.relative_path
+    if not path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project image file not found on disk.",
+        )
+    return FileResponse(path)
+
+
+@router.post("/{project_id}/images/{image_id}/tags", response_model=ProjectImageRead)
+async def update_project_image_tags_route(
+    project_id: uuid.UUID,
+    image_id: uuid.UUID,
+    body: ProjectImageTagUpdate,
+    session: AsyncSession = Depends(db_session),
+) -> ProjectImageRead:
+    project = await session.get(Project, project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
+
+    image = await session.get(DatasetImage, image_id)
+    if image is None or image.project_id != project.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project image not found.",
+        )
+
+    await update_project_image_tags(session, project, image, body.add, body.remove)
+
+    tag_link_result = await session.execute(
+        select(DatasetImageTag).where(
+            DatasetImageTag.project_id == project.id,
+            DatasetImageTag.image_id == image.id,
+        )
+    )
+    links = tag_link_result.scalars().all()
+    tags: list[ProjectTagRead] = []
+    if links:
+        tag_ids = [link.tag_id for link in links]
+        tag_result = await session.execute(select(ProjectTag).where(ProjectTag.id.in_(tag_ids)))
+        tags = [ProjectTagRead.model_validate(tag) for tag in tag_result.scalars().all()]
+
+    return ProjectImageRead(
+        id=image.id,
+        project_id=image.project_id,
+        relative_path=image.relative_path,
+        filename=image.filename,
+        discovered_at=image.discovered_at,
+        removed_at=image.removed_at,
+        tags=tags,
+    )

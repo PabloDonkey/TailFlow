@@ -1,19 +1,19 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { ImageRead, ImageSummary, ImageUploadResponse } from '../api'
+import type { ProjectImageRead, ProjectImageSummary } from '../api'
 import * as api from '../api'
 
 export const useImageStore = defineStore('images', () => {
-  const images = ref<ImageSummary[]>([])
-  const currentImage = ref<ImageRead | null>(null)
+  const images = ref<ProjectImageSummary[]>([])
+  const currentImage = ref<ProjectImageRead | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
 
-  async function fetchImages() {
+  async function fetchImages(projectId: string) {
     loading.value = true
     error.value = null
     try {
-      images.value = await api.listImages()
+      images.value = await api.listProjectImages(projectId)
     } catch (e) {
       error.value = String(e)
     } finally {
@@ -21,11 +21,11 @@ export const useImageStore = defineStore('images', () => {
     }
   }
 
-  async function fetchImage(id: string) {
+  async function fetchImage(projectId: string, id: string) {
     loading.value = true
     error.value = null
     try {
-      currentImage.value = await api.getImage(id)
+      currentImage.value = await api.getProjectImage(projectId, id)
     } catch (e) {
       error.value = String(e)
     } finally {
@@ -33,29 +33,14 @@ export const useImageStore = defineStore('images', () => {
     }
   }
 
-  async function upload(file: File): Promise<ImageUploadResponse | null> {
-    loading.value = true
-    error.value = null
+  async function updateTags(projectId: string, id: string, add: string[], remove: string[]) {
     try {
-      const result = await api.uploadImage(file)
-      await fetchImages()
-      return result
-    } catch (e) {
-      error.value = String(e)
-      return null
-    } finally {
-      loading.value = false
-    }
-  }
-
-  async function updateTags(id: string, add: string[], remove: string[]) {
-    try {
-      const updated = await api.updateImageTags(id, add, remove)
+      const updated = await api.updateProjectImageTags(projectId, id, add, remove)
       currentImage.value = updated
     } catch (e) {
       error.value = String(e)
     }
   }
 
-  return { images, currentImage, loading, error, fetchImages, fetchImage, upload, updateTags }
+  return { images, currentImage, loading, error, fetchImages, fetchImage, updateTags }
 })

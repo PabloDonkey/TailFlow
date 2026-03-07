@@ -65,6 +65,34 @@ export const ProjectSyncResponseSchema = z.object({
   synced_at: z.string().datetime({ offset: true }),
 })
 
+export const ProjectTagSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+})
+
+export const ProjectImageSummarySchema = z.object({
+  id: z.string().uuid(),
+  project_id: z.string().uuid(),
+  relative_path: z.string(),
+  filename: z.string(),
+  discovered_at: z.string().datetime({ offset: true }),
+})
+
+export const ProjectImageReadSchema = ProjectImageSummarySchema.extend({
+  removed_at: z.string().datetime({ offset: true }).nullable(),
+  tags: z.array(ProjectTagSchema),
+})
+
+export const ProjectImageTagUpdateSchema = z.object({
+  add: z.array(z.string()),
+  remove: z.array(z.string()),
+})
+
+export const ProjectUpdatePayloadSchema = z.object({
+  trigger_tag: z.string().optional(),
+  class_tag: z.string().optional(),
+})
+
 export const ProjectCreatePayloadSchema = z.object({
   folder_name: z.string().min(1),
   class_tag: z.string().min(1),
@@ -96,6 +124,9 @@ export type ProjectSyncResponse = z.infer<typeof ProjectSyncResponseSchema>
 export type ProjectCreatePayload = z.infer<typeof ProjectCreatePayloadSchema>
 export type ProjectCreateResponse = z.infer<typeof ProjectCreateResponseSchema>
 export type ProjectImageUploadResponse = z.infer<typeof ProjectImageUploadResponseSchema>
+export type ProjectImageSummary = z.infer<typeof ProjectImageSummarySchema>
+export type ProjectImageRead = z.infer<typeof ProjectImageReadSchema>
+export type ProjectUpdatePayload = z.infer<typeof ProjectUpdatePayloadSchema>
 
 // ─── API client ──────────────────────────────────────────────────────────────
 
@@ -212,5 +243,41 @@ export async function uploadProjectImages(
   return fetchJSON(ProjectImageUploadResponseSchema, `${BASE}/projects/${projectId}/images`, {
     method: 'POST',
     body: form,
+  })
+}
+
+export async function updateProject(
+  projectId: string,
+  payload: ProjectUpdatePayload,
+): Promise<Project> {
+  return fetchJSON(ProjectSchema, `${BASE}/projects/${projectId}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function listProjectImages(projectId: string): Promise<ProjectImageSummary[]> {
+  return fetchJSON(z.array(ProjectImageSummarySchema), `${BASE}/projects/${projectId}/images`)
+}
+
+export async function getProjectImage(projectId: string, imageId: string): Promise<ProjectImageRead> {
+  return fetchJSON(ProjectImageReadSchema, `${BASE}/projects/${projectId}/images/${imageId}`)
+}
+
+export function getProjectImageFileUrl(projectId: string, imageId: string): string {
+  return `${BASE}/projects/${projectId}/images/${imageId}/file`
+}
+
+export async function updateProjectImageTags(
+  projectId: string,
+  imageId: string,
+  add: string[],
+  remove: string[],
+): Promise<ProjectImageRead> {
+  return fetchJSON(ProjectImageReadSchema, `${BASE}/projects/${projectId}/images/${imageId}/tags`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(ProjectImageTagUpdateSchema.parse({ add, remove })),
   })
 }

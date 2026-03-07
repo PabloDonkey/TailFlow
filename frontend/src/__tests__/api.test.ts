@@ -9,6 +9,9 @@ import {
   ProjectSyncResponseSchema,
   ProjectCreateResponseSchema,
   ProjectImageUploadResponseSchema,
+  ProjectImageSummarySchema,
+  ProjectImageReadSchema,
+  ProjectUpdatePayloadSchema,
 } from '../api'
 
 describe('API schemas', () => {
@@ -163,5 +166,31 @@ describe('API schemas', () => {
 
     const result = ProjectImageUploadResponseSchema.parse(raw)
     expect(result.uploaded_files).toHaveLength(2)
+  })
+
+  it('parses project image summary and read payloads', () => {
+    const summary = ProjectImageSummarySchema.parse({
+      id: '550e8400-e29b-41d4-a716-446655440014',
+      project_id: '550e8400-e29b-41d4-a716-446655440015',
+      relative_path: 'dataset/a.png',
+      filename: 'a.png',
+      discovered_at: '2026-01-01T00:00:00Z',
+    })
+    expect(summary.filename).toBe('a.png')
+
+    const read = ProjectImageReadSchema.parse({
+      ...summary,
+      removed_at: null,
+      tags: [{ id: '550e8400-e29b-41d4-a716-446655440016', name: 'portrait' }],
+    })
+    expect(read.tags[0]?.name).toBe('portrait')
+  })
+
+  it('parses project update payload', () => {
+    const payload = ProjectUpdatePayloadSchema.parse({
+      trigger_tag: 'trigger-x',
+      class_tag: 'class-y',
+    })
+    expect(payload.trigger_tag).toBe('trigger-x')
   })
 })

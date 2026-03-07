@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useProjectStore } from '../stores/projects'
 
 const projectStore = useProjectStore()
@@ -12,10 +12,17 @@ const createTriggerTag = ref('')
 const createFormError = ref<string | null>(null)
 const uploadFormError = ref<string | null>(null)
 const selectedUploadFiles = ref<File[]>([])
+const editTriggerTag = ref('')
+const editClassTag = ref('')
+const editFormError = ref<string | null>(null)
 
 onMounted(() => {
   projectStore.fetchProjects()
 })
+
+watch(selectedProject, () => {
+  startEditingSelectedProject()
+}, { immediate: true })
 
 async function discoverProjects() {
   await projectStore.discoverAndRefresh()
@@ -85,6 +92,40 @@ function formatDate(value: string | null): string {
     return '—'
   }
   return new Date(value).toLocaleString()
+}
+
+function startEditingSelectedProject() {
+  if (!selectedProject.value) {
+    editTriggerTag.value = ''
+    editClassTag.value = ''
+    return
+  }
+
+  editTriggerTag.value = selectedProject.value.trigger_tag
+  editClassTag.value = selectedProject.value.class_tag
+}
+
+async function saveProjectMetadata() {
+  editFormError.value = null
+  if (!selectedProject.value) {
+    editFormError.value = 'Select a project first.'
+    return
+  }
+
+  const triggerTag = editTriggerTag.value.trim()
+  const classTag = editClassTag.value.trim()
+  if (!triggerTag || !classTag) {
+    editFormError.value = 'Trigger tag and class tag are required.'
+    return
+  }
+
+  const updated = await projectStore.updateSelectedProjectMetadata({
+    trigger_tag: triggerTag,
+    class_tag: classTag,
+  })
+  if (!updated && projectStore.error) {
+    editFormError.value = projectStore.error
+  }
 }
 </script>
 
@@ -160,11 +201,15 @@ function formatDate(value: string | null): string {
             </div>
             <div class="row">
               <dt>Trigger Tag</dt>
-              <dd>{{ selectedProject.trigger_tag }}</dd>
+              <dd>
+                <input v-model="editTriggerTag" type="text" />
+              </dd>
             </div>
             <div class="row">
               <dt>Class Tag</dt>
-              <dd>{{ selectedProject.class_tag }}</dd>
+              <dd>
+                <input v-model="editClassTag" type="text" />
+              </dd>
             </div>
             <div class="row">
               <dt>Dataset Path</dt>
@@ -183,6 +228,10 @@ function formatDate(value: string | null): string {
           <button class="btn btn-secondary" :disabled="projectStore.syncing" @click="syncProject">
             {{ projectStore.syncing ? 'Syncing…' : 'Sync Project' }}
           </button>
+          <button class="btn btn-secondary" :disabled="projectStore.creating" @click="saveProjectMetadata">
+            {{ projectStore.creating ? 'Saving…' : 'Save Metadata' }}
+          </button>
+          <p v-if="editFormError" class="error">{{ editFormError }}</p>
 
           <p v-if="projectStore.lastSync" class="status">
             Sync: +{{ projectStore.lastSync.added_images }} added,

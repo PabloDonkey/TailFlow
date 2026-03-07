@@ -1,27 +1,42 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { useProjectStore } from '../stores/projects'
 import { useImageStore } from '../stores/images'
-import { getImageFileUrl } from '../api'
+import { getProjectImageFileUrl } from '../api'
 
 const route = useRoute()
 const imageStore = useImageStore()
+const projectStore = useProjectStore()
 
 const newTag = ref('')
 const errorMsg = ref<string | null>(null)
+const projectId = ref<string | null>(null)
 
-onMounted(() => {
+onMounted(async () => {
+  const projectFromQuery = route.query.project as string | undefined
+  if (projectFromQuery) {
+    projectId.value = projectFromQuery
+  } else if (projectStore.selectedProjectId) {
+    projectId.value = projectStore.selectedProjectId
+  }
+
+  if (!projectId.value) {
+    errorMsg.value = 'Project context is required to view this image.'
+    return
+  }
+
   const id = route.params.id as string
-  imageStore.fetchImage(id)
+  await imageStore.fetchImage(projectId.value, id)
 })
 
 async function addTag() {
   const tag = newTag.value.trim()
   if (!tag) return
   const id = imageStore.currentImage?.id
-  if (!id) return
+  if (!id || !projectId.value) return
   errorMsg.value = null
-  await imageStore.updateTags(id, [tag], [])
+  await imageStore.updateTags(projectId.value, id, [tag], [])
   if (imageStore.error) {
     errorMsg.value = imageStore.error
   } else {
@@ -31,8 +46,8 @@ async function addTag() {
 
 async function removeTag(tagName: string) {
   const id = imageStore.currentImage?.id
-  if (!id) return
-  await imageStore.updateTags(id, [], [tagName])
+  if (!id || !projectId.value) return
+  await imageStore.updateTags(projectId.value, id, [], [tagName])
 }
 </script>
 
@@ -44,16 +59,15 @@ async function removeTag(tagName: string) {
     <template v-else>
       <div class="image-wrap">
         <img
-          :src="getImageFileUrl(imageStore.currentImage.id)"
-          :alt="imageStore.currentImage.original_name"
+          :src="getProjectImageFileUrl(projectId!, imageStore.currentImage.id)"
+          :alt="imageStore.currentImage.filename"
           class="detail-img"
         />
       </div>
 
-      <h2 class="image-name">{{ imageStore.currentImage.original_name }}</h2>
+      <h2 class="image-name">{{ imageStore.currentImage.filename }}</h2>
       <p class="meta">
-        {{ imageStore.currentImage.width }} × {{ imageStore.currentImage.height }}px ·
-        Uploaded {{ new Date(imageStore.currentImage.uploaded_at).toLocaleString() }}
+        Discovered {{ new Date(imageStore.currentImage.discovered_at).toLocaleString() }}
       </p>
 
       <div class="tags-section">

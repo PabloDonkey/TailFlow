@@ -4,6 +4,13 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
+class ProjectTagRead(BaseModel):
+    id: uuid.UUID
+    name: str
+
+    model_config = {"from_attributes": True}
+
+
 class ProjectRead(BaseModel):
     id: uuid.UUID
     name: str
@@ -27,6 +34,31 @@ class ProjectCreate(BaseModel):
 
 class ProjectCreateResponse(BaseModel):
     project: ProjectRead
+
+
+class ProjectUpdate(BaseModel):
+    trigger_tag: str | None = None
+    class_tag: str | None = None
+
+
+class ProjectImageSummary(BaseModel):
+    id: uuid.UUID
+    project_id: uuid.UUID
+    relative_path: str
+    filename: str
+    discovered_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class ProjectImageRead(ProjectImageSummary):
+    removed_at: datetime | None = None
+    tags: list[ProjectTagRead] = []
+
+
+class ProjectImageTagUpdate(BaseModel):
+    add: list[str] = []
+    remove: list[str] = []
 
 
 class ProjectDiscoverResponse(BaseModel):

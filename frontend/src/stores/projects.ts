@@ -7,6 +7,7 @@ import type {
   ProjectDiscoverResponse,
   ProjectImageUploadResponse,
   ProjectSyncResponse,
+  ProjectUpdatePayload,
 } from '../api'
 import * as api from '../api'
 
@@ -126,6 +127,27 @@ export const useProjectStore = defineStore('projects', () => {
     }
   }
 
+  async function updateSelectedProjectMetadata(payload: ProjectUpdatePayload) {
+    if (!selectedProjectId.value) {
+      return null
+    }
+
+    creating.value = true
+    error.value = null
+    try {
+      const updated = await api.updateProject(selectedProjectId.value, payload)
+      projects.value = projects.value.map((project) =>
+        project.id === updated.id ? updated : project,
+      )
+      return updated
+    } catch (e) {
+      error.value = String(e)
+      return null
+    } finally {
+      creating.value = false
+    }
+  }
+
   function selectProject(projectId: string) {
     selectedProjectId.value = projectId
   }
@@ -148,6 +170,7 @@ export const useProjectStore = defineStore('projects', () => {
     syncSelectedProject,
     createProject,
     uploadImagesToSelectedProject,
+    updateSelectedProjectMetadata,
     selectProject,
   }
 })
