@@ -59,6 +59,10 @@ make run
    STORAGE_PATH=./storage/images
    MAX_UPLOAD_SIZE_MB=50
    CLASSIFIER_ENABLED=false
+   LOG_LEVEL=INFO
+   REQUEST_LOGGING_ENABLED=true
+   FILE_LOG_ENABLED=false
+   FILE_LOG_PATH=./storage/logs/tailflow.log
    ```
 
    If you have PostgreSQL running locally, one possible setup is:
@@ -80,6 +84,7 @@ make run
    ```
 
 The backend will be available at `http://localhost:8000`, and a health check is exposed at `http://localhost:8000/health`.
+Logs are emitted to stdout by default; optional file logging can be enabled with `FILE_LOG_ENABLED`, and request logging can be controlled with `LOG_LEVEL`, `REQUEST_LOGGING_ENABLED`, and `FILE_LOG_PATH`.
 
 ## Run the frontend
 
