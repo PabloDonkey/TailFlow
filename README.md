@@ -27,7 +27,7 @@ Then start both development servers:
 make run
 ```
 
-`make install` creates `backend/.venv`, installs the backend development dependencies, copies `backend/.env` from `backend/.env.example` when needed, and runs `npm install` in `frontend/`.
+`make install` creates `backend/.venv`, installs the backend development dependencies, copies `backend/.env` from `backend/.env.example` when needed, prompts for `PROJECTS_ROOT_PATH` when it is empty, and runs `npm install` in `frontend/`.
 
 ## Run the backend
 
@@ -51,11 +51,16 @@ make run
    cp .env.example .env
    ```
 
-4. Update `backend/.env` so `DATABASE_URL` points to an existing PostgreSQL database.
-   The default example uses:
+4. Update `backend/.env` so it points to an existing PostgreSQL database and the project root directory.
+   The default example uses split database settings:
 
    ```env
-   DATABASE_URL=postgresql+psycopg://user:password@localhost:5432/tailflow
+   DATABASE_HOST=localhost
+   DATABASE_PORT=5432
+   DATABASE_NAME=tailflow_db
+   DATABASE_USER=tailflow
+   DATABASE_PASSWORD=password
+   PROJECTS_ROOT_PATH=/path/to/project-root
    STORAGE_PATH=./storage/images
    MAX_UPLOAD_SIZE_MB=50
    CLASSIFIER_ENABLED=false
@@ -65,11 +70,7 @@ make run
    FILE_LOG_PATH=./storage/logs/tailflow.log
    ```
 
-   If you have PostgreSQL running locally, one possible setup is:
-
-   ```bash
-   createdb tailflow
-   ```
+   `PROJECTS_ROOT_PATH` should point to the directory whose direct child folders will be treated as projects.
 
 5. Run the database migrations:
 

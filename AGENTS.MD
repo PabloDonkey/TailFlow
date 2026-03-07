@@ -85,14 +85,20 @@ Current documented features:
 ### Runtime configuration
 
 Backend configuration is loaded from `backend/.env` via `pydantic-settings`.
-The example environment file defines:
+The example environment file defines split database settings plus runtime paths:
 
-- `DATABASE_URL`
+- `DATABASE_HOST`
+- `DATABASE_PORT`
+- `DATABASE_NAME`
+- `DATABASE_USER`
+- `DATABASE_PASSWORD`
+- `PROJECTS_ROOT_PATH`
 - `STORAGE_PATH`
 - `MAX_UPLOAD_SIZE_MB`
 - `CLASSIFIER_ENABLED`
 
 Default local storage is `backend/storage/images`.
+`PROJECTS_ROOT_PATH` is the configured root whose direct child folders are treated as projects for the project/dataset workflow.
 
 ### Data and API infrastructure
 
