@@ -1,15 +1,37 @@
 from datetime import UTC, datetime
 from pathlib import Path
 
+import aiofiles
+from fastapi import HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.models.dataset_image import DatasetImage
 from app.models.project import Project
-from app.schemas.project import ProjectDiscoverResponse, ProjectSyncResponse
+from app.schemas.project import (
+    ProjectCreate,
+    ProjectDiscoverResponse,
+    ProjectImageUploadResponse,
+    ProjectSyncResponse,
+)
 
 ALLOWED_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
+ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+
+
+def _resolve_available_path(path: Path) -> Path:
+    if not path.exists():
+        return path
+
+    stem = path.stem
+    suffix = path.suffix
+    index = 1
+    while True:
+        candidate = path.with_name(f"{stem}-{index}{suffix}")
+        if not candidate.exists():
+            return candidate
+        index += 1
 
 
 def _iter_dataset_images(dataset_path: Path) -> dict[str, tuple[int, int]]:
@@ -24,6 +46,145 @@ def _iter_dataset_images(dataset_path: Path) -> dict[str, tuple[int, int]]:
         stat = path.stat()
         files[relative] = (stat.st_mtime_ns, stat.st_size)
     return files
+
+
+async def create_project(
+    session: AsyncSession,
+    payload: ProjectCreate,
+) -> Project:
+    root_path = settings.projects_root_path_resolved
+    folder_name = payload.folder_name.strip()
+    class_tag = payload.class_tag.strip()
+
+    if not folder_name:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="folder_name must not be empty.",
+        )
+    if not class_tag:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="class_tag must not be empty.",
+        )
+
+    existing = await session.execute(
+        select(Project).where(Project.folder_name == folder_name)
+    )
+    if existing.scalar_one_or_none() is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Project '{folder_name}' already exists.",
+        )
+
+    project_dir = root_path / folder_name
+    dataset_dir = project_dir / "dataset"
+    if project_dir.exists():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Project folder already exists on disk: {project_dir}",
+        )
+
+    dataset_dir.mkdir(parents=True, exist_ok=False)
+
+    project = Project(
+        name=(payload.name.strip() if payload.name else folder_name),
+        folder_name=folder_name,
+        root_path=str(root_path),
+        dataset_path=str(dataset_dir),
+        trigger_tag=(
+            payload.trigger_tag.strip() if payload.trigger_tag else folder_name
+        ),
+        class_tag=class_tag,
+        missing_at=None,
+    )
+    session.add(project)
+    await session.commit()
+    await session.refresh(project)
+    return project
+
+
+async def upload_images_to_project(
+    session: AsyncSession,
+    project: Project,
+    files: list[UploadFile],
+) -> ProjectImageUploadResponse:
+    dataset_path = Path(project.dataset_path)
+    if not dataset_path.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Project dataset folder is missing.",
+        )
+
+    max_bytes = settings.max_upload_size_mb * 1024 * 1024
+    uploaded_files: list[str] = []
+    created_records = 0
+    restored_records = 0
+
+    for file in files:
+        if file.content_type not in ALLOWED_CONTENT_TYPES:
+            raise HTTPException(
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                detail=f"Unsupported file type: {file.content_type}",
+            )
+
+        original_name = file.filename or "image.jpg"
+        original_path = Path(original_name)
+        suffix = original_path.suffix.lower()
+        if suffix not in ALLOWED_IMAGE_SUFFIXES:
+            raise HTTPException(
+                status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+                detail=f"Unsupported file extension: {suffix or '(none)'}",
+            )
+
+        destination = _resolve_available_path(dataset_path / original_path.name)
+        contents = await file.read()
+        if len(contents) > max_bytes:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=f"File exceeds maximum size of {settings.max_upload_size_mb} MB.",
+            )
+
+        async with aiofiles.open(destination, "wb") as output:
+            await output.write(contents)
+
+        stat = destination.stat()
+        relative_path = destination.relative_to(dataset_path).as_posix()
+        record_result = await session.execute(
+            select(DatasetImage).where(
+                DatasetImage.project_id == project.id,
+                DatasetImage.relative_path == relative_path,
+            )
+        )
+        record = record_result.scalar_one_or_none()
+        if record is None:
+            record = DatasetImage(
+                project_id=project.id,
+                relative_path=relative_path,
+                filename=destination.name,
+                file_mtime_ns=stat.st_mtime_ns,
+                file_size_bytes=stat.st_size,
+                removed_at=None,
+            )
+            session.add(record)
+            created_records += 1
+        else:
+            record.filename = destination.name
+            record.file_mtime_ns = stat.st_mtime_ns
+            record.file_size_bytes = stat.st_size
+            if record.removed_at is not None:
+                record.removed_at = None
+                restored_records += 1
+
+        uploaded_files.append(relative_path)
+
+    await session.commit()
+
+    return ProjectImageUploadResponse(
+        project_id=project.id,
+        uploaded_files=uploaded_files,
+        created_records=created_records,
+        restored_records=restored_records,
+    )
 
 
 async def discover_projects(session: AsyncSession) -> ProjectDiscoverResponse:

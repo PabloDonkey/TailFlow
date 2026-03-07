@@ -1,9 +1,12 @@
 """Tests for project discovery and sync API endpoints."""
 
+import io
 from pathlib import Path
 
 import pytest
 from httpx import AsyncClient
+
+from tests.conftest import make_png_bytes
 
 
 @pytest.mark.asyncio
@@ -116,3 +119,63 @@ async def test_sync_project_marks_missing_when_dataset_disappears(
 
     refreshed = (await client.get("/api/projects")).json()[0]
     assert refreshed["missing_at"] is not None
+
+
+@pytest.mark.asyncio
+async def test_create_project_creates_directory_and_dataset(
+    client: AsyncClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+
+    response = await client.post(
+        "/api/projects",
+        json={"folder_name": "new-project", "class_tag": "animal"},
+    )
+
+    assert response.status_code == 201
+    project = response.json()["project"]
+    assert project["folder_name"] == "new-project"
+    assert project["trigger_tag"] == "new-project"
+    assert project["class_tag"] == "animal"
+    assert (tmp_path / "new-project").is_dir()
+    assert (tmp_path / "new-project" / "dataset").is_dir()
+
+
+@pytest.mark.asyncio
+async def test_upload_project_images_writes_into_project_dataset(
+    client: AsyncClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+    create_response = await client.post(
+        "/api/projects",
+        json={"folder_name": "upload-project", "class_tag": "subject"},
+    )
+    assert create_response.status_code == 201
+    project_id = create_response.json()["project"]["id"]
+
+    first = make_png_bytes(10, 10)
+    second = make_png_bytes(20, 20)
+
+    upload_response = await client.post(
+        f"/api/projects/{project_id}/images",
+        files=[
+            ("files", ("one.png", io.BytesIO(first), "image/png")),
+            ("files", ("two.png", io.BytesIO(second), "image/png")),
+        ],
+    )
+
+    assert upload_response.status_code == 200
+    payload = upload_response.json()
+    assert payload["created_records"] == 2
+    assert payload["restored_records"] == 0
+    assert sorted(payload["uploaded_files"]) == ["one.png", "two.png"]
+
+    dataset_dir = tmp_path / "upload-project" / "dataset"
+    assert (dataset_dir / "one.png").is_file()
+    assert (dataset_dir / "two.png").is_file()
+
+    sync_response = await client.post(f"/api/projects/{project_id}/sync")
+    assert sync_response.status_code == 200
+    sync_payload = sync_response.json()
+    assert sync_payload["added_images"] == 0
+    assert sync_payload["removed_images"] == 0
