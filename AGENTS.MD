@@ -19,6 +19,15 @@ Bootstrap expectation for future sessions:
 3. Add new directive or instructional guidance to `.ai/rule.md`.
 4. Add new non-directive project facts to `.ai/memory.md`, and date each entry with an ISO 8601 timestamp.
 
+## Feature documentation
+
+Feature documentation lives under `docs/`.
+When a task touches a documented feature, read the relevant file in `docs/` before planning or implementation if it will help clarify product behavior or data modeling.
+
+Current documented features:
+
+- `docs/project-dataset-workflow.md` - filesystem-backed project discovery, dataset handling, metadata persistence, sync behavior, and class diagram
+
 ## Tech stack
 
 ### Backend
@@ -71,6 +80,7 @@ Bootstrap expectation for future sessions:
   - `stores/` - Pinia stores
 - `.github/workflows/ci.yml` - CI pipeline definition
 - `Makefile` - root development shortcuts
+- `docs/` - feature documentation and design notes
 
 ### Runtime configuration
 
