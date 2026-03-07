@@ -5,6 +5,20 @@
 TailFlow is a mobile-friendly image tagging application with a FastAPI backend and a Vue 3 frontend.
 The repository is split into `backend/` for the API and persistence layer, and `frontend/` for the browser UI.
 
+## Repo AI context
+
+Persistent AI context for this repository lives under `.ai/`:
+
+- `.ai/rule.md` - directive or instructional project rules
+- `.ai/memory.md` - dated, non-directive project memory entries using ISO 8601 timestamps
+
+Bootstrap expectation for future sessions:
+
+1. Read `.ai/rule.md` on startup before planning or implementation work.
+2. Read `.ai/memory.md` on startup after `.ai/rule.md`.
+3. Add new directive or instructional guidance to `.ai/rule.md`.
+4. Add new non-directive project facts to `.ai/memory.md`, and date each entry with an ISO 8601 timestamp.
+
 ## Tech stack
 
 ### Backend
