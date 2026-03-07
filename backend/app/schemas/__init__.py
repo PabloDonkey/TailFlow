@@ -5,6 +5,7 @@ from app.schemas.image import (
     ImageTagUpdate,
     ImageUploadResponse,
 )
+from app.schemas.project import ProjectDiscoverResponse, ProjectRead, ProjectSyncResponse
 from app.schemas.tag import TagCreate, TagRead
 
 __all__ = [
@@ -13,6 +14,9 @@ __all__ = [
     "ImageSummary",
     "ImageTagUpdate",
     "ImageUploadResponse",
+    "ProjectDiscoverResponse",
+    "ProjectRead",
+    "ProjectSyncResponse",
     "TagCreate",
     "TagRead",
 ]
