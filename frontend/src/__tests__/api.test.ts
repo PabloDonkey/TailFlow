@@ -4,6 +4,9 @@ import {
   ImageSummarySchema,
   ImageReadSchema,
   ImageUploadResponseSchema,
+  ProjectSchema,
+  ProjectDiscoverResponseSchema,
+  ProjectSyncResponseSchema,
 } from '../api'
 
 describe('API schemas', () => {
@@ -86,5 +89,46 @@ describe('API schemas', () => {
         created_at: '2026-01-01T00:00:00Z',
       })
     ).toThrow()
+  })
+
+  it('parses Project metadata', () => {
+    const raw = {
+      id: '550e8400-e29b-41d4-a716-446655440010',
+      name: 'project-a',
+      folder_name: 'project-a',
+      root_path: '/tmp/projects',
+      dataset_path: '/tmp/projects/project-a/dataset',
+      trigger_tag: 'project-a',
+      class_tag: 'character',
+      last_synced_at: '2026-01-01T00:00:00Z',
+      missing_at: null,
+    }
+    const project = ProjectSchema.parse(raw)
+    expect(project.folder_name).toBe('project-a')
+    expect(project.missing_at).toBeNull()
+  })
+
+  it('parses project discover response', () => {
+    const raw = {
+      discovered_projects: 3,
+      imported_projects: 1,
+      marked_missing_projects: 1,
+    }
+    const result = ProjectDiscoverResponseSchema.parse(raw)
+    expect(result.discovered_projects).toBe(3)
+  })
+
+  it('parses project sync response', () => {
+    const raw = {
+      project_id: '550e8400-e29b-41d4-a716-446655440011',
+      added_images: 2,
+      removed_images: 1,
+      restored_images: 0,
+      missing: false,
+      synced_at: '2026-01-01T00:00:00Z',
+    }
+    const result = ProjectSyncResponseSchema.parse(raw)
+    expect(result.added_images).toBe(2)
+    expect(result.missing).toBe(false)
   })
 })

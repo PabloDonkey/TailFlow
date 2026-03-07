@@ -38,6 +38,33 @@ export const ClassifyResponseSchema = z.object({
   suggested_tags: z.array(z.string()),
 })
 
+export const ProjectSchema = z.object({
+  id: z.string().uuid(),
+  name: z.string(),
+  folder_name: z.string(),
+  root_path: z.string(),
+  dataset_path: z.string(),
+  trigger_tag: z.string(),
+  class_tag: z.string(),
+  last_synced_at: z.string().datetime({ offset: true }).nullable(),
+  missing_at: z.string().datetime({ offset: true }).nullable(),
+})
+
+export const ProjectDiscoverResponseSchema = z.object({
+  discovered_projects: z.number().int(),
+  imported_projects: z.number().int(),
+  marked_missing_projects: z.number().int(),
+})
+
+export const ProjectSyncResponseSchema = z.object({
+  project_id: z.string().uuid(),
+  added_images: z.number().int(),
+  removed_images: z.number().int(),
+  restored_images: z.number().int(),
+  missing: z.boolean(),
+  synced_at: z.string().datetime({ offset: true }),
+})
+
 // ─── Inferred types ──────────────────────────────────────────────────────────
 
 export type Tag = z.infer<typeof TagSchema>
@@ -45,6 +72,9 @@ export type ImageSummary = z.infer<typeof ImageSummarySchema>
 export type ImageRead = z.infer<typeof ImageReadSchema>
 export type ImageUploadResponse = z.infer<typeof ImageUploadResponseSchema>
 export type ClassifyResponse = z.infer<typeof ClassifyResponseSchema>
+export type Project = z.infer<typeof ProjectSchema>
+export type ProjectDiscoverResponse = z.infer<typeof ProjectDiscoverResponseSchema>
+export type ProjectSyncResponse = z.infer<typeof ProjectSyncResponseSchema>
 
 // ─── API client ──────────────────────────────────────────────────────────────
 
@@ -120,5 +150,23 @@ export async function classifyImage(file: File): Promise<ClassifyResponse> {
   return fetchJSON(ClassifyResponseSchema, `${BASE}/classify`, {
     method: 'POST',
     body: form,
+  })
+}
+
+// Projects
+
+export async function listProjects(): Promise<Project[]> {
+  return fetchJSON(z.array(ProjectSchema), `${BASE}/projects`)
+}
+
+export async function discoverProjects(): Promise<ProjectDiscoverResponse> {
+  return fetchJSON(ProjectDiscoverResponseSchema, `${BASE}/projects/discover`, {
+    method: 'POST',
+  })
+}
+
+export async function syncProject(projectId: string): Promise<ProjectSyncResponse> {
+  return fetchJSON(ProjectSyncResponseSchema, `${BASE}/projects/${projectId}/sync`, {
+    method: 'POST',
   })
 }

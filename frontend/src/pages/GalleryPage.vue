@@ -23,7 +23,7 @@ function goToImage(id: string) {
     <p v-if="imageStore.loading">Loading…</p>
     <p v-else-if="imageStore.error" class="error">{{ imageStore.error }}</p>
     <p v-else-if="!imageStore.images.length" class="empty">
-      No images yet. <RouterLink to="/upload">Upload one!</RouterLink>
+      No images yet. <RouterLink to="/projects">Select a project first.</RouterLink>
     </p>
 
     <div v-else class="grid">

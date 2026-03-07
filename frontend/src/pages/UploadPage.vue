@@ -1,86 +1,122 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { useImageStore } from '../stores/images'
+import { computed, onMounted } from 'vue'
+import { useProjectStore } from '../stores/projects'
 
-const router = useRouter()
-const imageStore = useImageStore()
+const projectStore = useProjectStore()
 
-const selectedFile = ref<File | null>(null)
-const preview = ref<string | null>(null)
-const suggestedTags = ref<string[]>([])
-const uploadedId = ref<string | null>(null)
-const errorMsg = ref<string | null>(null)
+const selectedProject = computed(() => projectStore.selectedProject)
 
-function onFileChange(e: Event) {
-  const input = e.target as HTMLInputElement
-  const file = input.files?.[0]
-  if (!file) return
-  selectedFile.value = file
-  preview.value = URL.createObjectURL(file)
-  suggestedTags.value = []
-  uploadedId.value = null
-  errorMsg.value = null
+onMounted(() => {
+  projectStore.fetchProjects()
+})
+
+async function discoverProjects() {
+  await projectStore.discoverAndRefresh()
 }
 
-async function doUpload() {
-  if (!selectedFile.value) return
-  errorMsg.value = null
-  const result = await imageStore.upload(selectedFile.value)
-  if (result) {
-    uploadedId.value = result.id
-    suggestedTags.value = result.suggested_tags
-  } else {
-    errorMsg.value = imageStore.error ?? 'Upload failed'
-  }
+async function syncProject() {
+  await projectStore.syncSelectedProject()
 }
 
-function goToImage() {
-  if (uploadedId.value) {
-    router.push(`/image/${uploadedId.value}`)
+function formatDate(value: string | null): string {
+  if (!value) {
+    return '—'
   }
+  return new Date(value).toLocaleString()
 }
 </script>
 
 <template>
-  <div class="upload-page">
-    <h1>Upload Image</h1>
-
-    <label class="file-label">
-      <input type="file" accept="image/*" @change="onFileChange" class="file-input" />
-      <span>{{ selectedFile ? selectedFile.name : 'Choose an image…' }}</span>
-    </label>
-
-    <div v-if="preview" class="preview-wrap">
-      <img :src="preview" alt="Preview" class="preview-img" />
+  <div class="projects-page">
+    <div class="header-row">
+      <h1>Projects</h1>
+      <button class="btn btn-primary" :disabled="projectStore.loading" @click="discoverProjects">
+        {{ projectStore.loading ? 'Refreshing…' : 'Discover / Refresh' }}
+      </button>
     </div>
 
-    <button
-      v-if="selectedFile && !uploadedId"
-      @click="doUpload"
-      :disabled="imageStore.loading"
-      class="btn btn-primary"
-    >
-      {{ imageStore.loading ? 'Uploading…' : 'Upload' }}
-    </button>
+    <p v-if="projectStore.error" class="error">{{ projectStore.error }}</p>
+    <p v-if="projectStore.lastDiscover" class="status">
+      Discovery: {{ projectStore.lastDiscover.discovered_projects }} found,
+      {{ projectStore.lastDiscover.imported_projects }} imported,
+      {{ projectStore.lastDiscover.marked_missing_projects }} marked missing.
+    </p>
 
-    <div v-if="errorMsg" class="error">{{ errorMsg }}</div>
+    <div class="content-grid">
+      <section class="project-list">
+        <h2>Available Projects</h2>
+        <p v-if="!projectStore.projects.length" class="empty">No projects found yet.</p>
+        <ul v-else>
+          <li v-for="project in projectStore.projects" :key="project.id">
+            <button
+              class="project-item"
+              :class="{ active: project.id === projectStore.selectedProjectId }"
+              @click="projectStore.selectProject(project.id)"
+            >
+              <span class="project-name">{{ project.name }}</span>
+              <span v-if="project.missing_at" class="missing-pill">Missing</span>
+            </button>
+          </li>
+        </ul>
+      </section>
 
-    <div v-if="uploadedId" class="success">
-      <p>✅ Image uploaded successfully!</p>
-      <div v-if="suggestedTags.length" class="tags-wrap">
-        <strong>Suggested tags:</strong>
-        <span v-for="tag in suggestedTags" :key="tag" class="tag">{{ tag }}</span>
-      </div>
-      <button @click="goToImage" class="btn btn-secondary">View &amp; Tag Image</button>
+      <section class="project-details">
+        <h2>Project Details</h2>
+        <p v-if="!selectedProject" class="empty">Select a project to inspect metadata.</p>
+        <div v-else class="details-card">
+          <dl>
+            <div class="row">
+              <dt>Folder</dt>
+              <dd>{{ selectedProject.folder_name }}</dd>
+            </div>
+            <div class="row">
+              <dt>Trigger Tag</dt>
+              <dd>{{ selectedProject.trigger_tag }}</dd>
+            </div>
+            <div class="row">
+              <dt>Class Tag</dt>
+              <dd>{{ selectedProject.class_tag }}</dd>
+            </div>
+            <div class="row">
+              <dt>Dataset Path</dt>
+              <dd>{{ selectedProject.dataset_path }}</dd>
+            </div>
+            <div class="row">
+              <dt>Last Synced</dt>
+              <dd>{{ formatDate(selectedProject.last_synced_at) }}</dd>
+            </div>
+            <div class="row">
+              <dt>Status</dt>
+              <dd>{{ selectedProject.missing_at ? 'Missing' : 'Present' }}</dd>
+            </div>
+          </dl>
+
+          <button class="btn btn-secondary" :disabled="projectStore.syncing" @click="syncProject">
+            {{ projectStore.syncing ? 'Syncing…' : 'Sync Project' }}
+          </button>
+
+          <p v-if="projectStore.lastSync" class="status">
+            Sync: +{{ projectStore.lastSync.added_images }} added,
+            -{{ projectStore.lastSync.removed_images }} removed,
+            {{ projectStore.lastSync.restored_images }} restored.
+          </p>
+        </div>
+      </section>
     </div>
   </div>
 </template>
 
 <style scoped>
-.upload-page {
+.projects-page {
   display: flex;
   flex-direction: column;
+  gap: 1rem;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   gap: 1rem;
 }
 
@@ -88,36 +124,29 @@ h1 {
   font-size: 1.5rem;
 }
 
-.file-label {
-  display: block;
-  border: 2px dashed #aaa;
-  border-radius: 8px;
-  padding: 1.5rem;
-  text-align: center;
-  cursor: pointer;
+.content-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+}
+
+.project-list,
+.project-details {
   background: #fff;
-}
-
-.file-input {
-  display: none;
-}
-
-.preview-wrap {
-  text-align: center;
-}
-
-.preview-img {
-  max-width: 100%;
-  max-height: 300px;
   border-radius: 8px;
-  object-fit: contain;
+  padding: 1rem;
+}
+
+h2 {
+  margin-bottom: 0.75rem;
+  font-size: 1.1rem;
 }
 
 .btn {
-  padding: 0.75rem 1.5rem;
+  padding: 0.65rem 1rem;
   border: none;
   border-radius: 6px;
-  font-size: 1rem;
+  font-size: 0.95rem;
   cursor: pointer;
 }
 
@@ -142,24 +171,83 @@ h1 {
   border-radius: 4px;
 }
 
-.success {
+.status {
+  color: #444;
+  font-size: 0.9rem;
+}
+
+.empty {
+  color: #666;
+}
+
+.project-list ul {
+  list-style: none;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.tags-wrap {
+.project-item {
+  width: 100%;
+  text-align: left;
+  background: #f6f7fb;
+  border: 1px solid #d8ddef;
+  border-radius: 6px;
+  padding: 0.65rem 0.75rem;
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  cursor: pointer;
 }
 
-.tag {
-  background: #e8eaf6;
-  color: #3f51b5;
-  padding: 0.2rem 0.6rem;
-  border-radius: 12px;
-  font-size: 0.85rem;
+.project-item.active {
+  border-color: #4a4e8a;
+  background: #e9ecf8;
+}
+
+.project-name {
+  font-weight: 600;
+}
+
+.missing-pill {
+  background: #fee;
+  color: #a11;
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.75rem;
+}
+
+.details-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+dl {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 0.5rem;
+}
+
+dt {
+  color: #555;
+  font-weight: 600;
+}
+
+dd {
+  color: #222;
+  word-break: break-word;
+}
+
+@media (min-width: 800px) {
+  .content-grid {
+    grid-template-columns: 1fr 1.2fr;
+  }
 }
 </style>
