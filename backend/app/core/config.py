@@ -1,4 +1,5 @@
 from pathlib import Path
+from urllib.parse import quote_plus
 
 from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -12,7 +13,11 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
     )
 
-    database_url: str = "postgresql+psycopg://user:password@localhost:5432/tailflow"
+    database_host: str = "localhost"
+    database_port: int = 5432
+    database_name: str = "tailflow"
+    database_user: str = "user"
+    database_password: str = "password"
     storage_path: str = "./storage/images"
     max_upload_size_mb: int = 50
     classifier_enabled: bool = False
@@ -33,6 +38,15 @@ class Settings(BaseSettings):
             raise ValueError(f"log_level must be one of: {supported_levels}")
 
         return normalized
+
+    @property
+    def database_url(self) -> str:
+        encoded_user = quote_plus(self.database_user)
+        encoded_password = quote_plus(self.database_password)
+        return (
+            f"postgresql+psycopg://{encoded_user}:{encoded_password}"
+            f"@{self.database_host}:{self.database_port}/{self.database_name}"
+        )
 
 
 settings = Settings()

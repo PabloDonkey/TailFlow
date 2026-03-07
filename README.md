@@ -51,11 +51,15 @@ make run
    cp .env.example .env
    ```
 
-4. Update `backend/.env` so `DATABASE_URL` points to an existing PostgreSQL database.
-   The default example uses:
+4. Update `backend/.env` so it points to an existing PostgreSQL database.
+   The default example uses split database settings:
 
    ```env
-   DATABASE_URL=postgresql+psycopg://user:password@localhost:5432/tailflow
+   DATABASE_HOST=localhost
+   DATABASE_PORT=5432
+   DATABASE_NAME=tailflow
+   DATABASE_USER=user
+   DATABASE_PASSWORD=password
    STORAGE_PATH=./storage/images
    MAX_UPLOAD_SIZE_MB=50
    CLASSIFIER_ENABLED=false
@@ -64,6 +68,7 @@ make run
    FILE_LOG_ENABLED=false
    FILE_LOG_PATH=./storage/logs/tailflow.log
    ```
+
 
    If you have PostgreSQL running locally, one possible setup is:
 
