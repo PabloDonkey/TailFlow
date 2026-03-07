@@ -7,6 +7,8 @@ import {
   ProjectSchema,
   ProjectDiscoverResponseSchema,
   ProjectSyncResponseSchema,
+  ProjectCreateResponseSchema,
+  ProjectImageUploadResponseSchema,
 } from '../api'
 
 describe('API schemas', () => {
@@ -130,5 +132,36 @@ describe('API schemas', () => {
     const result = ProjectSyncResponseSchema.parse(raw)
     expect(result.added_images).toBe(2)
     expect(result.missing).toBe(false)
+  })
+
+  it('parses project create response', () => {
+    const raw = {
+      project: {
+        id: '550e8400-e29b-41d4-a716-446655440012',
+        name: 'project-new',
+        folder_name: 'project-new',
+        root_path: '/tmp/projects',
+        dataset_path: '/tmp/projects/project-new/dataset',
+        trigger_tag: 'project-new',
+        class_tag: 'style',
+        last_synced_at: null,
+        missing_at: null,
+      },
+    }
+
+    const result = ProjectCreateResponseSchema.parse(raw)
+    expect(result.project.folder_name).toBe('project-new')
+  })
+
+  it('parses project image upload response', () => {
+    const raw = {
+      project_id: '550e8400-e29b-41d4-a716-446655440013',
+      uploaded_files: ['a.png', 'b.jpg'],
+      created_records: 2,
+      restored_records: 0,
+    }
+
+    const result = ProjectImageUploadResponseSchema.parse(raw)
+    expect(result.uploaded_files).toHaveLength(2)
   })
 })

@@ -65,6 +65,24 @@ export const ProjectSyncResponseSchema = z.object({
   synced_at: z.string().datetime({ offset: true }),
 })
 
+export const ProjectCreatePayloadSchema = z.object({
+  folder_name: z.string().min(1),
+  class_tag: z.string().min(1),
+  name: z.string().optional(),
+  trigger_tag: z.string().optional(),
+})
+
+export const ProjectCreateResponseSchema = z.object({
+  project: ProjectSchema,
+})
+
+export const ProjectImageUploadResponseSchema = z.object({
+  project_id: z.string().uuid(),
+  uploaded_files: z.array(z.string()),
+  created_records: z.number().int(),
+  restored_records: z.number().int(),
+})
+
 // ─── Inferred types ──────────────────────────────────────────────────────────
 
 export type Tag = z.infer<typeof TagSchema>
@@ -75,6 +93,9 @@ export type ClassifyResponse = z.infer<typeof ClassifyResponseSchema>
 export type Project = z.infer<typeof ProjectSchema>
 export type ProjectDiscoverResponse = z.infer<typeof ProjectDiscoverResponseSchema>
 export type ProjectSyncResponse = z.infer<typeof ProjectSyncResponseSchema>
+export type ProjectCreatePayload = z.infer<typeof ProjectCreatePayloadSchema>
+export type ProjectCreateResponse = z.infer<typeof ProjectCreateResponseSchema>
+export type ProjectImageUploadResponse = z.infer<typeof ProjectImageUploadResponseSchema>
 
 // ─── API client ──────────────────────────────────────────────────────────────
 
@@ -168,5 +189,28 @@ export async function discoverProjects(): Promise<ProjectDiscoverResponse> {
 export async function syncProject(projectId: string): Promise<ProjectSyncResponse> {
   return fetchJSON(ProjectSyncResponseSchema, `${BASE}/projects/${projectId}/sync`, {
     method: 'POST',
+  })
+}
+
+export async function createProject(payload: ProjectCreatePayload): Promise<ProjectCreateResponse> {
+  return fetchJSON(ProjectCreateResponseSchema, `${BASE}/projects`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+}
+
+export async function uploadProjectImages(
+  projectId: string,
+  files: File[],
+): Promise<ProjectImageUploadResponse> {
+  const form = new FormData()
+  for (const file of files) {
+    form.append('files', file)
+  }
+
+  return fetchJSON(ProjectImageUploadResponseSchema, `${BASE}/projects/${projectId}/images`, {
+    method: 'POST',
+    body: form,
   })
 }

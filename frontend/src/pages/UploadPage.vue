@@ -1,10 +1,17 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useProjectStore } from '../stores/projects'
 
 const projectStore = useProjectStore()
 
 const selectedProject = computed(() => projectStore.selectedProject)
+const createFolderName = ref('')
+const createClassTag = ref('')
+const createName = ref('')
+const createTriggerTag = ref('')
+const createFormError = ref<string | null>(null)
+const uploadFormError = ref<string | null>(null)
+const selectedUploadFiles = ref<File[]>([])
 
 onMounted(() => {
   projectStore.fetchProjects()
@@ -16,6 +23,61 @@ async function discoverProjects() {
 
 async function syncProject() {
   await projectStore.syncSelectedProject()
+}
+
+async function createProject() {
+  createFormError.value = null
+
+  const folderName = createFolderName.value.trim()
+  const classTag = createClassTag.value.trim()
+
+  if (!folderName) {
+    createFormError.value = 'Folder name is required.'
+    return
+  }
+  if (!classTag) {
+    createFormError.value = 'Class tag is required.'
+    return
+  }
+
+  const result = await projectStore.createProject({
+    folder_name: folderName,
+    class_tag: classTag,
+    name: createName.value.trim() || undefined,
+    trigger_tag: createTriggerTag.value.trim() || undefined,
+  })
+
+  if (result) {
+    createFolderName.value = ''
+    createClassTag.value = ''
+    createName.value = ''
+    createTriggerTag.value = ''
+  }
+}
+
+function onUploadFilesChanged(event: Event) {
+  const input = event.target as HTMLInputElement
+  selectedUploadFiles.value = Array.from(input.files ?? [])
+  uploadFormError.value = null
+}
+
+async function uploadFilesToProject() {
+  uploadFormError.value = null
+
+  if (!selectedProject.value) {
+    uploadFormError.value = 'Select a project first.'
+    return
+  }
+
+  if (selectedUploadFiles.value.length === 0) {
+    uploadFormError.value = 'Select one or more image files to upload.'
+    return
+  }
+
+  const result = await projectStore.uploadImagesToSelectedProject(selectedUploadFiles.value)
+  if (result) {
+    selectedUploadFiles.value = []
+  }
 }
 
 function formatDate(value: string | null): string {
@@ -41,6 +103,33 @@ function formatDate(value: string | null): string {
       {{ projectStore.lastDiscover.imported_projects }} imported,
       {{ projectStore.lastDiscover.marked_missing_projects }} marked missing.
     </p>
+
+    <section class="create-project">
+      <h2>Create Project</h2>
+      <div class="form-grid">
+        <label>
+          Folder Name
+          <input v-model="createFolderName" type="text" placeholder="e.g. project-c" />
+        </label>
+        <label>
+          Class Tag
+          <input v-model="createClassTag" type="text" placeholder="e.g. character" />
+        </label>
+        <label>
+          Display Name (optional)
+          <input v-model="createName" type="text" placeholder="e.g. Project C" />
+        </label>
+        <label>
+          Trigger Tag (optional)
+          <input v-model="createTriggerTag" type="text" placeholder="defaults to folder" />
+        </label>
+      </div>
+      <button class="btn btn-primary" :disabled="projectStore.creating" @click="createProject">
+        {{ projectStore.creating ? 'Creating…' : 'Create Project' }}
+      </button>
+      <p v-if="createFormError" class="error">{{ createFormError }}</p>
+      <p v-if="projectStore.lastCreate" class="status success">Project created successfully.</p>
+    </section>
 
     <div class="content-grid">
       <section class="project-list">
@@ -100,6 +189,33 @@ function formatDate(value: string | null): string {
             -{{ projectStore.lastSync.removed_images }} removed,
             {{ projectStore.lastSync.restored_images }} restored.
           </p>
+
+          <div class="upload-box" :class="{ disabled: selectedProject.missing_at !== null }">
+            <h3>Upload Images to Project</h3>
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              :disabled="selectedProject.missing_at !== null"
+              @change="onUploadFilesChanged"
+            />
+            <button
+              class="btn btn-primary"
+              :disabled="projectStore.uploading || selectedProject.missing_at !== null"
+              @click="uploadFilesToProject"
+            >
+              {{ projectStore.uploading ? 'Uploading…' : 'Upload to Dataset' }}
+            </button>
+            <p v-if="selectedProject.missing_at" class="error">
+              Upload disabled because this project's folder is missing.
+            </p>
+            <p v-else-if="uploadFormError" class="error">{{ uploadFormError }}</p>
+            <p v-if="projectStore.lastUpload" class="status success">
+              Upload complete: {{ projectStore.lastUpload.uploaded_files.length }} file(s),
+              {{ projectStore.lastUpload.created_records }} record(s) created,
+              {{ projectStore.lastUpload.restored_records }} restored.
+            </p>
+          </div>
         </div>
       </section>
     </div>
@@ -131,7 +247,8 @@ h1 {
 }
 
 .project-list,
-.project-details {
+.project-details,
+.create-project {
   background: #fff;
   border-radius: 8px;
   padding: 1rem;
@@ -174,6 +291,10 @@ h2 {
 .status {
   color: #444;
   font-size: 0.9rem;
+}
+
+.status.success {
+  color: #0b6b0b;
 }
 
 .empty {
@@ -223,6 +344,41 @@ h2 {
   gap: 0.75rem;
 }
 
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.6rem;
+  margin-bottom: 0.75rem;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  color: #333;
+  font-size: 0.92rem;
+}
+
+input[type='text'],
+input[type='file'] {
+  border: 1px solid #cfd4e2;
+  border-radius: 6px;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.92rem;
+}
+
+.upload-box {
+  border-top: 1px solid #eceff5;
+  padding-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.upload-box.disabled {
+  opacity: 0.85;
+}
+
 dl {
   display: flex;
   flex-direction: column;
@@ -248,6 +404,10 @@ dd {
 @media (min-width: 800px) {
   .content-grid {
     grid-template-columns: 1fr 1.2fr;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr 1fr;
   }
 }
 </style>

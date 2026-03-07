@@ -1,6 +1,13 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import type { Project, ProjectDiscoverResponse, ProjectSyncResponse } from '../api'
+import type {
+  Project,
+  ProjectCreatePayload,
+  ProjectCreateResponse,
+  ProjectDiscoverResponse,
+  ProjectImageUploadResponse,
+  ProjectSyncResponse,
+} from '../api'
 import * as api from '../api'
 
 export const useProjectStore = defineStore('projects', () => {
@@ -8,9 +15,13 @@ export const useProjectStore = defineStore('projects', () => {
   const selectedProjectId = ref<string | null>(null)
   const loading = ref(false)
   const syncing = ref(false)
+  const creating = ref(false)
+  const uploading = ref(false)
   const error = ref<string | null>(null)
   const lastDiscover = ref<ProjectDiscoverResponse | null>(null)
   const lastSync = ref<ProjectSyncResponse | null>(null)
+  const lastCreate = ref<ProjectCreateResponse | null>(null)
+  const lastUpload = ref<ProjectImageUploadResponse | null>(null)
 
   const selectedProject = computed(() =>
     projects.value.find((project) => project.id === selectedProjectId.value) ?? null,
@@ -78,6 +89,43 @@ export const useProjectStore = defineStore('projects', () => {
     }
   }
 
+  async function createProject(payload: ProjectCreatePayload) {
+    creating.value = true
+    error.value = null
+    try {
+      lastCreate.value = await api.createProject(payload)
+      await fetchProjects()
+      if (lastCreate.value?.project.id) {
+        selectedProjectId.value = lastCreate.value.project.id
+      }
+      return lastCreate.value
+    } catch (e) {
+      error.value = String(e)
+      return null
+    } finally {
+      creating.value = false
+    }
+  }
+
+  async function uploadImagesToSelectedProject(files: File[]) {
+    if (!selectedProjectId.value || files.length === 0) {
+      return null
+    }
+
+    uploading.value = true
+    error.value = null
+    try {
+      lastUpload.value = await api.uploadProjectImages(selectedProjectId.value, files)
+      await fetchProjects()
+      return lastUpload.value
+    } catch (e) {
+      error.value = String(e)
+      return null
+    } finally {
+      uploading.value = false
+    }
+  }
+
   function selectProject(projectId: string) {
     selectedProjectId.value = projectId
   }
@@ -88,12 +136,18 @@ export const useProjectStore = defineStore('projects', () => {
     selectedProject,
     loading,
     syncing,
+    creating,
+    uploading,
     error,
     lastDiscover,
     lastSync,
+    lastCreate,
+    lastUpload,
     fetchProjects,
     discoverAndRefresh,
     syncSelectedProject,
+    createProject,
+    uploadImagesToSelectedProject,
     selectProject,
   }
 })
