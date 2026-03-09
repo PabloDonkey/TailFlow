@@ -10,6 +10,7 @@ install:
 	fi; \
 	( cd backend && ./.venv/bin/python -m pip install -e ".[dev]" ); \
 	( cd backend && ./.venv/bin/python ../scripts/install_setup.py ); \
+	git config core.hooksPath .githooks; \
 	echo "Installing frontend dependencies..."; \
 	cd frontend && npm install
 

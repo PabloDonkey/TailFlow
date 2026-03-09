@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -eu
+
+ALLOW_VAR="${ALLOW_MAIN_PUSH:-}"
+if [ "$ALLOW_VAR" = "1" ]; then
+    exit 0
+fi
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+    if [ "$remote_ref" = "refs/heads/main" ]; then
+        echo "Push blocked: direct pushes to 'main' are not allowed." >&2
+        echo "Open a feature branch and submit a PR instead." >&2
+        echo "Temporary override: set ALLOW_MAIN_PUSH=1 for this push." >&2
+        exit 1
+    fi
+done
+
+exit 0

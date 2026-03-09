@@ -15,6 +15,8 @@ TailFlow is a mobile-friendly image tagging app with a FastAPI backend and a Vue
 
 ## Quick start from the repository root
 
+### Linux
+
 Install backend and frontend dependencies:
 
 ```bash
@@ -28,12 +30,30 @@ make run
 ```
 
 `make install` creates `backend/.venv`, installs backend development dependencies, bootstraps `backend/.env` from `backend/.env.example` when needed, auto-generates a random `DATABASE_PASSWORD` when empty, and runs `npm install` in `frontend/`. `PROJECTS_ROOT_PATH` is configured through the web onboarding flow.
+`make install` also enables repository-managed git hooks (`core.hooksPath=.githooks`), including a `pre-push` hook that blocks direct pushes to `main`.
 
-For Windows environments without GNU Make, run the same env bootstrap directly:
+### Windows (PowerShell)
 
-```bash
-python scripts/install_setup.py
+Install backend and frontend dependencies:
+
+```powershell
+pwsh -File scripts/dev.ps1 install
 ```
+
+Then start both development servers:
+
+```powershell
+pwsh -File scripts/dev.ps1 run
+```
+
+Stop running dev processes:
+
+```powershell
+pwsh -File scripts/dev.ps1 stop
+```
+
+The PowerShell script mirrors the Linux command surface with additional commands: `test`, `lint`, `typecheck`, and `build`.
+`pwsh -File scripts/dev.ps1 install` also enables repository-managed git hooks (`core.hooksPath=.githooks`), including a `pre-push` hook that blocks direct pushes to `main`.
 
 ## Run the backend
 
@@ -120,8 +140,16 @@ During development, Vite proxies `/api` requests to `http://localhost:8000`, so 
 
 If you already completed the backend and frontend setup steps, you can start both dev servers together from the repository root:
 
+Linux:
+
 ```bash
 make run
+```
+
+Windows (PowerShell):
+
+```powershell
+pwsh -File scripts/dev.ps1 run
 ```
 
 `make run` starts the FastAPI backend from `backend/.venv` and then launches the Vite frontend. Stop it with `Ctrl+C`, which also stops the backend process.
@@ -167,9 +195,23 @@ npm run build
 
 ### Root shortcut
 
+Linux:
+
 ```bash
 make install
 make run
+```
+
+Windows (PowerShell):
+
+```powershell
+pwsh -File scripts/dev.ps1 install
+pwsh -File scripts/dev.ps1 run
+pwsh -File scripts/dev.ps1 stop
+pwsh -File scripts/dev.ps1 test
+pwsh -File scripts/dev.ps1 lint
+pwsh -File scripts/dev.ps1 typecheck
+pwsh -File scripts/dev.ps1 build
 ```
 
 ## Notes
