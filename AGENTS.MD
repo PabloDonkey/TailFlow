@@ -93,7 +93,6 @@ The example environment file defines split database settings plus runtime paths:
 - `DATABASE_USER`
 - `DATABASE_PASSWORD`
 - `PROJECTS_ROOT_PATH`
-- `STORAGE_PATH`
 - `MAX_UPLOAD_SIZE_MB`
 - `CLASSIFIER_ENABLED`
 
