@@ -301,10 +301,10 @@ async function saveProjectMetadata() {
           </button>
           <button
             class="btn btn-secondary"
-            :disabled="projectStore.creating"
+            :disabled="projectStore.updating"
             @click="saveProjectMetadata"
           >
-            {{ projectStore.creating ? 'Saving…' : 'Save Metadata' }}
+            {{ projectStore.updating ? 'Saving…' : 'Save Metadata' }}
           </button>
           <p
             v-if="editFormError"

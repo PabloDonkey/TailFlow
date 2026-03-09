@@ -54,4 +54,5 @@ class Project(Base):
         back_populates="project",
         cascade="all, delete-orphan",
         lazy="selectin",
+        overlaps="dataset_image,tag,image_tag_links",
     )

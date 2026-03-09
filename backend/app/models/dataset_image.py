@@ -2,7 +2,15 @@ import uuid
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, String, Uuid
+from sqlalchemy import (
+    BigInteger,
+    DateTime,
+    ForeignKey,
+    ForeignKeyConstraint,
+    String,
+    UniqueConstraint,
+    Uuid,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -13,6 +21,10 @@ if TYPE_CHECKING:
 
 class DatasetImage(Base):
     __tablename__ = "dataset_images"
+    __table_args__ = (
+        UniqueConstraint("project_id", "relative_path", name="uq_dataset_image_path"),
+        UniqueConstraint("id", "project_id", name="uq_dataset_image_id_project"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -38,11 +50,16 @@ class DatasetImage(Base):
         back_populates="dataset_image",
         cascade="all, delete-orphan",
         lazy="selectin",
+        overlaps="project,tag,image_tag_links",
     )
 
 
 class ProjectTag(Base):
     __tablename__ = "project_tags"
+    __table_args__ = (
+        UniqueConstraint("project_id", "name", name="uq_project_tag_name"),
+        UniqueConstraint("id", "project_id", name="uq_project_tag_id_project"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
     project_id: Mapped[uuid.UUID] = mapped_column(
@@ -61,18 +78,27 @@ class ProjectTag(Base):
         back_populates="tag",
         cascade="all, delete-orphan",
         lazy="selectin",
+        overlaps="dataset_image,project,image_tag_links",
     )
 
 
 class DatasetImageTag(Base):
     __tablename__ = "dataset_image_tag"
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["image_id", "project_id"],
+            ["dataset_images.id", "dataset_images.project_id"],
+            name="fk_dataset_image_tag_image_project",
+        ),
+        ForeignKeyConstraint(
+            ["tag_id", "project_id"],
+            ["project_tags.id", "project_tags.project_id"],
+            name="fk_dataset_image_tag_tag_project",
+        ),
+    )
 
-    image_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("dataset_images.id"), primary_key=True
-    )
-    tag_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("project_tags.id"), primary_key=True
-    )
+    image_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    tag_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
     project_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("projects.id"), nullable=False
     )
@@ -81,11 +107,20 @@ class DatasetImageTag(Base):
     )
 
     dataset_image: Mapped["DatasetImage"] = relationship(
-        "DatasetImage", back_populates="image_tag_links", lazy="selectin"
+        "DatasetImage",
+        back_populates="image_tag_links",
+        lazy="selectin",
+        overlaps="project,tag,image_tag_links",
     )
     tag: Mapped["ProjectTag"] = relationship(
-        "ProjectTag", back_populates="image_tag_links", lazy="selectin"
+        "ProjectTag",
+        back_populates="image_tag_links",
+        lazy="selectin",
+        overlaps="dataset_image,project,image_tag_links",
     )
     project: Mapped["Project"] = relationship(
-        "Project", back_populates="image_tag_links", lazy="selectin"
+        "Project",
+        back_populates="image_tag_links",
+        lazy="selectin",
+        overlaps="dataset_image,tag,image_tag_links",
     )

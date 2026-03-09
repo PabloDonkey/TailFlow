@@ -5,7 +5,10 @@ from pathlib import Path
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.schemas.project import ProjectCreate
+from app.services.projects import create_project
 from tests.conftest import make_png_bytes
 
 
@@ -139,6 +142,28 @@ async def test_create_project_creates_directory_and_dataset(
     assert project["class_tag"] == "animal"
     assert (tmp_path / "new-project").is_dir()
     assert (tmp_path / "new-project" / "dataset").is_dir()
+
+
+@pytest.mark.asyncio
+async def test_create_project_cleans_directory_when_commit_fails(
+    session: AsyncSession,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+
+    async def failing_commit() -> None:
+        raise RuntimeError("database unavailable")
+
+    monkeypatch.setattr(session, "commit", failing_commit)
+
+    with pytest.raises(RuntimeError, match="database unavailable"):
+        await create_project(
+            session,
+            ProjectCreate(folder_name="rollback-project", class_tag="subject"),
+        )
+
+    assert not (tmp_path / "rollback-project").exists()
 
 
 @pytest.mark.asyncio

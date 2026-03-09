@@ -1,3 +1,4 @@
+import shutil
 import uuid
 from datetime import UTC, datetime
 from pathlib import Path
@@ -86,23 +87,31 @@ async def create_project(
             detail=f"Project folder already exists on disk: {project_dir}",
         )
 
-    dataset_dir.mkdir(parents=True, exist_ok=False)
+    created_project_dir = False
+    try:
+        dataset_dir.mkdir(parents=True, exist_ok=False)
+        created_project_dir = True
 
-    project = Project(
-        name=(payload.name.strip() if payload.name else folder_name),
-        folder_name=folder_name,
-        root_path=str(root_path),
-        dataset_path=str(dataset_dir),
-        trigger_tag=(
-            payload.trigger_tag.strip() if payload.trigger_tag else folder_name
-        ),
-        class_tag=class_tag,
-        missing_at=None,
-    )
-    session.add(project)
-    await session.commit()
-    await session.refresh(project)
-    return project
+        project = Project(
+            name=(payload.name.strip() if payload.name else folder_name),
+            folder_name=folder_name,
+            root_path=str(root_path),
+            dataset_path=str(dataset_dir),
+            trigger_tag=(
+                payload.trigger_tag.strip() if payload.trigger_tag else folder_name
+            ),
+            class_tag=class_tag,
+            missing_at=None,
+        )
+        session.add(project)
+        await session.commit()
+        await session.refresh(project)
+        return project
+    except Exception:
+        await session.rollback()
+        if created_project_dir and project_dir.exists():
+            shutil.rmtree(project_dir, ignore_errors=True)
+        raise
 
 
 async def upload_images_to_project(
@@ -252,20 +261,18 @@ async def update_project_image_tags(
         )
     )
     existing_links = existing_links_result.scalars().all()
+    existing_tag_ids = {link.tag_id for link in existing_links}
 
     add_set = {name.strip() for name in add if name.strip()}
     remove_set = {name.strip() for name in remove if name.strip()}
 
     for name in add_set:
         tag = await get_or_create_project_tag(session, project.id, name)
-        link_exists = any(
-            link.tag_id == tag.id and link.image_id == image.id
-            for link in existing_links
-        )
-        if not link_exists:
+        if tag.id not in existing_tag_ids:
             session.add(
                 DatasetImageTag(project_id=project.id, image_id=image.id, tag_id=tag.id)
             )
+            existing_tag_ids.add(tag.id)
 
     if remove_set:
         remove_tags_result = await session.execute(

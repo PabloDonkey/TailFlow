@@ -17,6 +17,7 @@ export const useProjectStore = defineStore('projects', () => {
   const loading = ref(false)
   const syncing = ref(false)
   const creating = ref(false)
+  const updating = ref(false)
   const uploading = ref(false)
   const error = ref<string | null>(null)
   const lastDiscover = ref<ProjectDiscoverResponse | null>(null)
@@ -132,7 +133,7 @@ export const useProjectStore = defineStore('projects', () => {
       return null
     }
 
-    creating.value = true
+    updating.value = true
     error.value = null
     try {
       const updated = await api.updateProject(selectedProjectId.value, payload)
@@ -144,7 +145,7 @@ export const useProjectStore = defineStore('projects', () => {
       error.value = String(e)
       return null
     } finally {
-      creating.value = false
+      updating.value = false
     }
   }
 
@@ -159,6 +160,7 @@ export const useProjectStore = defineStore('projects', () => {
     loading,
     syncing,
     creating,
+    updating,
     uploading,
     error,
     lastDiscover,

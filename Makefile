@@ -55,11 +55,22 @@ run:
 		echo "Run: make install"; \
 		exit 1; \
 	fi; \
-	if ss -ltn 'sport = :8000' | grep -q LISTEN; then \
-		echo "Port 8000 is already in use."; \
-		echo "Stop the existing backend process and retry, or change the backend port."; \
-		echo "Tip: run 'ss -ltnp \"sport = :8000\"' to find the process."; \
-		exit 1; \
+	if command -v ss >/dev/null 2>&1; then \
+		if ss -ltn 'sport = :8000' | grep -q LISTEN; then \
+			echo "Port 8000 is already in use."; \
+			echo "Stop the existing backend process and retry, or change the backend port."; \
+			echo "Tip: run 'ss -ltnp \"sport = :8000\"' to find the process."; \
+			exit 1; \
+		fi; \
+	elif command -v lsof >/dev/null 2>&1; then \
+		if lsof -nP -iTCP:8000 -sTCP:LISTEN >/dev/null 2>&1; then \
+			echo "Port 8000 is already in use."; \
+			echo "Stop the existing backend process and retry, or change the backend port."; \
+			echo "Tip: run 'lsof -nP -iTCP:8000 -sTCP:LISTEN' to find the process."; \
+			exit 1; \
+		fi; \
+	else \
+		echo "Warning: neither 'ss' nor 'lsof' is available; skipping preflight port check for 8000."; \
 	fi; \
 	echo "Applying backend migrations..."; \
 	( cd backend && ./.venv/bin/alembic upgrade head ); \
@@ -74,13 +85,22 @@ run:
 stop:
 	@set -euo pipefail; \
 	stopped=0; \
-	backend_pids=$$(ss -ltnp 'sport = :8000' 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u || true); \
+	if command -v ss >/dev/null 2>&1; then \
+		backend_pids=$$(ss -ltnp 'sport = :8000' 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u || true); \
+		frontend_pids=$$(ss -ltnp '( sport = :5173 or sport = :5174 )' 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u || true); \
+	elif command -v lsof >/dev/null 2>&1; then \
+		backend_pids=$$(lsof -tiTCP:8000 -sTCP:LISTEN 2>/dev/null | sort -u || true); \
+		frontend_pids=$$({ lsof -tiTCP:5173 -sTCP:LISTEN 2>/dev/null; lsof -tiTCP:5174 -sTCP:LISTEN 2>/dev/null; } | sort -u || true); \
+	else \
+		backend_pids=''; \
+		frontend_pids=''; \
+		echo "Warning: neither 'ss' nor 'lsof' is available; cannot auto-detect running dev processes."; \
+	fi; \
 	if [ -n "$$backend_pids" ]; then \
 		kill $$backend_pids || true; \
 		echo "Stopped backend uvicorn process(es)."; \
 		stopped=1; \
 	fi; \
-	frontend_pids=$$(ss -ltnp '( sport = :5173 or sport = :5174 )' 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u || true); \
 	if [ -n "$$frontend_pids" ]; then \
 		kill $$frontend_pids || true; \
 		echo "Stopped frontend vite process(es)."; \
