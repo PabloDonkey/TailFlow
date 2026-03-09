@@ -1,6 +1,6 @@
+import uuid
 from datetime import UTC, datetime
 from pathlib import Path
-import uuid
 
 import aiofiles
 from fastapi import HTTPException, UploadFile, status
@@ -14,8 +14,8 @@ from app.schemas.project import (
     ProjectCreate,
     ProjectDiscoverResponse,
     ProjectImageUploadResponse,
-    ProjectUpdate,
     ProjectSyncResponse,
+    ProjectUpdate,
 )
 
 ALLOWED_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
@@ -143,7 +143,9 @@ async def upload_images_to_project(
         if len(contents) > max_bytes:
             raise HTTPException(
                 status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail=f"File exceeds maximum size of {settings.max_upload_size_mb} MB.",
+                detail=(
+                    f"File exceeds maximum size of {settings.max_upload_size_mb} MB."
+                ),
             )
 
         async with aiofiles.open(destination, "wb") as output:
@@ -251,22 +253,14 @@ async def update_project_image_tags(
     )
     existing_links = existing_links_result.scalars().all()
 
-    tag_ids_by_name: dict[str, str] = {}
-    if existing_links:
-        existing_tag_ids = [link.tag_id for link in existing_links]
-        existing_tags_result = await session.execute(
-            select(ProjectTag).where(ProjectTag.id.in_(existing_tag_ids))
-        )
-        for tag in existing_tags_result.scalars().all():
-            tag_ids_by_name[tag.name] = str(tag.id)
-
     add_set = {name.strip() for name in add if name.strip()}
     remove_set = {name.strip() for name in remove if name.strip()}
 
     for name in add_set:
         tag = await get_or_create_project_tag(session, project.id, name)
         link_exists = any(
-            link.tag_id == tag.id and link.image_id == image.id for link in existing_links
+            link.tag_id == tag.id and link.image_id == image.id
+            for link in existing_links
         )
         if not link_exists:
             session.add(

@@ -34,7 +34,11 @@ from app.services.projects import (
 router = APIRouter(prefix="/projects", tags=["projects"])
 
 
-@router.post("", response_model=ProjectCreateResponse, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "",
+    response_model=ProjectCreateResponse,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_project_route(
     body: ProjectCreate,
     session: AsyncSession = Depends(db_session),
@@ -163,8 +167,13 @@ async def get_project_image_route(
     tags: list[ProjectTagRead] = []
     if links:
         tag_ids = [link.tag_id for link in links]
-        tag_result = await session.execute(select(ProjectTag).where(ProjectTag.id.in_(tag_ids)))
-        tags = [ProjectTagRead.model_validate(tag) for tag in tag_result.scalars().all()]
+        tag_result = await session.execute(
+            select(ProjectTag).where(ProjectTag.id.in_(tag_ids))
+        )
+        tags = [
+            ProjectTagRead.model_validate(tag)
+            for tag in tag_result.scalars().all()
+        ]
 
     return ProjectImageRead(
         id=image.id,
@@ -239,8 +248,13 @@ async def update_project_image_tags_route(
     tags: list[ProjectTagRead] = []
     if links:
         tag_ids = [link.tag_id for link in links]
-        tag_result = await session.execute(select(ProjectTag).where(ProjectTag.id.in_(tag_ids)))
-        tags = [ProjectTagRead.model_validate(tag) for tag in tag_result.scalars().all()]
+        tag_result = await session.execute(
+            select(ProjectTag).where(ProjectTag.id.in_(tag_ids))
+        )
+        tags = [
+            ProjectTagRead.model_validate(tag)
+            for tag in tag_result.scalars().all()
+        ]
 
     return ProjectImageRead(
         id=image.id,

@@ -8,7 +8,12 @@ import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 from PIL import Image as PILImage
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
 from app.api.deps import db_session
 from app.db.base import Base
@@ -23,7 +28,7 @@ def event_loop_policy() -> asyncio.DefaultEventLoopPolicy:
 
 
 @pytest_asyncio.fixture(scope="function")
-async def db_engine():
+async def db_engine() -> AsyncGenerator[AsyncEngine, None]:
     engine = create_async_engine(TEST_DATABASE_URL, echo=False)
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -34,7 +39,7 @@ async def db_engine():
 
 
 @pytest_asyncio.fixture(scope="function")
-async def session(db_engine) -> AsyncGenerator[AsyncSession, None]:
+async def session(db_engine: AsyncEngine) -> AsyncGenerator[AsyncSession, None]:
     session_factory = async_sessionmaker(
         bind=db_engine, class_=AsyncSession, expire_on_commit=False
     )
@@ -43,7 +48,7 @@ async def session(db_engine) -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest_asyncio.fixture(scope="function")
-async def client(db_engine) -> AsyncGenerator[AsyncClient, None]:
+async def client(db_engine: AsyncEngine) -> AsyncGenerator[AsyncClient, None]:
     session_factory = async_sessionmaker(
         bind=db_engine, class_=AsyncSession, expire_on_commit=False
     )

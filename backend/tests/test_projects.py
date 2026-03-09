@@ -182,7 +182,11 @@ async def test_upload_project_images_writes_into_project_dataset(
 
 
 @pytest.mark.asyncio
-async def test_update_project_tags_metadata(client: AsyncClient, tmp_path: Path, monkeypatch) -> None:
+async def test_update_project_tags_metadata(
+    client: AsyncClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
     created = await client.post(
         "/api/projects",
