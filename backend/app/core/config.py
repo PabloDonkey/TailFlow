@@ -20,7 +20,6 @@ class Settings(BaseSettings):
     database_user: str = "tailflow"
     database_password: str = "password"
     projects_root_path: Path | None = None
-    storage_path: str = "./storage/images"
     max_upload_size_mb: int = 50
     classifier_enabled: bool = False
     log_level: str = "INFO"

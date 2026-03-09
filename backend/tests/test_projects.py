@@ -21,18 +21,18 @@ async def test_discover_projects_imports_valid_dataset_folders(
 
     assert response.status_code == 200
     payload = response.json()
-    assert payload["discovered_projects"] == 1
-    assert payload["imported_projects"] == 1
+    assert payload["discovered_projects"] == 2
+    assert payload["imported_projects"] == 2
     assert payload["marked_missing_projects"] == 0
+
+    assert (tmp_path / "project-b" / "dataset").is_dir()
 
     list_response = await client.get("/api/projects")
     assert list_response.status_code == 200
     projects = list_response.json()
-    assert len(projects) == 1
-    assert projects[0]["folder_name"] == "project-a"
-    assert projects[0]["trigger_tag"] == "project-a"
-    assert projects[0]["class_tag"] == "project-a"
-    assert projects[0]["missing_at"] is None
+    assert len(projects) == 2
+    folder_names = {project["folder_name"] for project in projects}
+    assert folder_names == {"project-a", "project-b"}
 
 
 @pytest.mark.asyncio

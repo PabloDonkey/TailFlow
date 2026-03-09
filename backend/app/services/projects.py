@@ -295,9 +295,10 @@ async def discover_projects(session: AsyncSession) -> ProjectDiscoverResponse:
     for child in root_path.iterdir():
         if not child.is_dir():
             continue
+
         dataset_path = child / "dataset"
-        if not dataset_path.is_dir():
-            continue
+        dataset_path.mkdir(parents=True, exist_ok=True)
+
         discovered_dirs[child.name] = dataset_path
 
     existing_projects_result = await session.execute(select(Project))

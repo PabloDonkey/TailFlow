@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: install run
+.PHONY: install run stop
 
 install:
 	@set -euo pipefail; \
@@ -55,6 +55,14 @@ run:
 		echo "Run: make install"; \
 		exit 1; \
 	fi; \
+	if ss -ltn 'sport = :8000' | grep -q LISTEN; then \
+		echo "Port 8000 is already in use."; \
+		echo "Stop the existing backend process and retry, or change the backend port."; \
+		echo "Tip: run 'ss -ltnp \"sport = :8000\"' to find the process."; \
+		exit 1; \
+	fi; \
+	echo "Applying backend migrations..."; \
+	( cd backend && ./.venv/bin/alembic upgrade head ); \
 	backend_pid=''; \
 	trap 'if [ -n "$$backend_pid" ]; then kill "$$backend_pid"; wait "$$backend_pid" 2>/dev/null || true; fi' EXIT INT TERM; \
 	( cd backend && exec ./.venv/bin/python -m uvicorn app.main:app --reload ) & \
@@ -62,3 +70,22 @@ run:
 	echo "Backend running at http://localhost:8000 (PID $$backend_pid)"; \
 	echo "Starting frontend at http://localhost:5173"; \
 	cd frontend && npm run dev
+
+stop:
+	@set -euo pipefail; \
+	stopped=0; \
+	backend_pids=$$(ss -ltnp 'sport = :8000' 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u || true); \
+	if [ -n "$$backend_pids" ]; then \
+		kill $$backend_pids || true; \
+		echo "Stopped backend uvicorn process(es)."; \
+		stopped=1; \
+	fi; \
+	frontend_pids=$$(ss -ltnp '( sport = :5173 or sport = :5174 )' 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u || true); \
+	if [ -n "$$frontend_pids" ]; then \
+		kill $$frontend_pids || true; \
+		echo "Stopped frontend vite process(es)."; \
+		stopped=1; \
+	fi; \
+	if [ "$$stopped" -eq 0 ]; then \
+		echo "No TailFlow dev processes found."; \
+	fi

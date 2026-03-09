@@ -61,7 +61,6 @@ make run
    DATABASE_USER=tailflow
    DATABASE_PASSWORD=password
    PROJECTS_ROOT_PATH=/path/to/project-root
-   STORAGE_PATH=./storage/images
    MAX_UPLOAD_SIZE_MB=50
    CLASSIFIER_ENABLED=false
    LOG_LEVEL=INFO
