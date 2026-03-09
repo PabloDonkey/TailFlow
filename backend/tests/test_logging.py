@@ -21,6 +21,21 @@ def test_settings_reject_invalid_log_level() -> None:
         Settings(log_level="verbose")
 
 
+def test_settings_build_database_url_from_split_values() -> None:
+    settings = Settings(
+        database_host="localhost",
+        database_port=5432,
+        database_name="tailflow",
+        database_user="tailflow",
+        database_password="p@ss word",
+    )
+
+    assert (
+        settings.database_url
+        == "postgresql+psycopg://tailflow:p%40ss+word@localhost:5432/tailflow"
+    )
+
+
 def test_configure_logging_writes_optional_file(tmp_path: Path) -> None:
     log_path = tmp_path / "logs" / "tailflow.log"
 

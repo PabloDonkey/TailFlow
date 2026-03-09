@@ -71,6 +71,12 @@ make run
 
    `PROJECTS_ROOT_PATH` should point to the directory whose direct child folders will be treated as projects.
 
+   If you have PostgreSQL running locally, one possible setup is:
+
+   ```bash
+   createdb tailflow
+   ```
+
 5. Run the database migrations:
 
    ```bash
