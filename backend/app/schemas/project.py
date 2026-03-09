@@ -81,3 +81,17 @@ class ProjectSyncResponse(BaseModel):
     restored_images: int
     missing: bool
     synced_at: datetime
+
+
+class ProjectOnboardingStatus(BaseModel):
+    configured: bool
+    projects_root_path: str | None = None
+    default_projects_root_path: str
+
+
+class ProjectOnboardingConfigure(BaseModel):
+    projects_root_path: str
+
+
+class ProjectOnboardingConfigureResponse(BaseModel):
+    projects_root_path: str

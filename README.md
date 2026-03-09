@@ -27,7 +27,13 @@ Then start both development servers:
 make run
 ```
 
-`make install` creates `backend/.venv`, installs the backend development dependencies, copies `backend/.env` from `backend/.env.example` when needed, prompts for `PROJECTS_ROOT_PATH` when it is empty, and runs `npm install` in `frontend/`.
+`make install` creates `backend/.venv`, installs backend development dependencies, bootstraps `backend/.env` from `backend/.env.example` when needed, auto-generates a random `DATABASE_PASSWORD` when empty, and runs `npm install` in `frontend/`. `PROJECTS_ROOT_PATH` is configured through the web onboarding flow.
+
+For Windows environments without GNU Make, run the same env bootstrap directly:
+
+```bash
+python scripts/install_setup.py
+```
 
 ## Run the backend
 
@@ -51,7 +57,7 @@ make run
    cp .env.example .env
    ```
 
-4. Update `backend/.env` so it points to an existing PostgreSQL database and the project root directory.
+4. Update `backend/.env` so it points to an existing PostgreSQL database.
    The default example uses split database settings:
 
    ```env
@@ -59,8 +65,8 @@ make run
    DATABASE_PORT=5432
    DATABASE_NAME=tailflow_db
    DATABASE_USER=tailflow
-   DATABASE_PASSWORD=password
-   PROJECTS_ROOT_PATH=/path/to/project-root
+   DATABASE_PASSWORD=generated-or-custom-password
+   PROJECTS_ROOT_PATH=
    MAX_UPLOAD_SIZE_MB=50
    CLASSIFIER_ENABLED=false
    LOG_LEVEL=INFO
@@ -69,7 +75,7 @@ make run
    FILE_LOG_PATH=./storage/logs/tailflow.log
    ```
 
-   `PROJECTS_ROOT_PATH` should point to the directory whose direct child folders will be treated as projects.
+   `PROJECTS_ROOT_PATH` can stay empty initially; the frontend onboarding page will request and save it.
 
    If you have PostgreSQL running locally, one possible setup is:
 

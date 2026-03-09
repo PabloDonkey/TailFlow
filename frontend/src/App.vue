@@ -1,6 +1,17 @@
+<script setup lang="ts">
+import { computed } from 'vue'
+import { useRoute } from 'vue-router'
+
+const route = useRoute()
+const showNavigation = computed(() => route.path !== '/onboarding')
+</script>
+
 <template>
   <div id="app-root">
-    <nav class="nav-bar">
+    <nav
+      v-if="showNavigation"
+      class="nav-bar"
+    >
       <RouterLink to="/projects">
         Projects
       </RouterLink>

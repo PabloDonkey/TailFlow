@@ -7,12 +7,23 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import db_session
+from app.core.config import (
+    configure_projects_root_path,
+    default_projects_root_path,
+    get_backend_env_example_file_path,
+    get_backend_env_file_path,
+    is_projects_root_configured,
+    settings,
+)
 from app.models.dataset_image import DatasetImage, DatasetImageTag, ProjectTag
 from app.models.project import Project
 from app.schemas.project import (
     ProjectCreate,
     ProjectCreateResponse,
     ProjectDiscoverResponse,
+    ProjectOnboardingConfigure,
+    ProjectOnboardingConfigureResponse,
+    ProjectOnboardingStatus,
     ProjectImageRead,
     ProjectImageSummary,
     ProjectImageTagUpdate,
@@ -32,6 +43,49 @@ from app.services.projects import (
 )
 
 router = APIRouter(prefix="/projects", tags=["projects"])
+
+
+@router.get("/onboarding/status", response_model=ProjectOnboardingStatus)
+async def onboarding_status_route() -> ProjectOnboardingStatus:
+    configured = is_projects_root_configured()
+    current_path = str(settings.projects_root_path) if settings.projects_root_path else None
+    return ProjectOnboardingStatus(
+        configured=configured,
+        projects_root_path=current_path,
+        default_projects_root_path=str(default_projects_root_path()),
+    )
+
+
+@router.post(
+    "/onboarding/configure",
+    response_model=ProjectOnboardingConfigureResponse,
+)
+async def onboarding_configure_route(
+    body: ProjectOnboardingConfigure,
+) -> ProjectOnboardingConfigureResponse:
+    if body.projects_root_path.strip() == "":
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="projects_root_path is required.",
+        )
+
+    env_path = get_backend_env_file_path()
+    if not env_path.exists():
+        example_path = get_backend_env_example_file_path()
+        if example_path.exists():
+            env_path.write_text(example_path.read_text(encoding="utf-8"), encoding="utf-8")
+        else:
+            env_path.write_text("", encoding="utf-8")
+
+    try:
+        configured_path = configure_projects_root_path(body.projects_root_path)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(exc),
+        ) from exc
+
+    return ProjectOnboardingConfigureResponse(projects_root_path=str(configured_path))
 
 
 @router.post(

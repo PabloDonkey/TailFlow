@@ -8,6 +8,8 @@ import {
   ProjectImageUploadResponseSchema,
   ProjectImageSummarySchema,
   ProjectImageReadSchema,
+  ProjectOnboardingConfigureResponseSchema,
+  ProjectOnboardingStatusSchema,
   ProjectUpdatePayloadSchema,
 } from '../api'
 
@@ -142,5 +144,22 @@ describe('API schemas', () => {
       class_tag: 'class-y',
     })
     expect(payload.trigger_tag).toBe('trigger-x')
+  })
+
+  it('parses onboarding status response', () => {
+    const status = ProjectOnboardingStatusSchema.parse({
+      configured: false,
+      projects_root_path: null,
+      default_projects_root_path: '/home/user/tailflow',
+    })
+    expect(status.configured).toBe(false)
+    expect(status.projects_root_path).toBeNull()
+  })
+
+  it('parses onboarding configure response', () => {
+    const payload = ProjectOnboardingConfigureResponseSchema.parse({
+      projects_root_path: '/home/user/tailflow',
+    })
+    expect(payload.projects_root_path).toBe('/home/user/tailflow')
   })
 })

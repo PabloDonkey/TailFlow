@@ -39,6 +39,60 @@ async def test_discover_projects_imports_valid_dataset_folders(
 
 
 @pytest.mark.asyncio
+async def test_onboarding_status_reports_unconfigured_when_projects_root_missing(
+    client: AsyncClient,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", None)
+
+    response = await client.get("/api/projects/onboarding/status")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["configured"] is False
+    assert payload["projects_root_path"] is None
+    assert payload["default_projects_root_path"]
+
+
+@pytest.mark.asyncio
+async def test_onboarding_configure_sets_projects_root_and_updates_env(
+    client: AsyncClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    env_file = tmp_path / ".env"
+    example_env_file = tmp_path / ".env.example"
+    example_env_file.write_text("DATABASE_PASSWORD=\n", encoding="utf-8")
+
+    monkeypatch.setattr("app.core.config.get_backend_env_file_path", lambda: env_file)
+    monkeypatch.setattr("app.api.routes.projects.get_backend_env_file_path", lambda: env_file)
+    monkeypatch.setattr(
+        "app.api.routes.projects.get_backend_env_example_file_path",
+        lambda: example_env_file,
+    )
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", None)
+
+    target_root = tmp_path / "tailflow-projects"
+    configure_response = await client.post(
+        "/api/projects/onboarding/configure",
+        json={"projects_root_path": str(target_root)},
+    )
+
+    assert configure_response.status_code == 200
+    payload = configure_response.json()
+    assert payload["projects_root_path"] == str(target_root.resolve())
+    assert target_root.is_dir()
+    env_content = env_file.read_text(encoding="utf-8")
+    assert f'PROJECTS_ROOT_PATH="{target_root.resolve()}"' in env_content
+
+    status_response = await client.get("/api/projects/onboarding/status")
+    assert status_response.status_code == 200
+    status_payload = status_response.json()
+    assert status_payload["configured"] is True
+    assert status_payload["projects_root_path"] == str(target_root.resolve())
+
+
+@pytest.mark.asyncio
 async def test_discover_projects_marks_missing_when_folder_removed(
     client: AsyncClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

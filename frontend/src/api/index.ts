@@ -86,6 +86,16 @@ export const ProjectImageUploadResponseSchema = z.object({
   restored_records: z.number().int(),
 })
 
+export const ProjectOnboardingStatusSchema = z.object({
+  configured: z.boolean(),
+  projects_root_path: z.string().nullable(),
+  default_projects_root_path: z.string(),
+})
+
+export const ProjectOnboardingConfigureResponseSchema = z.object({
+  projects_root_path: z.string(),
+})
+
 // ─── Inferred types ──────────────────────────────────────────────────────────
 
 export type Tag = z.infer<typeof TagSchema>
@@ -99,6 +109,10 @@ export type ProjectImageUploadResponse = z.infer<typeof ProjectImageUploadRespon
 export type ProjectImageSummary = z.infer<typeof ProjectImageSummarySchema>
 export type ProjectImageRead = z.infer<typeof ProjectImageReadSchema>
 export type ProjectUpdatePayload = z.infer<typeof ProjectUpdatePayloadSchema>
+export type ProjectOnboardingStatus = z.infer<typeof ProjectOnboardingStatusSchema>
+export type ProjectOnboardingConfigureResponse = z.infer<
+  typeof ProjectOnboardingConfigureResponseSchema
+>
 
 // ─── API client ──────────────────────────────────────────────────────────────
 
@@ -216,5 +230,19 @@ export async function updateProjectImageTags(
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(ProjectImageTagUpdateSchema.parse({ add, remove })),
+  })
+}
+
+export async function getOnboardingStatus(): Promise<ProjectOnboardingStatus> {
+  return fetchJSON(ProjectOnboardingStatusSchema, `${BASE}/projects/onboarding/status`)
+}
+
+export async function configureOnboardingProjectsRootPath(
+  projectsRootPath: string,
+): Promise<ProjectOnboardingConfigureResponse> {
+  return fetchJSON(ProjectOnboardingConfigureResponseSchema, `${BASE}/projects/onboarding/configure`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ projects_root_path: projectsRootPath }),
   })
 }
