@@ -133,13 +133,25 @@ async function saveProjectMetadata() {
   <div class="projects-page">
     <div class="header-row">
       <h1>Projects</h1>
-      <button class="btn btn-primary" :disabled="projectStore.loading" @click="discoverProjects">
+      <button
+        class="btn btn-primary"
+        :disabled="projectStore.loading"
+        @click="discoverProjects"
+      >
         {{ projectStore.loading ? 'Refreshing…' : 'Discover / Refresh' }}
       </button>
     </div>
 
-    <p v-if="projectStore.error" class="error">{{ projectStore.error }}</p>
-    <p v-if="projectStore.lastDiscover" class="status">
+    <p
+      v-if="projectStore.error"
+      class="error"
+    >
+      {{ projectStore.error }}
+    </p>
+    <p
+      v-if="projectStore.lastDiscover"
+      class="status"
+    >
       Discovery: {{ projectStore.lastDiscover.discovered_projects }} found,
       {{ projectStore.lastDiscover.imported_projects }} imported,
       {{ projectStore.lastDiscover.marked_missing_projects }} marked missing.
@@ -150,41 +162,82 @@ async function saveProjectMetadata() {
       <div class="form-grid">
         <label>
           Folder Name
-          <input v-model="createFolderName" type="text" placeholder="e.g. project-c" />
+          <input
+            v-model="createFolderName"
+            type="text"
+            placeholder="e.g. project-c"
+          >
         </label>
         <label>
           Class Tag
-          <input v-model="createClassTag" type="text" placeholder="e.g. character" />
+          <input
+            v-model="createClassTag"
+            type="text"
+            placeholder="e.g. character"
+          >
         </label>
         <label>
           Display Name (optional)
-          <input v-model="createName" type="text" placeholder="e.g. Project C" />
+          <input
+            v-model="createName"
+            type="text"
+            placeholder="e.g. Project C"
+          >
         </label>
         <label>
           Trigger Tag (optional)
-          <input v-model="createTriggerTag" type="text" placeholder="defaults to folder" />
+          <input
+            v-model="createTriggerTag"
+            type="text"
+            placeholder="defaults to folder"
+          >
         </label>
       </div>
-      <button class="btn btn-primary" :disabled="projectStore.creating" @click="createProject">
+      <button
+        class="btn btn-primary"
+        :disabled="projectStore.creating"
+        @click="createProject"
+      >
         {{ projectStore.creating ? 'Creating…' : 'Create Project' }}
       </button>
-      <p v-if="createFormError" class="error">{{ createFormError }}</p>
-      <p v-if="projectStore.lastCreate" class="status success">Project created successfully.</p>
+      <p
+        v-if="createFormError"
+        class="error"
+      >
+        {{ createFormError }}
+      </p>
+      <p
+        v-if="projectStore.lastCreate"
+        class="status success"
+      >
+        Project created successfully.
+      </p>
     </section>
 
     <div class="content-grid">
       <section class="project-list">
         <h2>Available Projects</h2>
-        <p v-if="!projectStore.projects.length" class="empty">No projects found yet.</p>
+        <p
+          v-if="!projectStore.projects.length"
+          class="empty"
+        >
+          No projects found yet.
+        </p>
         <ul v-else>
-          <li v-for="project in projectStore.projects" :key="project.id">
+          <li
+            v-for="project in projectStore.projects"
+            :key="project.id"
+          >
             <button
               class="project-item"
               :class="{ active: project.id === projectStore.selectedProjectId }"
               @click="projectStore.selectProject(project.id)"
             >
               <span class="project-name">{{ project.name }}</span>
-              <span v-if="project.missing_at" class="missing-pill">Missing</span>
+              <span
+                v-if="project.missing_at"
+                class="missing-pill"
+              >Missing</span>
             </button>
           </li>
         </ul>
@@ -192,8 +245,16 @@ async function saveProjectMetadata() {
 
       <section class="project-details">
         <h2>Project Details</h2>
-        <p v-if="!selectedProject" class="empty">Select a project to inspect metadata.</p>
-        <div v-else class="details-card">
+        <p
+          v-if="!selectedProject"
+          class="empty"
+        >
+          Select a project to inspect metadata.
+        </p>
+        <div
+          v-else
+          class="details-card"
+        >
           <dl>
             <div class="row">
               <dt>Folder</dt>
@@ -202,13 +263,19 @@ async function saveProjectMetadata() {
             <div class="row">
               <dt>Trigger Tag</dt>
               <dd>
-                <input v-model="editTriggerTag" type="text" />
+                <input
+                  v-model="editTriggerTag"
+                  type="text"
+                >
               </dd>
             </div>
             <div class="row">
               <dt>Class Tag</dt>
               <dd>
-                <input v-model="editClassTag" type="text" />
+                <input
+                  v-model="editClassTag"
+                  type="text"
+                >
               </dd>
             </div>
             <div class="row">
@@ -225,21 +292,40 @@ async function saveProjectMetadata() {
             </div>
           </dl>
 
-          <button class="btn btn-secondary" :disabled="projectStore.syncing" @click="syncProject">
+          <button
+            class="btn btn-secondary"
+            :disabled="projectStore.syncing"
+            @click="syncProject"
+          >
             {{ projectStore.syncing ? 'Syncing…' : 'Sync Project' }}
           </button>
-          <button class="btn btn-secondary" :disabled="projectStore.creating" @click="saveProjectMetadata">
+          <button
+            class="btn btn-secondary"
+            :disabled="projectStore.creating"
+            @click="saveProjectMetadata"
+          >
             {{ projectStore.creating ? 'Saving…' : 'Save Metadata' }}
           </button>
-          <p v-if="editFormError" class="error">{{ editFormError }}</p>
+          <p
+            v-if="editFormError"
+            class="error"
+          >
+            {{ editFormError }}
+          </p>
 
-          <p v-if="projectStore.lastSync" class="status">
+          <p
+            v-if="projectStore.lastSync"
+            class="status"
+          >
             Sync: +{{ projectStore.lastSync.added_images }} added,
             -{{ projectStore.lastSync.removed_images }} removed,
             {{ projectStore.lastSync.restored_images }} restored.
           </p>
 
-          <div class="upload-box" :class="{ disabled: selectedProject.missing_at !== null }">
+          <div
+            class="upload-box"
+            :class="{ disabled: selectedProject.missing_at !== null }"
+          >
             <h3>Upload Images to Project</h3>
             <input
               type="file"
@@ -247,7 +333,7 @@ async function saveProjectMetadata() {
               multiple
               :disabled="selectedProject.missing_at !== null"
               @change="onUploadFilesChanged"
-            />
+            >
             <button
               class="btn btn-primary"
               :disabled="projectStore.uploading || selectedProject.missing_at !== null"
@@ -255,11 +341,22 @@ async function saveProjectMetadata() {
             >
               {{ projectStore.uploading ? 'Uploading…' : 'Upload to Dataset' }}
             </button>
-            <p v-if="selectedProject.missing_at" class="error">
+            <p
+              v-if="selectedProject.missing_at"
+              class="error"
+            >
               Upload disabled because this project's folder is missing.
             </p>
-            <p v-else-if="uploadFormError" class="error">{{ uploadFormError }}</p>
-            <p v-if="projectStore.lastUpload" class="status success">
+            <p
+              v-else-if="uploadFormError"
+              class="error"
+            >
+              {{ uploadFormError }}
+            </p>
+            <p
+              v-if="projectStore.lastUpload"
+              class="status success"
+            >
               Upload complete: {{ projectStore.lastUpload.uploaded_files.length }} file(s),
               {{ projectStore.lastUpload.created_records }} record(s) created,
               {{ projectStore.lastUpload.restored_records }} restored.

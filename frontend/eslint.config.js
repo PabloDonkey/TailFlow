@@ -6,18 +6,21 @@ import vueParser from 'vue-eslint-parser'
 export default [
   js.configs.recommended,
   ...tsPlugin.configs.recommended,
+  ...vuePlugin.configs['flat/recommended'],
+  {
+    files: ['**/*.{ts,vue}'],
+    rules: {
+      'no-undef': 'off',
+    },
+  },
   {
     files: ['**/*.vue'],
-    plugins: { vue: vuePlugin },
     languageOptions: {
       parser: vueParser,
       parserOptions: {
         parser: tsPlugin.parser,
         extraFileExtensions: ['.vue'],
       },
-    },
-    rules: {
-      ...vuePlugin.configs['vue3-recommended'].rules,
     },
   },
   {

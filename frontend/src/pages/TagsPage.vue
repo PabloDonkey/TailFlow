@@ -33,20 +33,57 @@ async function createTag() {
     <div class="create-form">
       <h2>Create Tag</h2>
       <div class="form-row">
-        <input v-model="newTagName" placeholder="Tag name" class="input" @keyup.enter="createTag" />
-        <input v-model="newTagCategory" placeholder="Category (optional)" class="input" />
-        <button @click="createTag" :disabled="tagStore.loading" class="btn btn-primary">Add</button>
+        <input
+          v-model="newTagName"
+          placeholder="Tag name"
+          class="input"
+          @keyup.enter="createTag"
+        >
+        <input
+          v-model="newTagCategory"
+          placeholder="Category (optional)"
+          class="input"
+        >
+        <button
+          :disabled="tagStore.loading"
+          class="btn btn-primary"
+          @click="createTag"
+        >
+          Add
+        </button>
       </div>
-      <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
+      <p
+        v-if="errorMsg"
+        class="error"
+      >
+        {{ errorMsg }}
+      </p>
     </div>
 
     <div class="tags-list-section">
-      <p v-if="tagStore.loading">Loading…</p>
-      <p v-else-if="!tagStore.tags.length" class="empty">No tags yet.</p>
-      <ul v-else class="tags-list">
-        <li v-for="tag in tagStore.tags" :key="tag.id" class="tag-item">
+      <p v-if="tagStore.loading">
+        Loading…
+      </p>
+      <p
+        v-else-if="!tagStore.tags.length"
+        class="empty"
+      >
+        No tags yet.
+      </p>
+      <ul
+        v-else
+        class="tags-list"
+      >
+        <li
+          v-for="tag in tagStore.tags"
+          :key="tag.id"
+          class="tag-item"
+        >
           <span class="tag-name">{{ tag.name }}</span>
-          <span v-if="tag.category" class="tag-category">{{ tag.category }}</span>
+          <span
+            v-if="tag.category"
+            class="tag-category"
+          >{{ tag.category }}</span>
         </li>
       </ul>
     </div>

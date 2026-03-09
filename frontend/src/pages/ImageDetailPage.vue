@@ -53,8 +53,15 @@ async function removeTag(tagName: string) {
 
 <template>
   <div class="detail-page">
-    <p v-if="imageStore.loading">Loading…</p>
-    <p v-else-if="!imageStore.currentImage" class="error">Image not found.</p>
+    <p v-if="imageStore.loading">
+      Loading…
+    </p>
+    <p
+      v-else-if="!imageStore.currentImage"
+      class="error"
+    >
+      Image not found.
+    </p>
 
     <template v-else>
       <div class="image-wrap">
@@ -62,27 +69,41 @@ async function removeTag(tagName: string) {
           :src="getProjectImageFileUrl(projectId!, imageStore.currentImage.id)"
           :alt="imageStore.currentImage.filename"
           class="detail-img"
-        />
+        >
       </div>
 
-      <h2 class="image-name">{{ imageStore.currentImage.filename }}</h2>
+      <h2 class="image-name">
+        {{ imageStore.currentImage.filename }}
+      </h2>
       <p class="meta">
         Discovered {{ new Date(imageStore.currentImage.discovered_at).toLocaleString() }}
       </p>
 
       <div class="tags-section">
         <h3>Tags</h3>
-        <div class="tags-list" v-if="imageStore.currentImage.tags.length">
+        <div
+          v-if="imageStore.currentImage.tags.length"
+          class="tags-list"
+        >
           <span
             v-for="tag in imageStore.currentImage.tags"
             :key="tag.id"
             class="tag"
           >
             {{ tag.name }}
-            <button @click="removeTag(tag.name)" class="tag-remove" aria-label="Remove tag">×</button>
+            <button
+              class="tag-remove"
+              aria-label="Remove tag"
+              @click="removeTag(tag.name)"
+            >×</button>
           </span>
         </div>
-        <p v-else class="no-tags">No tags yet.</p>
+        <p
+          v-else
+          class="no-tags"
+        >
+          No tags yet.
+        </p>
 
         <div class="add-tag">
           <input
@@ -90,10 +111,20 @@ async function removeTag(tagName: string) {
             placeholder="Add a tag…"
             class="tag-input"
             @keyup.enter="addTag"
-          />
-          <button @click="addTag" class="btn btn-primary">Add</button>
+          >
+          <button
+            class="btn btn-primary"
+            @click="addTag"
+          >
+            Add
+          </button>
         </div>
-        <p v-if="errorMsg" class="error">{{ errorMsg }}</p>
+        <p
+          v-if="errorMsg"
+          class="error"
+        >
+          {{ errorMsg }}
+        </p>
       </div>
     </template>
   </div>

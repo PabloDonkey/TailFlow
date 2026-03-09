@@ -41,17 +41,37 @@ watch(
   <div class="gallery-page">
     <h1>Gallery</h1>
 
-    <p v-if="!projectStore.selectedProjectId" class="empty">
-      Select a project in <RouterLink to="/projects">Projects</RouterLink> first.
+    <p
+      v-if="!projectStore.selectedProjectId"
+      class="empty"
+    >
+      Select a project in <RouterLink to="/projects">
+        Projects
+      </RouterLink> first.
     </p>
 
-    <p v-else-if="imageStore.loading">Loading…</p>
-    <p v-else-if="imageStore.error" class="error">{{ imageStore.error }}</p>
-    <p v-else-if="!imageStore.images.length" class="empty">
-      No images yet. <RouterLink to="/projects">Select a project first.</RouterLink>
+    <p v-else-if="imageStore.loading">
+      Loading…
+    </p>
+    <p
+      v-else-if="imageStore.error"
+      class="error"
+    >
+      {{ imageStore.error }}
+    </p>
+    <p
+      v-else-if="!imageStore.images.length"
+      class="empty"
+    >
+      No images yet. <RouterLink to="/projects">
+        Select a project first.
+      </RouterLink>
     </p>
 
-    <div v-else class="grid">
+    <div
+      v-else
+      class="grid"
+    >
       <div
         v-for="img in imageStore.images"
         :key="img.id"
@@ -63,9 +83,12 @@ watch(
           :alt="img.filename"
           class="thumb"
           loading="lazy"
-        />
+        >
         <div class="card-info">
-          <span class="name" :title="img.filename">{{ img.filename }}</span>
+          <span
+            class="name"
+            :title="img.filename"
+          >{{ img.filename }}</span>
           <span class="tag-count">{{ img.relative_path }}</span>
         </div>
       </div>
