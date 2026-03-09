@@ -19,6 +19,15 @@ Bootstrap expectation for future sessions:
 3. Add new directive or instructional guidance to `.ai/rule.md`.
 4. Add new non-directive project facts to `.ai/memory.md`, and date each entry with an ISO 8601 timestamp.
 
+## Feature documentation
+
+Feature documentation lives under `docs/`.
+When a task touches a documented feature, read the relevant file in `docs/` before planning or implementation if it will help clarify product behavior or data modeling.
+
+Current documented features:
+
+- `docs/project-dataset-workflow.md` - filesystem-backed project discovery, dataset handling, metadata persistence, sync behavior, and class diagram
+
 ## Tech stack
 
 ### Backend
@@ -71,18 +80,23 @@ Bootstrap expectation for future sessions:
   - `stores/` - Pinia stores
 - `.github/workflows/ci.yml` - CI pipeline definition
 - `Makefile` - root development shortcuts
+- `docs/` - feature documentation and design notes
 
 ### Runtime configuration
 
 Backend configuration is loaded from `backend/.env` via `pydantic-settings`.
-The example environment file defines:
+The example environment file defines split database settings plus runtime paths:
 
-- `DATABASE_URL`
-- `STORAGE_PATH`
+- `DATABASE_HOST`
+- `DATABASE_PORT`
+- `DATABASE_NAME`
+- `DATABASE_USER`
+- `DATABASE_PASSWORD`
+- `PROJECTS_ROOT_PATH`
 - `MAX_UPLOAD_SIZE_MB`
 - `CLASSIFIER_ENABLED`
 
-Default local storage is `backend/storage/images`.
+`PROJECTS_ROOT_PATH` is the configured root whose direct child folders are treated as projects for the project/dataset workflow.
 
 ### Data and API infrastructure
 

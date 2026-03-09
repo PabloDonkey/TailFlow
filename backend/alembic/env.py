@@ -6,7 +6,9 @@ from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
 # Import all models so Alembic can detect them
+import app.models.dataset_image  # noqa: F401
 import app.models.image  # noqa: F401
+import app.models.project  # noqa: F401
 import app.models.tag  # noqa: F401
 from alembic import context
 from app.core.config import settings

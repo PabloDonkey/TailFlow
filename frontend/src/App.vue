@@ -1,9 +1,15 @@
 <template>
   <div id="app-root">
     <nav class="nav-bar">
-      <RouterLink to="/gallery">Gallery</RouterLink>
-      <RouterLink to="/upload">Upload</RouterLink>
-      <RouterLink to="/tags">Tags</RouterLink>
+      <RouterLink to="/projects">
+        Projects
+      </RouterLink>
+      <RouterLink to="/gallery">
+        Gallery
+      </RouterLink>
+      <RouterLink to="/tags">
+        Tags
+      </RouterLink>
     </nav>
     <main class="page-content">
       <RouterView />

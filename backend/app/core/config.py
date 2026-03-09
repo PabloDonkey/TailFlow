@@ -11,14 +11,15 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
+        env_ignore_empty=True,
     )
 
     database_host: str = "localhost"
     database_port: int = 5432
-    database_name: str = "tailflow"
-    database_user: str = "user"
+    database_name: str = "tailflow_db"
+    database_user: str = "tailflow"
     database_password: str = "password"
-    storage_path: str = "./storage/images"
+    projects_root_path: Path | None = None
     max_upload_size_mb: int = 50
     classifier_enabled: bool = False
     log_level: str = "INFO"
@@ -39,6 +40,16 @@ class Settings(BaseSettings):
 
         return normalized
 
+    @field_validator("projects_root_path", mode="before")
+    @classmethod
+    def normalize_projects_root_path(cls, value: object) -> object:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            stripped = value.strip()
+            return None if not stripped else Path(stripped).expanduser()
+        return value
+
     @property
     def database_url(self) -> str:
         encoded_user = quote_plus(self.database_user)
@@ -47,6 +58,21 @@ class Settings(BaseSettings):
             f"postgresql+psycopg://{encoded_user}:{encoded_password}"
             f"@{self.database_host}:{self.database_port}/{self.database_name}"
         )
+
+    @property
+    def projects_root_path_resolved(self) -> Path:
+        if self.projects_root_path is None:
+            raise ValueError(
+                "PROJECTS_ROOT_PATH is not configured. "
+                "Set it in backend/.env before using project discovery features."
+            )
+
+        resolved = self.projects_root_path.resolve()
+        if not resolved.exists():
+            raise ValueError(f"PROJECTS_ROOT_PATH does not exist: {resolved}")
+        if not resolved.is_dir():
+            raise ValueError(f"PROJECTS_ROOT_PATH is not a directory: {resolved}")
+        return resolved
 
 
 settings = Settings()

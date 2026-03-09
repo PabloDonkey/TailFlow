@@ -7,8 +7,9 @@ import TagsPage from '../pages/TagsPage.vue'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', redirect: '/gallery' },
-    { path: '/upload', component: UploadPage },
+    { path: '/', redirect: '/projects' },
+    { path: '/projects', component: UploadPage },
+    { path: '/upload', redirect: '/projects' },
     { path: '/gallery', component: GalleryPage },
     { path: '/image/:id', component: ImageDetailPage },
     { path: '/tags', component: TagsPage },
