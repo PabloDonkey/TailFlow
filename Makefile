@@ -46,10 +46,10 @@ run:
 	( cd backend && ./.venv/bin/alembic upgrade head ); \
 	backend_pid=''; \
 	trap 'if [ -n "$$backend_pid" ]; then kill "$$backend_pid"; wait "$$backend_pid" 2>/dev/null || true; fi' EXIT INT TERM; \
-	( cd backend && exec ./.venv/bin/python -m uvicorn app.main:app --reload ) & \
+	( cd backend && exec ./.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload ) & \
 	backend_pid=$$!; \
-	echo "Backend running at http://localhost:8000 (PID $$backend_pid)"; \
-	echo "Starting frontend at http://localhost:5173"; \
+	echo "Backend running at http://0.0.0.0:8000 (PID $$backend_pid)"; \
+	echo "Starting frontend at http://0.0.0.0:5173"; \
 	cd frontend && npm run dev
 
 stop:
