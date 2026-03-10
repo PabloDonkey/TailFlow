@@ -2,9 +2,10 @@ import uuid
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, String, Uuid
+from sqlalchemy import DateTime, Enum, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.core.enums import TaggingMode
 from app.db.base import Base
 
 if TYPE_CHECKING:
@@ -21,6 +22,11 @@ class Project(Base):
     dataset_path: Mapped[str] = mapped_column(String(2048), nullable=False)
     trigger_tag: Mapped[str] = mapped_column(String(255), nullable=False)
     class_tag: Mapped[str] = mapped_column(String(255), nullable=False)
+    tagging_mode: Mapped[TaggingMode] = mapped_column(
+        Enum(TaggingMode, name="tagging_mode", native_enum=False, length=16),
+        nullable=False,
+        default=TaggingMode.E621,
+    )
     last_synced_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )

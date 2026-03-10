@@ -33,7 +33,11 @@ async def create_tag(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Tag '{body.name}' already exists.",
         )
-    tag = Tag(name=body.name, category=body.category)
+    tag = Tag(
+        name=body.name,
+        catalog_ids=dict(body.catalog_ids),
+        category=body.category,
+    )
     session.add(tag)
     await session.commit()
     await session.refresh(tag)

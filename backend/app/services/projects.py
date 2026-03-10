@@ -9,6 +9,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
+from app.core.enums import TaggingMode
 from app.models.dataset_image import DatasetImage, DatasetImageTag, ProjectTag
 from app.models.project import Project
 from app.schemas.project import (
@@ -101,6 +102,7 @@ async def create_project(
                 payload.trigger_tag.strip() if payload.trigger_tag else folder_name
             ),
             class_tag=class_tag,
+            tagging_mode=payload.tagging_mode,
             missing_at=None,
         )
         session.add(project)
@@ -223,6 +225,9 @@ async def update_project_metadata(
             )
         project.class_tag = class_tag
 
+    if payload.tagging_mode is not None:
+        project.tagging_mode = payload.tagging_mode
+
     await session.commit()
     await session.refresh(project)
     return project
@@ -319,6 +324,7 @@ async def discover_projects(session: AsyncSession) -> ProjectDiscoverResponse:
                 dataset_path=str(dataset_path),
                 trigger_tag=folder_name,
                 class_tag=folder_name,
+                tagging_mode=TaggingMode.E621,
                 missing_at=None,
             )
             session.add(project)

@@ -2,9 +2,12 @@ import { z } from 'zod'
 
 // ─── Schema definitions ──────────────────────────────────────────────────────
 
+export const TaggingModeSchema = z.enum(['e621', 'booru'])
+
 export const TagSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
+  catalog_ids: z.record(z.string(), z.string()),
   category: z.string().nullable(),
   created_at: z.string().datetime({ offset: true }),
 })
@@ -21,6 +24,7 @@ export const ProjectSchema = z.object({
   dataset_path: z.string(),
   trigger_tag: z.string(),
   class_tag: z.string(),
+  tagging_mode: TaggingModeSchema,
   last_synced_at: z.string().datetime({ offset: true }).nullable(),
   missing_at: z.string().datetime({ offset: true }).nullable(),
 })
@@ -66,6 +70,7 @@ export const ProjectImageTagUpdateSchema = z.object({
 export const ProjectUpdatePayloadSchema = z.object({
   trigger_tag: z.string().optional(),
   class_tag: z.string().optional(),
+  tagging_mode: TaggingModeSchema.optional(),
 })
 
 export const ProjectCreatePayloadSchema = z.object({
@@ -73,6 +78,7 @@ export const ProjectCreatePayloadSchema = z.object({
   class_tag: z.string().min(1),
   name: z.string().optional(),
   trigger_tag: z.string().optional(),
+  tagging_mode: TaggingModeSchema.optional(),
 })
 
 export const ProjectCreateResponseSchema = z.object({

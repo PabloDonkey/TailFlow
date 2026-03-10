@@ -1,7 +1,9 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from app.core.enums import TaggingMode
 
 
 class ProjectTagRead(BaseModel):
@@ -19,6 +21,7 @@ class ProjectRead(BaseModel):
     dataset_path: str
     trigger_tag: str
     class_tag: str
+    tagging_mode: TaggingMode
     last_synced_at: datetime | None = None
     missing_at: datetime | None = None
 
@@ -30,6 +33,7 @@ class ProjectCreate(BaseModel):
     class_tag: str
     name: str | None = None
     trigger_tag: str | None = None
+    tagging_mode: TaggingMode = TaggingMode.E621
 
 
 class ProjectCreateResponse(BaseModel):
@@ -39,6 +43,7 @@ class ProjectCreateResponse(BaseModel):
 class ProjectUpdate(BaseModel):
     trigger_tag: str | None = None
     class_tag: str | None = None
+    tagging_mode: TaggingMode | None = None
 
 
 class ProjectImageSummary(BaseModel):
@@ -53,12 +58,12 @@ class ProjectImageSummary(BaseModel):
 
 class ProjectImageRead(ProjectImageSummary):
     removed_at: datetime | None = None
-    tags: list[ProjectTagRead] = []
+    tags: list[ProjectTagRead] = Field(default_factory=list)
 
 
 class ProjectImageTagUpdate(BaseModel):
-    add: list[str] = []
-    remove: list[str] = []
+    add: list[str] = Field(default_factory=list)
+    remove: list[str] = Field(default_factory=list)
 
 
 class ProjectDiscoverResponse(BaseModel):

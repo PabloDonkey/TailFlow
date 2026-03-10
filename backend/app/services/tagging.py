@@ -12,10 +12,11 @@ from app.models.tag import Tag
 
 async def get_or_create_tag(session: AsyncSession, name: str) -> Tag:
     """Return an existing Tag by name, or create a new one."""
-    result = await session.execute(select(Tag).where(Tag.name == name))
+    normalized_name = name.strip()
+    result = await session.execute(select(Tag).where(Tag.name == normalized_name))
     tag = result.scalar_one_or_none()
     if tag is None:
-        tag = Tag(name=name)
+        tag = Tag(name=normalized_name)
         session.add(tag)
         await session.flush()
     return tag

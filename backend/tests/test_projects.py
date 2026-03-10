@@ -36,6 +36,7 @@ async def test_discover_projects_imports_valid_dataset_folders(
     assert len(projects) == 2
     folder_names = {project["folder_name"] for project in projects}
     assert folder_names == {"project-a", "project-b"}
+    assert {project["tagging_mode"] for project in projects} == {"e621"}
 
 
 @pytest.mark.asyncio
@@ -65,7 +66,10 @@ async def test_onboarding_configure_sets_projects_root_and_updates_env(
     example_env_file.write_text("DATABASE_PASSWORD=\n", encoding="utf-8")
 
     monkeypatch.setattr("app.core.config.get_backend_env_file_path", lambda: env_file)
-    monkeypatch.setattr("app.api.routes.projects.get_backend_env_file_path", lambda: env_file)
+    monkeypatch.setattr(
+        "app.api.routes.projects.get_backend_env_file_path",
+        lambda: env_file,
+    )
     monkeypatch.setattr(
         "app.api.routes.projects.get_backend_env_example_file_path",
         lambda: example_env_file,
@@ -194,6 +198,7 @@ async def test_create_project_creates_directory_and_dataset(
     assert project["folder_name"] == "new-project"
     assert project["trigger_tag"] == "new-project"
     assert project["class_tag"] == "animal"
+    assert project["tagging_mode"] == "e621"
     assert (tmp_path / "new-project").is_dir()
     assert (tmp_path / "new-project" / "dataset").is_dir()
 
@@ -275,12 +280,55 @@ async def test_update_project_tags_metadata(
 
     updated = await client.patch(
         f"/api/projects/{project_id}",
-        json={"trigger_tag": "new-trigger", "class_tag": "new-class"},
+        json={
+            "trigger_tag": "new-trigger",
+            "class_tag": "new-class",
+            "tagging_mode": "booru",
+        },
     )
     assert updated.status_code == 200
     payload = updated.json()
     assert payload["trigger_tag"] == "new-trigger"
     assert payload["class_tag"] == "new-class"
+    assert payload["tagging_mode"] == "booru"
+
+
+@pytest.mark.asyncio
+async def test_create_project_uses_default_tagging_mode(
+    client: AsyncClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+
+    created = await client.post(
+        "/api/projects",
+        json={"folder_name": "default-mode", "class_tag": "base"},
+    )
+
+    assert created.status_code == 201
+    assert created.json()["project"]["tagging_mode"] == "e621"
+
+
+@pytest.mark.asyncio
+async def test_create_project_allows_explicit_tagging_mode(
+    client: AsyncClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+
+    created = await client.post(
+        "/api/projects",
+        json={
+            "folder_name": "booru-mode",
+            "class_tag": "base",
+            "tagging_mode": "booru",
+        },
+    )
+
+    assert created.status_code == 201
+    assert created.json()["project"]["tagging_mode"] == "booru"
 
 
 @pytest.mark.asyncio
