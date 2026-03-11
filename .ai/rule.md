@@ -8,3 +8,4 @@
 - Before any commit, run the full backend and frontend test suites and proceed only if they pass.
 - Only store built-in AI memory when the user explicitly asks for it.
 - Keep directive or instructional guidance in this file, not in `.ai/memory.md`.
+- When a task is finished, update `.ai/memory.md` with any useful dated project facts needed to resume future work quickly.

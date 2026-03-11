@@ -6,3 +6,6 @@
 - 2026-03-07T03:55:55.413Z - Frontend API responses are validated with Zod schemas through a shared `fetchJSON` wrapper in `frontend/src/api/index.ts`.
 - 2026-03-07T03:55:55.413Z - Pinia stores use composition-style stores with `loading` and `error` refs around async actions.
 - 2026-03-07T03:55:55.413Z - Backend tests run against in-memory SQLite, and backend models favor SQLAlchemy's cross-database `sa.Uuid` type.
+- 2026-03-11T04:02:16.618Z - Story 001 Phase 2 is implemented: `backend/app/services/tag_import.py` and `scripts/import_tags.py` import bundled `e621` and `booru` CSV catalogs into shared global tags, merging by name, filling `catalog_ids`, normalizing categories, and staying idempotent.
+- 2026-03-11T04:02:16.618Z - Story 001 Phase 3 is implemented in the backend: dataset image tag assignments now reference shared `Tag` rows with ordered `position` and `is_protected`, trigger/class tags are enforced on upload and sync, and project metadata changes propagate to existing image assignments.
+- 2026-03-11T04:02:16.618Z - VS Code/Pylance needs the repo root `pyrightconfig.json` so backend analysis resolves `backend/.venv` plus the `backend` import root for both `backend/` and `scripts/`.
