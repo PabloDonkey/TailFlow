@@ -21,13 +21,13 @@ from app.schemas.project import (
     ProjectCreate,
     ProjectCreateResponse,
     ProjectDiscoverResponse,
-    ProjectOnboardingConfigure,
-    ProjectOnboardingConfigureResponse,
-    ProjectOnboardingStatus,
     ProjectImageRead,
     ProjectImageSummary,
     ProjectImageTagUpdate,
     ProjectImageUploadResponse,
+    ProjectOnboardingConfigure,
+    ProjectOnboardingConfigureResponse,
+    ProjectOnboardingStatus,
     ProjectRead,
     ProjectSyncResponse,
     ProjectTagRead,
@@ -48,7 +48,11 @@ router = APIRouter(prefix="/projects", tags=["projects"])
 @router.get("/onboarding/status", response_model=ProjectOnboardingStatus)
 async def onboarding_status_route() -> ProjectOnboardingStatus:
     configured = is_projects_root_configured()
-    current_path = str(settings.projects_root_path) if settings.projects_root_path else None
+    current_path = (
+        str(settings.projects_root_path)
+        if settings.projects_root_path
+        else None
+    )
     return ProjectOnboardingStatus(
         configured=configured,
         projects_root_path=current_path,
@@ -73,7 +77,10 @@ async def onboarding_configure_route(
     if not env_path.exists():
         example_path = get_backend_env_example_file_path()
         if example_path.exists():
-            env_path.write_text(example_path.read_text(encoding="utf-8"), encoding="utf-8")
+            env_path.write_text(
+                example_path.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
         else:
             env_path.write_text("", encoding="utf-8")
 
