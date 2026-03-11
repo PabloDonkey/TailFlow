@@ -221,3 +221,5 @@ backend/.venv/
 # SQLite dev database
 backend/*.db
 
+# Local story workspace
+stories/
