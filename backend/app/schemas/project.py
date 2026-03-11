@@ -9,8 +9,12 @@ from app.core.enums import TaggingMode
 class ProjectTagRead(BaseModel):
     id: uuid.UUID
     name: str
+    catalog_ids: dict[str, str] = Field(default_factory=dict)
+    category: str | None = None
+    position: int
+    is_protected: bool
 
-    model_config = {"from_attributes": True}
+    model_config = {"extra": "ignore"}
 
 
 class ProjectRead(BaseModel):

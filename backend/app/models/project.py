@@ -9,7 +9,7 @@ from app.core.enums import TaggingMode
 from app.db.base import Base
 
 if TYPE_CHECKING:
-    from app.models.dataset_image import DatasetImage, DatasetImageTag, ProjectTag
+    from app.models.dataset_image import DatasetImage, DatasetImageTag
 
 
 class Project(Base):
@@ -45,12 +45,6 @@ class Project(Base):
 
     dataset_images: Mapped[list["DatasetImage"]] = relationship(
         "DatasetImage",
-        back_populates="project",
-        cascade="all, delete-orphan",
-        lazy="selectin",
-    )
-    tags: Mapped[list["ProjectTag"]] = relationship(
-        "ProjectTag",
         back_populates="project",
         cascade="all, delete-orphan",
         lazy="selectin",

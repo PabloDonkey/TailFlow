@@ -7,11 +7,13 @@ import aiofiles
 from fastapi import HTTPException, UploadFile, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
 from app.core.enums import TaggingMode
-from app.models.dataset_image import DatasetImage, DatasetImageTag, ProjectTag
+from app.models.dataset_image import DatasetImage, DatasetImageTag
 from app.models.project import Project
+from app.models.tag import Tag
 from app.schemas.project import (
     ProjectCreate,
     ProjectDiscoverResponse,
@@ -50,6 +52,101 @@ def _iter_dataset_images(dataset_path: Path) -> dict[str, tuple[int, int]]:
         stat = path.stat()
         files[relative] = (stat.st_mtime_ns, stat.st_size)
     return files
+
+
+def _normalize_unique_tag_names(names: list[str]) -> list[str]:
+    normalized_names: list[str] = []
+    seen_names: set[str] = set()
+    for raw_name in names:
+        name = raw_name.strip()
+        if not name or name in seen_names:
+            continue
+        normalized_names.append(name)
+        seen_names.add(name)
+    return normalized_names
+
+
+async def get_or_create_shared_tag(session: AsyncSession, name: str) -> Tag:
+    result = await session.execute(select(Tag).where(Tag.name == name))
+    tag = result.scalar_one_or_none()
+    if tag is None:
+        tag = Tag(name=name, catalog_ids={})
+        session.add(tag)
+        await session.flush()
+    return tag
+
+
+async def _load_image_tag_links(
+    session: AsyncSession, project_id: uuid.UUID, image_id: uuid.UUID
+) -> list[DatasetImageTag]:
+    result = await session.execute(
+        select(DatasetImageTag)
+        .options(selectinload(DatasetImageTag.tag))
+        .where(
+            DatasetImageTag.project_id == project_id,
+            DatasetImageTag.image_id == image_id,
+        )
+        .order_by(DatasetImageTag.position.asc(), DatasetImageTag.created_at.asc())
+    )
+    return list(result.scalars().all())
+
+
+async def ensure_project_image_tag_assignments(
+    session: AsyncSession, project: Project, image: DatasetImage
+) -> None:
+    await session.flush()
+
+    required_tag_names = _normalize_unique_tag_names(
+        [project.trigger_tag, project.class_tag]
+    )
+    required_tags = [
+        await get_or_create_shared_tag(session, tag_name)
+        for tag_name in required_tag_names
+    ]
+    required_tag_ids = {tag.id for tag in required_tags}
+
+    existing_links = await _load_image_tag_links(session, project.id, image.id)
+    links_by_tag_id: dict[uuid.UUID, DatasetImageTag] = {}
+    manual_links: list[DatasetImageTag] = []
+
+    for link in existing_links:
+        if link.tag_id in required_tag_ids:
+            links_by_tag_id[link.tag_id] = link
+            continue
+        if link.is_protected:
+            await session.delete(link)
+            continue
+        manual_links.append(link)
+
+    await session.flush()
+
+    temporary_position = 1000
+    for link in [*links_by_tag_id.values(), *manual_links]:
+        link.position = temporary_position
+        temporary_position += 1
+
+    if links_by_tag_id or manual_links:
+        await session.flush()
+
+    for position, tag in enumerate(required_tags):
+        existing_link = links_by_tag_id.get(tag.id)
+        if existing_link is None:
+            session.add(
+                DatasetImageTag(
+                    project_id=project.id,
+                    image_id=image.id,
+                    tag_id=tag.id,
+                    position=position,
+                    is_protected=True,
+                )
+            )
+            continue
+        existing_link.position = position
+        existing_link.is_protected = True
+
+    for position, link in enumerate(manual_links, start=len(required_tags)):
+        link.position = position
+        link.is_protected = False
 
 
 async def create_project(
@@ -190,6 +287,7 @@ async def upload_images_to_project(
                 record.removed_at = None
                 restored_records += 1
 
+        await ensure_project_image_tag_assignments(session, project, record)
         uploaded_files.append(relative_path)
 
     await session.commit()
@@ -207,49 +305,45 @@ async def update_project_metadata(
     project: Project,
     payload: ProjectUpdate,
 ) -> Project:
+    new_trigger_tag = (
+        payload.trigger_tag.strip()
+        if payload.trigger_tag is not None
+        else project.trigger_tag
+    )
+    new_class_tag = (
+        payload.class_tag.strip()
+        if payload.class_tag is not None
+        else project.class_tag
+    )
+
     if payload.trigger_tag is not None:
-        trigger_tag = payload.trigger_tag.strip()
-        if not trigger_tag:
+        if not new_trigger_tag:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="trigger_tag must not be empty.",
             )
-        project.trigger_tag = trigger_tag
+        project.trigger_tag = new_trigger_tag
 
     if payload.class_tag is not None:
-        class_tag = payload.class_tag.strip()
-        if not class_tag:
+        if not new_class_tag:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
                 detail="class_tag must not be empty.",
             )
-        project.class_tag = class_tag
+        project.class_tag = new_class_tag
 
     if payload.tagging_mode is not None:
         project.tagging_mode = payload.tagging_mode
 
+    images_result = await session.execute(
+        select(DatasetImage).where(DatasetImage.project_id == project.id)
+    )
+    for image in images_result.scalars().all():
+        await ensure_project_image_tag_assignments(session, project, image)
+
     await session.commit()
     await session.refresh(project)
     return project
-
-
-async def get_or_create_project_tag(
-    session: AsyncSession,
-    project_id: uuid.UUID,
-    name: str,
-) -> ProjectTag:
-    result = await session.execute(
-        select(ProjectTag).where(
-            ProjectTag.project_id == project_id,
-            ProjectTag.name == name,
-        )
-    )
-    tag = result.scalar_one_or_none()
-    if tag is None:
-        tag = ProjectTag(project_id=project_id, name=name)
-        session.add(tag)
-        await session.flush()
-    return tag
 
 
 async def update_project_image_tags(
@@ -259,38 +353,46 @@ async def update_project_image_tags(
     add: list[str],
     remove: list[str],
 ) -> None:
-    existing_links_result = await session.execute(
-        select(DatasetImageTag).where(
-            DatasetImageTag.project_id == project.id,
-            DatasetImageTag.image_id == image.id,
-        )
+    add_names = _normalize_unique_tag_names(add)
+    remove_names = set(_normalize_unique_tag_names(remove))
+    protected_names = set(
+        _normalize_unique_tag_names([project.trigger_tag, project.class_tag])
     )
-    existing_links = existing_links_result.scalars().all()
+    blocked_names = sorted(remove_names & protected_names)
+    if blocked_names:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Protected trigger and class tags cannot be removed from an image.",
+        )
+
+    await ensure_project_image_tag_assignments(session, project, image)
+    existing_links = await _load_image_tag_links(session, project.id, image.id)
     existing_tag_ids = {link.tag_id for link in existing_links}
+    next_position = len(existing_links)
 
-    add_set = {name.strip() for name in add if name.strip()}
-    remove_set = {name.strip() for name in remove if name.strip()}
-
-    for name in add_set:
-        tag = await get_or_create_project_tag(session, project.id, name)
-        if tag.id not in existing_tag_ids:
-            session.add(
-                DatasetImageTag(project_id=project.id, image_id=image.id, tag_id=tag.id)
-            )
-            existing_tag_ids.add(tag.id)
-
-    if remove_set:
-        remove_tags_result = await session.execute(
-            select(ProjectTag).where(
-                ProjectTag.project_id == project.id,
-                ProjectTag.name.in_(remove_set),
+    for name in add_names:
+        tag = await get_or_create_shared_tag(session, name)
+        if tag.id in existing_tag_ids:
+            continue
+        session.add(
+            DatasetImageTag(
+                project_id=project.id,
+                image_id=image.id,
+                tag_id=tag.id,
+                position=next_position,
+                is_protected=False,
             )
         )
-        remove_tag_ids = {tag.id for tag in remove_tags_result.scalars().all()}
+        existing_tag_ids.add(tag.id)
+        next_position += 1
+
+    if remove_names:
+        existing_links = await _load_image_tag_links(session, project.id, image.id)
         for link in existing_links:
-            if link.tag_id in remove_tag_ids:
+            if link.tag.name in remove_names and not link.is_protected:
                 await session.delete(link)
 
+    await ensure_project_image_tag_assignments(session, project, image)
     await session.commit()
 
 
@@ -386,25 +488,25 @@ async def sync_project(session: AsyncSession, project: Project) -> ProjectSyncRe
         filename = Path(relative_path).name
 
         if tracked is None:
-            session.add(
-                DatasetImage(
-                    project_id=project.id,
-                    relative_path=relative_path,
-                    filename=filename,
-                    file_mtime_ns=mtime_ns,
-                    file_size_bytes=size_bytes,
-                    removed_at=None,
-                )
+            tracked = DatasetImage(
+                project_id=project.id,
+                relative_path=relative_path,
+                filename=filename,
+                file_mtime_ns=mtime_ns,
+                file_size_bytes=size_bytes,
+                removed_at=None,
             )
+            session.add(tracked)
             added_images += 1
-            continue
+        else:
+            tracked.filename = filename
+            tracked.file_mtime_ns = mtime_ns
+            tracked.file_size_bytes = size_bytes
+            if tracked.removed_at is not None:
+                tracked.removed_at = None
+                restored_images += 1
 
-        tracked.filename = filename
-        tracked.file_mtime_ns = mtime_ns
-        tracked.file_size_bytes = size_bytes
-        if tracked.removed_at is not None:
-            tracked.removed_at = None
-            restored_images += 1
+        await ensure_project_image_tag_assignments(session, project, tracked)
 
     removed_images = 0
     for relative_path, tracked in tracked_images.items():

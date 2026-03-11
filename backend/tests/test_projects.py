@@ -294,6 +294,38 @@ async def test_update_project_tags_metadata(
 
 
 @pytest.mark.asyncio
+async def test_update_project_metadata_propagates_protected_tags_to_images(
+    client: AsyncClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+    created = await client.post(
+        "/api/projects",
+        json={"folder_name": "meta-sync", "class_tag": "base"},
+    )
+    project_id = created.json()["project"]["id"]
+
+    image_bytes = make_png_bytes(10, 10)
+    uploaded = await client.post(
+        f"/api/projects/{project_id}/images",
+        files=[("files", ("face.png", io.BytesIO(image_bytes), "image/png"))],
+    )
+    assert uploaded.status_code == 200
+
+    image_id = (await client.get(f"/api/projects/{project_id}/images")).json()[0]["id"]
+
+    updated = await client.patch(
+        f"/api/projects/{project_id}",
+        json={"trigger_tag": "new-trigger", "class_tag": "new-class"},
+    )
+    assert updated.status_code == 200
+
+    image = await client.get(f"/api/projects/{project_id}/images/{image_id}")
+    assert image.status_code == 200
+    assert [tag["name"] for tag in image.json()["tags"]] == ["new-trigger", "new-class"]
+    assert [tag["is_protected"] for tag in image.json()["tags"]] == [True, True]
+
+
+@pytest.mark.asyncio
 async def test_create_project_uses_default_tagging_mode(
     client: AsyncClient,
     tmp_path: Path,
@@ -361,8 +393,15 @@ async def test_project_image_tagging_and_tag_preservation_across_sync(
         json={"add": ["portrait", "style-a"], "remove": []},
     )
     assert add_tags.status_code == 200
-    tag_names = sorted(tag["name"] for tag in add_tags.json()["tags"])
-    assert tag_names == ["portrait", "style-a"]
+    tag_names = [tag["name"] for tag in add_tags.json()["tags"]]
+    assert tag_names == ["tag-project", "subject", "portrait", "style-a"]
+    assert [tag["position"] for tag in add_tags.json()["tags"]] == [0, 1, 2, 3]
+    assert [tag["is_protected"] for tag in add_tags.json()["tags"]] == [
+        True,
+        True,
+        False,
+        False,
+    ]
 
     remove_tag = await client.post(
         f"/api/projects/{project_id}/images/{image_id}/tags",
@@ -370,7 +409,13 @@ async def test_project_image_tagging_and_tag_preservation_across_sync(
     )
     assert remove_tag.status_code == 200
     tag_names_after_remove = [tag["name"] for tag in remove_tag.json()["tags"]]
-    assert tag_names_after_remove == ["style-a"]
+    assert tag_names_after_remove == ["tag-project", "subject", "style-a"]
+
+    blocked_remove = await client.post(
+        f"/api/projects/{project_id}/images/{image_id}/tags",
+        json={"add": [], "remove": ["tag-project"]},
+    )
+    assert blocked_remove.status_code == 422
 
     dataset_file = tmp_path / "tag-project" / "dataset" / "face.png"
     dataset_file.unlink()
@@ -387,4 +432,4 @@ async def test_project_image_tagging_and_tag_preservation_across_sync(
     restored_image = await client.get(f"/api/projects/{project_id}/images/{image_id}")
     assert restored_image.status_code == 200
     restored_tag_names = [tag["name"] for tag in restored_image.json()["tags"]]
-    assert restored_tag_names == ["style-a"]
+    assert restored_tag_names == ["tag-project", "subject", "style-a"]

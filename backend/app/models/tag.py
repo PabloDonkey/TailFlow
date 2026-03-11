@@ -10,6 +10,7 @@ from app.db.base import Base
 from app.models.image import image_tag
 
 if TYPE_CHECKING:
+    from app.models.dataset_image import DatasetImageTag
     from app.models.image import Image
 
 
@@ -30,4 +31,10 @@ class Tag(Base):
 
     images: Mapped[list["Image"]] = relationship(
         "Image", secondary=image_tag, back_populates="tags", lazy="selectin"
+    )
+    image_tag_links: Mapped[list["DatasetImageTag"]] = relationship(
+        "DatasetImageTag",
+        back_populates="tag",
+        lazy="selectin",
+        overlaps="dataset_image,project,image_tag_links",
     )
