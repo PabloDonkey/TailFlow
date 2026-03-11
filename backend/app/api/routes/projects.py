@@ -308,7 +308,14 @@ async def update_project_image_tags_route(
             detail="Project image not found.",
         )
 
-    await update_project_image_tags(session, project, image, body.add, body.remove)
+    await update_project_image_tags(
+        session,
+        project,
+        image,
+        body.add,
+        body.remove,
+        create_missing=body.create_missing,
+    )
 
     tags = await _read_project_image_tags(session, project, image)
 

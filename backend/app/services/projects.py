@@ -1,3 +1,4 @@
+import logging
 import shutil
 import uuid
 from datetime import UTC, datetime
@@ -24,6 +25,7 @@ from app.schemas.project import (
 
 ALLOWED_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+logger = logging.getLogger(__name__)
 
 
 def _resolve_available_path(path: Path) -> Path:
@@ -74,6 +76,49 @@ async def get_or_create_shared_tag(session: AsyncSession, name: str) -> Tag:
         session.add(tag)
         await session.flush()
     return tag
+
+
+def _tag_is_available_in_mode(tag: Tag, tagging_mode: TaggingMode) -> bool:
+    return not tag.catalog_ids or tagging_mode.value in tag.catalog_ids
+
+
+async def _resolve_manual_project_tag(
+    session: AsyncSession,
+    project: Project,
+    name: str,
+    *,
+    create_missing: bool,
+) -> Tag:
+    result = await session.execute(select(Tag).where(Tag.name == name))
+    tag = result.scalar_one_or_none()
+
+    if tag is None:
+        if not create_missing:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail=(
+                    f"Tag '{name}' does not exist. Confirm creation before adding "
+                    "it as a shared tag."
+                ),
+            )
+
+        logger.info(
+            "Creating shared user-defined tag '%s' for project %s in %s mode.",
+            name,
+            project.id,
+            project.tagging_mode.value,
+        )
+        return await get_or_create_shared_tag(session, name)
+
+    if _tag_is_available_in_mode(tag, project.tagging_mode):
+        return tag
+
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+        detail=(
+            f"Tag '{name}' is not available in {project.tagging_mode.value} mode."
+        ),
+    )
 
 
 async def _load_image_tag_links(
@@ -352,6 +397,8 @@ async def update_project_image_tags(
     image: DatasetImage,
     add: list[str],
     remove: list[str],
+    *,
+    create_missing: bool = False,
 ) -> None:
     add_names = _normalize_unique_tag_names(add)
     remove_names = set(_normalize_unique_tag_names(remove))
@@ -371,7 +418,12 @@ async def update_project_image_tags(
     next_position = len(existing_links)
 
     for name in add_names:
-        tag = await get_or_create_shared_tag(session, name)
+        tag = await _resolve_manual_project_tag(
+            session,
+            project,
+            name,
+            create_missing=create_missing,
+        )
         if tag.id in existing_tag_ids:
             continue
         session.add(

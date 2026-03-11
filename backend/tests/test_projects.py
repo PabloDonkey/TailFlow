@@ -5,8 +5,10 @@ from pathlib import Path
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.tag import Tag
 from app.schemas.project import ProjectCreate
 from app.services.projects import create_project
 from tests.conftest import make_png_bytes
@@ -390,7 +392,7 @@ async def test_project_image_tagging_and_tag_preservation_across_sync(
 
     add_tags = await client.post(
         f"/api/projects/{project_id}/images/{image_id}/tags",
-        json={"add": ["portrait", "style-a"], "remove": []},
+        json={"add": ["portrait", "style-a"], "remove": [], "create_missing": True},
     )
     assert add_tags.status_code == 200
     tag_names = [tag["name"] for tag in add_tags.json()["tags"]]
@@ -433,3 +435,170 @@ async def test_project_image_tagging_and_tag_preservation_across_sync(
     assert restored_image.status_code == 200
     restored_tag_names = [tag["name"] for tag in restored_image.json()["tags"]]
     assert restored_tag_names == ["tag-project", "subject", "style-a"]
+
+
+@pytest.mark.asyncio
+async def test_manual_tagging_rejects_source_tag_outside_project_mode(
+    client: AsyncClient,
+    session: AsyncSession,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session.add(Tag(name="wolf", catalog_ids={"e621": "42"}))
+    await session.commit()
+
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+    created = await client.post(
+        "/api/projects",
+        json={
+            "folder_name": "booru-project",
+            "class_tag": "base",
+            "tagging_mode": "booru",
+        },
+    )
+    project_id = created.json()["project"]["id"]
+
+    image_bytes = make_png_bytes(10, 10)
+    uploaded = await client.post(
+        f"/api/projects/{project_id}/images",
+        files=[("files", ("face.png", io.BytesIO(image_bytes), "image/png"))],
+    )
+    assert uploaded.status_code == 200
+
+    image_id = (await client.get(f"/api/projects/{project_id}/images")).json()[0]["id"]
+
+    response = await client.post(
+        f"/api/projects/{project_id}/images/{image_id}/tags",
+        json={"add": ["wolf"], "remove": []},
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"] == "Tag 'wolf' is not available in booru mode."
+
+
+@pytest.mark.asyncio
+async def test_manual_tagging_allows_shared_user_defined_tags_in_any_mode(
+    client: AsyncClient,
+    session: AsyncSession,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session.add(Tag(name="shared-style", catalog_ids={}))
+    await session.commit()
+
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+    created = await client.post(
+        "/api/projects",
+        json={
+            "folder_name": "shared-tags",
+            "class_tag": "base",
+            "tagging_mode": "booru",
+        },
+    )
+    project_id = created.json()["project"]["id"]
+
+    image_bytes = make_png_bytes(10, 10)
+    uploaded = await client.post(
+        f"/api/projects/{project_id}/images",
+        files=[("files", ("face.png", io.BytesIO(image_bytes), "image/png"))],
+    )
+    assert uploaded.status_code == 200
+
+    image_id = (await client.get(f"/api/projects/{project_id}/images")).json()[0]["id"]
+    response = await client.post(
+        f"/api/projects/{project_id}/images/{image_id}/tags",
+        json={"add": ["shared-style"], "remove": []},
+    )
+
+    assert response.status_code == 200
+    assert [tag["name"] for tag in response.json()["tags"]] == [
+        "shared-tags",
+        "base",
+        "shared-style",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_manual_tagging_requires_confirmation_before_creating_unknown_tag(
+    client: AsyncClient, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+    created = await client.post(
+        "/api/projects",
+        json={"folder_name": "confirm-tags", "class_tag": "base"},
+    )
+    project_id = created.json()["project"]["id"]
+
+    image_bytes = make_png_bytes(10, 10)
+    uploaded = await client.post(
+        f"/api/projects/{project_id}/images",
+        files=[("files", ("face.png", io.BytesIO(image_bytes), "image/png"))],
+    )
+    assert uploaded.status_code == 200
+
+    image_id = (await client.get(f"/api/projects/{project_id}/images")).json()[0]["id"]
+
+    rejected = await client.post(
+        f"/api/projects/{project_id}/images/{image_id}/tags",
+        json={"add": ["new-shared-tag"], "remove": []},
+    )
+    assert rejected.status_code == 422
+    expected_detail = (
+        "Tag 'new-shared-tag' does not exist. Confirm creation before adding "
+        "it as a shared tag."
+    )
+    assert (
+        rejected.json()["detail"]
+        == expected_detail
+    )
+
+    created_tag = await client.post(
+        f"/api/projects/{project_id}/images/{image_id}/tags",
+        json={"add": ["new-shared-tag"], "remove": [], "create_missing": True},
+    )
+    assert created_tag.status_code == 200
+    added_tag = created_tag.json()["tags"][2]
+    assert added_tag["name"] == "new-shared-tag"
+    assert added_tag["catalog_ids"] == {}
+
+
+@pytest.mark.asyncio
+async def test_protected_class_tag_reuses_existing_catalog_tag_in_project_mode(
+    client: AsyncClient,
+    session: AsyncSession,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    existing_class_tag = Tag(name="character", catalog_ids={"booru": "55"})
+    session.add(existing_class_tag)
+    await session.commit()
+
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+    created = await client.post(
+        "/api/projects",
+        json={
+            "folder_name": "reuse-class",
+            "class_tag": "character",
+            "tagging_mode": "booru",
+        },
+    )
+    project_id = created.json()["project"]["id"]
+
+    image_bytes = make_png_bytes(10, 10)
+    uploaded = await client.post(
+        f"/api/projects/{project_id}/images",
+        files=[("files", ("face.png", io.BytesIO(image_bytes), "image/png"))],
+    )
+    assert uploaded.status_code == 200
+
+    image_id = (await client.get(f"/api/projects/{project_id}/images")).json()[0]["id"]
+    image = await client.get(f"/api/projects/{project_id}/images/{image_id}")
+
+    assert image.status_code == 200
+    protected_class_tag = image.json()["tags"][1]
+    assert protected_class_tag["id"] == str(existing_class_tag.id)
+    assert protected_class_tag["name"] == "character"
+    assert protected_class_tag["catalog_ids"] == {"booru": "55"}
+
+    tags_result = await session.execute(select(Tag).where(Tag.name == "character"))
+    assert len(tags_result.scalars().all()) == 1

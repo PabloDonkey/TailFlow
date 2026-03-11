@@ -68,6 +68,7 @@ class ProjectImageRead(ProjectImageSummary):
 class ProjectImageTagUpdate(BaseModel):
     add: list[str] = Field(default_factory=list)
     remove: list[str] = Field(default_factory=list)
+    create_missing: bool = False
 
 
 class ProjectDiscoverResponse(BaseModel):
