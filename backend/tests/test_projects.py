@@ -602,3 +602,112 @@ async def test_protected_class_tag_reuses_existing_catalog_tag_in_project_mode(
 
     tags_result = await session.execute(select(Tag).where(Tag.name == "character"))
     assert len(tags_result.scalars().all()) == 1
+
+
+@pytest.mark.asyncio
+async def test_sync_project_imports_sidecar_tags_with_mode_filtering_and_auto_create(
+    client: AsyncClient,
+    session: AsyncSession,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    session.add_all(
+        [
+            Tag(name="booru-wolf", catalog_ids={"booru": "42"}),
+            Tag(name="e621-wolf", catalog_ids={"e621": "99"}),
+            Tag(name="shared-style", catalog_ids={}),
+        ]
+    )
+    await session.commit()
+
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+    created = await client.post(
+        "/api/projects",
+        json={
+            "folder_name": "sidecar-sync",
+            "class_tag": "subject",
+            "tagging_mode": "booru",
+        },
+    )
+    assert created.status_code == 201
+    project_id = created.json()["project"]["id"]
+
+    dataset_dir = tmp_path / "sidecar-sync" / "dataset"
+    (dataset_dir / "fox.png").write_bytes(b"fox")
+    (dataset_dir / "fox.txt").write_text(
+        " booru-wolf, shared-style, new-shared, e621-wolf, , booru-wolf ",
+        encoding="utf-8",
+    )
+
+    sync_response = await client.post(f"/api/projects/{project_id}/sync")
+    assert sync_response.status_code == 200
+    assert sync_response.json()["added_images"] == 1
+
+    image_id = (await client.get(f"/api/projects/{project_id}/images")).json()[0]["id"]
+    image_response = await client.get(f"/api/projects/{project_id}/images/{image_id}")
+
+    assert image_response.status_code == 200
+    tags = image_response.json()["tags"]
+    assert [tag["name"] for tag in tags] == [
+        "sidecar-sync",
+        "subject",
+        "booru-wolf",
+        "shared-style",
+        "new-shared",
+    ]
+    assert [tag["position"] for tag in tags] == [0, 1, 2, 3, 4]
+    assert [tag["is_protected"] for tag in tags] == [
+        True,
+        True,
+        False,
+        False,
+        False,
+    ]
+
+    created_tag = await session.execute(select(Tag).where(Tag.name == "new-shared"))
+    assert created_tag.scalar_one().catalog_ids == {}
+
+
+@pytest.mark.asyncio
+async def test_sync_project_sidecar_import_preserves_existing_manual_tags(
+    client: AsyncClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+    created = await client.post(
+        "/api/projects",
+        json={"folder_name": "sidecar-preserve", "class_tag": "subject"},
+    )
+    assert created.status_code == 201
+    project_id = created.json()["project"]["id"]
+
+    image_bytes = make_png_bytes(10, 10)
+    uploaded = await client.post(
+        f"/api/projects/{project_id}/images",
+        files=[("files", ("fox.png", io.BytesIO(image_bytes), "image/png"))],
+    )
+    assert uploaded.status_code == 200
+
+    image_id = (await client.get(f"/api/projects/{project_id}/images")).json()[0]["id"]
+
+    manual_update = await client.post(
+        f"/api/projects/{project_id}/images/{image_id}/tags",
+        json={"add": ["manual-style"], "remove": [], "create_missing": True},
+    )
+    assert manual_update.status_code == 200
+
+    dataset_dir = tmp_path / "sidecar-preserve" / "dataset"
+    (dataset_dir / "fox.txt").write_text("sidecar-style", encoding="utf-8")
+
+    sync_response = await client.post(f"/api/projects/{project_id}/sync")
+    assert sync_response.status_code == 200
+
+    image_response = await client.get(f"/api/projects/{project_id}/images/{image_id}")
+    assert image_response.status_code == 200
+    assert [tag["name"] for tag in image_response.json()["tags"]] == [
+        "sidecar-preserve",
+        "subject",
+        "manual-style",
+        "sidecar-style",
+    ]

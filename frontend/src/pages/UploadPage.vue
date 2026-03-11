@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useProjectStore } from '../stores/projects'
+import type { TaggingMode } from '../api'
 
 const projectStore = useProjectStore()
 
@@ -9,11 +10,13 @@ const createFolderName = ref('')
 const createClassTag = ref('')
 const createName = ref('')
 const createTriggerTag = ref('')
+const createTaggingMode = ref<TaggingMode>('e621')
 const createFormError = ref<string | null>(null)
 const uploadFormError = ref<string | null>(null)
 const selectedUploadFiles = ref<File[]>([])
 const editTriggerTag = ref('')
 const editClassTag = ref('')
+const editTaggingMode = ref<TaggingMode>('e621')
 const editFormError = ref<string | null>(null)
 
 onMounted(() => {
@@ -52,6 +55,7 @@ async function createProject() {
     class_tag: classTag,
     name: createName.value.trim() || undefined,
     trigger_tag: createTriggerTag.value.trim() || undefined,
+    tagging_mode: createTaggingMode.value,
   })
 
   if (result) {
@@ -59,6 +63,7 @@ async function createProject() {
     createClassTag.value = ''
     createName.value = ''
     createTriggerTag.value = ''
+    createTaggingMode.value = 'e621'
   }
 }
 
@@ -103,6 +108,7 @@ function startEditingSelectedProject() {
 
   editTriggerTag.value = selectedProject.value.trigger_tag
   editClassTag.value = selectedProject.value.class_tag
+  editTaggingMode.value = selectedProject.value.tagging_mode
 }
 
 async function saveProjectMetadata() {
@@ -122,6 +128,7 @@ async function saveProjectMetadata() {
   const updated = await projectStore.updateSelectedProjectMetadata({
     trigger_tag: triggerTag,
     class_tag: classTag,
+    tagging_mode: editTaggingMode.value,
   })
   if (!updated && projectStore.error) {
     editFormError.value = projectStore.error
@@ -191,6 +198,20 @@ async function saveProjectMetadata() {
             type="text"
             placeholder="defaults to folder"
           >
+        </label>
+        <label>
+          Tagging Mode
+          <select
+            v-model="createTaggingMode"
+            data-testid="create-tagging-mode"
+          >
+            <option value="e621">
+              e621
+            </option>
+            <option value="booru">
+              booru
+            </option>
+          </select>
         </label>
       </div>
       <button
@@ -276,6 +297,25 @@ async function saveProjectMetadata() {
                   v-model="editClassTag"
                   type="text"
                 >
+              </dd>
+            </div>
+            <div class="row">
+              <dt>Tagging Mode</dt>
+              <dd>
+                <select
+                  v-model="editTaggingMode"
+                  data-testid="edit-tagging-mode"
+                >
+                  <option value="e621">
+                    e621
+                  </option>
+                  <option value="booru">
+                    booru
+                  </option>
+                </select>
+                <p class="field-help">
+                  Shared user-defined tags stay available in both modes.
+                </p>
               </dd>
             </div>
             <div class="row">
@@ -506,11 +546,18 @@ label {
 }
 
 input[type='text'],
+select,
 input[type='file'] {
   border: 1px solid #cfd4e2;
   border-radius: 6px;
   padding: 0.5rem 0.6rem;
   font-size: 0.92rem;
+}
+
+.field-help {
+  margin-top: 0.35rem;
+  color: #666;
+  font-size: 0.82rem;
 }
 
 .upload-box {

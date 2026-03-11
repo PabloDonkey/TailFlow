@@ -8,6 +8,7 @@ import {
   ProjectImageUploadResponseSchema,
   ProjectImageSummarySchema,
   ProjectImageReadSchema,
+  ProjectImageTagUpdateSchema,
   ProjectOnboardingConfigureResponseSchema,
   ProjectOnboardingStatusSchema,
   ProjectUpdatePayloadSchema,
@@ -142,9 +143,26 @@ describe('API schemas', () => {
     const read = ProjectImageReadSchema.parse({
       ...summary,
       removed_at: null,
-      tags: [{ id: '550e8400-e29b-41d4-a716-446655440016', name: 'portrait' }],
+      tags: [{
+        id: '550e8400-e29b-41d4-a716-446655440016',
+        name: 'portrait',
+        catalog_ids: { e621: '10' },
+        category: 'general',
+        position: 2,
+        is_protected: false,
+      }],
     })
     expect(read.tags[0]?.name).toBe('portrait')
+    expect(read.tags[0]?.position).toBe(2)
+  })
+
+  it('parses project image tag update payload with create-missing flag', () => {
+    const payload = ProjectImageTagUpdateSchema.parse({
+      add: ['new-shared-tag'],
+      remove: [],
+      create_missing: true,
+    })
+    expect(payload.create_missing).toBe(true)
   })
 
   it('parses project update payload', () => {

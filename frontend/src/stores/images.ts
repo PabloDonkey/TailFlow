@@ -33,12 +33,30 @@ export const useImageStore = defineStore('images', () => {
     }
   }
 
-  async function updateTags(projectId: string, id: string, add: string[], remove: string[]) {
+  async function updateTags(
+    projectId: string,
+    id: string,
+    add: string[],
+    remove: string[],
+    createMissing = false,
+  ) {
+    loading.value = true
+    error.value = null
     try {
-      const updated = await api.updateProjectImageTags(projectId, id, add, remove)
+      const updated = await api.updateProjectImageTags(
+        projectId,
+        id,
+        add,
+        remove,
+        createMissing,
+      )
       currentImage.value = updated
+      return updated
     } catch (e) {
       error.value = String(e)
+      return null
+    } finally {
+      loading.value = false
     }
   }
 

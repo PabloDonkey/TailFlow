@@ -68,6 +68,14 @@ def _normalize_unique_tag_names(names: list[str]) -> list[str]:
     return normalized_names
 
 
+def _sidecar_path_for_image(dataset_path: Path, relative_path: str) -> Path:
+    return (dataset_path / relative_path).with_suffix(".txt")
+
+
+def _parse_sidecar_tag_names(sidecar_content: str) -> list[str]:
+    return _normalize_unique_tag_names(sidecar_content.split(","))
+
+
 async def get_or_create_shared_tag(session: AsyncSession, name: str) -> Tag:
     result = await session.execute(select(Tag).where(Tag.name == name))
     tag = result.scalar_one_or_none()
@@ -119,6 +127,35 @@ async def _resolve_manual_project_tag(
             f"Tag '{name}' is not available in {project.tagging_mode.value} mode."
         ),
     )
+
+
+async def _resolve_sync_project_tag(
+    session: AsyncSession,
+    project: Project,
+    name: str,
+) -> Tag | None:
+    result = await session.execute(select(Tag).where(Tag.name == name))
+    tag = result.scalar_one_or_none()
+
+    if tag is None:
+        logger.info(
+            "Creating shared user-defined tag '%s' during sync for project %s in %s mode.",
+            name,
+            project.id,
+            project.tagging_mode.value,
+        )
+        return await get_or_create_shared_tag(session, name)
+
+    if _tag_is_available_in_mode(tag, project.tagging_mode):
+        return tag
+
+    logger.info(
+        "Skipping sidecar tag '%s' for project %s because it is not available in %s mode.",
+        name,
+        project.id,
+        project.tagging_mode.value,
+    )
+    return None
 
 
 async def _load_image_tag_links(
@@ -192,6 +229,45 @@ async def ensure_project_image_tag_assignments(
     for position, link in enumerate(manual_links, start=len(required_tags)):
         link.position = position
         link.is_protected = False
+
+
+async def import_project_image_sidecar_tags(
+    session: AsyncSession,
+    project: Project,
+    image: DatasetImage,
+    dataset_path: Path,
+) -> None:
+    sidecar_path = _sidecar_path_for_image(dataset_path, image.relative_path)
+    if not sidecar_path.is_file():
+        return
+
+    sidecar_names = _parse_sidecar_tag_names(sidecar_path.read_text(encoding="utf-8"))
+    if not sidecar_names:
+        return
+
+    await ensure_project_image_tag_assignments(session, project, image)
+    existing_links = await _load_image_tag_links(session, project.id, image.id)
+    existing_tag_ids = {link.tag_id for link in existing_links}
+    next_position = len(existing_links)
+
+    for name in sidecar_names:
+        tag = await _resolve_sync_project_tag(session, project, name)
+        if tag is None or tag.id in existing_tag_ids:
+            continue
+
+        session.add(
+            DatasetImageTag(
+                project_id=project.id,
+                image_id=image.id,
+                tag_id=tag.id,
+                position=next_position,
+                is_protected=False,
+            )
+        )
+        existing_tag_ids.add(tag.id)
+        next_position += 1
+
+    await ensure_project_image_tag_assignments(session, project, image)
 
 
 async def create_project(
@@ -559,6 +635,7 @@ async def sync_project(session: AsyncSession, project: Project) -> ProjectSyncRe
                 restored_images += 1
 
         await ensure_project_image_tag_assignments(session, project, tracked)
+        await import_project_image_sidecar_tags(session, project, tracked, dataset_path)
 
     removed_images = 0
     for relative_path, tracked in tracked_images.items():
