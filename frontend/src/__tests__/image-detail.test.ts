@@ -8,12 +8,39 @@ const mocks = vi.hoisted(() => ({
     query: { project: 'project-1' },
   },
   imageStore: {
+    images: [
+      {
+        id: 'image-0',
+        project_id: 'project-1',
+        relative_path: 'prev.png',
+        filename: 'prev.png',
+        discovered_at: '2026-01-01T00:00:00Z',
+        tag_count: 1,
+      },
+      {
+        id: 'image-1',
+        project_id: 'project-1',
+        relative_path: 'fox.png',
+        filename: 'fox.png',
+        discovered_at: '2026-01-01T00:00:00Z',
+        tag_count: 2,
+      },
+      {
+        id: 'image-2',
+        project_id: 'project-1',
+        relative_path: 'next.png',
+        filename: 'next.png',
+        discovered_at: '2026-01-01T00:00:00Z',
+        tag_count: 4,
+      },
+    ],
     currentImage: {
       id: 'image-1',
       project_id: 'project-1',
       relative_path: 'fox.png',
       filename: 'fox.png',
       discovered_at: '2026-01-01T00:00:00Z',
+      tag_count: 2,
       removed_at: null,
       tags: [
         {
@@ -36,6 +63,7 @@ const mocks = vi.hoisted(() => ({
     },
     loading: false,
     error: null as string | null,
+    fetchImages: vi.fn().mockResolvedValue(undefined),
     fetchImage: vi.fn().mockResolvedValue(undefined),
     updateTags: vi.fn(),
   },
@@ -46,11 +74,15 @@ const mocks = vi.hoisted(() => ({
     fetchProjects: vi.fn().mockResolvedValue(undefined),
     selectProject: vi.fn(),
   },
+  router: {
+    push: vi.fn(),
+  },
   getProjectImageFileUrl: vi.fn().mockReturnValue('/api/projects/project-1/images/image-1/file'),
 }))
 
 vi.mock('vue-router', () => ({
   useRoute: () => mocks.route,
+  useRouter: () => mocks.router,
 }))
 
 vi.mock('../stores/images', () => ({
@@ -72,13 +104,15 @@ vi.mock('../api', async () => {
 describe('ImageDetailPage', () => {
   beforeEach(() => {
     mocks.imageStore.error = null
+    mocks.imageStore.fetchImages.mockClear()
     mocks.imageStore.fetchImage.mockClear()
     mocks.imageStore.updateTags.mockReset()
     mocks.projectStore.fetchProjects.mockClear()
     mocks.projectStore.selectProject.mockClear()
+    mocks.router.push.mockClear()
   })
 
-  it('renders protected tags as non-removable', async () => {
+  it('renders protected tags, navigation, and tag count', async () => {
     const wrapper = mount(ImageDetailPage)
     await flushPromises()
 
@@ -88,6 +122,21 @@ describe('ImageDetailPage', () => {
     expect(removeButtons[1]?.attributes('disabled')).toBeUndefined()
     expect(wrapper.text()).toContain('Trigger')
     expect(wrapper.text()).toContain('booru')
+    expect(wrapper.text()).toContain('Tags (2)')
+    expect(wrapper.text()).toContain('2 tags')
+    expect(wrapper.text()).not.toContain('shared')
+
+    await wrapper.get('[data-testid="previous-image-button"]').trigger('click')
+    await wrapper.get('[data-testid="next-image-button"]').trigger('click')
+
+    expect(mocks.router.push).toHaveBeenNthCalledWith(1, {
+      path: '/image/image-0',
+      query: { project: 'project-1' },
+    })
+    expect(mocks.router.push).toHaveBeenNthCalledWith(2, {
+      path: '/image/image-2',
+      query: { project: 'project-1' },
+    })
   })
 
   it('confirms and retries unknown tag creation', async () => {
@@ -99,7 +148,7 @@ describe('ImageDetailPage', () => {
     })
     mocks.imageStore.updateTags
       .mockImplementationOnce(async () => {
-        mocks.imageStore.error = 'Error: API 422: {"detail":"Tag \"new-shared\" does not exist. Confirm creation before adding it as a shared tag."}'
+        mocks.imageStore.error = 'Error: API 422: {"detail":"Tag "new-shared" does not exist. Confirm creation before adding it as a shared tag."}'
         return null
       })
       .mockImplementationOnce(async () => {

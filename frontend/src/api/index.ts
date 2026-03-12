@@ -59,6 +59,7 @@ export const ProjectImageSummarySchema = z.object({
   relative_path: z.string(),
   filename: z.string(),
   discovered_at: z.string().datetime({ offset: true }),
+  tag_count: z.number().int(),
 })
 
 export const ProjectImageReadSchema = ProjectImageSummarySchema.extend({

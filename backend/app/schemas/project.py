@@ -56,6 +56,7 @@ class ProjectImageSummary(BaseModel):
     relative_path: str
     filename: str
     discovered_at: datetime
+    tag_count: int = 0
 
     model_config = {"from_attributes": True}
 

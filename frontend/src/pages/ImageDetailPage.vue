@@ -1,11 +1,12 @@
-<script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
+pe<script setup lang="ts">
+import { computed, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { useProjectStore } from '../stores/projects'
 import { useImageStore } from '../stores/images'
 import { getProjectImageFileUrl, type ProjectTag } from '../api'
 
 const route = useRoute()
+const router = useRouter()
 const imageStore = useImageStore()
 const projectStore = useProjectStore()
 
@@ -14,29 +15,85 @@ const errorMsg = ref<string | null>(null)
 const projectId = ref<string | null>(null)
 const selectedProject = computed(() => projectStore.selectedProject)
 
-onMounted(async () => {
+const currentImageIndex = computed(() => {
+  const currentImageId = imageStore.currentImage?.id
+  if (!currentImageId) {
+    return -1
+  }
+  return imageStore.images.findIndex((image) => image.id === currentImageId)
+})
+
+const previousImage = computed(() => {
+  if (currentImageIndex.value <= 0) {
+    return null
+  }
+  return imageStore.images[currentImageIndex.value - 1] ?? null
+})
+
+const nextImage = computed(() => {
+  if (currentImageIndex.value < 0) {
+    return null
+  }
+  return imageStore.images[currentImageIndex.value + 1] ?? null
+})
+
+function formatTagCount(tagCount: number): string {
+  return `${tagCount} tag${tagCount === 1 ? '' : 's'}`
+}
+
+async function loadImageContext() {
   const projectFromQuery = route.query.project as string | undefined
-  if (projectFromQuery) {
-    projectId.value = projectFromQuery
-  } else if (projectStore.selectedProjectId) {
-    projectId.value = projectStore.selectedProjectId
+  if (!projectStore.projects.length) {
+    await projectStore.fetchProjects()
   }
 
-  if (!projectId.value) {
+  const resolvedProjectId = projectFromQuery ?? projectStore.selectedProjectId
+  if (!resolvedProjectId) {
     errorMsg.value = 'Project context is required to view this image.'
     return
   }
 
-  if (!projectStore.projects.length) {
-    await projectStore.fetchProjects()
+  projectId.value = resolvedProjectId
+  if (projectStore.selectedProjectId !== resolvedProjectId) {
+    projectStore.selectProject(resolvedProjectId)
   }
-  if (projectStore.selectedProjectId !== projectId.value) {
-    projectStore.selectProject(projectId.value)
+
+  const needsImageList =
+    !imageStore.images.length || imageStore.images[0]?.project_id !== resolvedProjectId
+  if (needsImageList) {
+    await imageStore.fetchImages(resolvedProjectId)
   }
 
   const id = route.params.id as string
-  await imageStore.fetchImage(projectId.value, id)
-})
+  await imageStore.fetchImage(resolvedProjectId, id)
+}
+
+watch(
+  () => [route.params.id, route.query.project],
+  async () => {
+    await loadImageContext()
+  },
+  { immediate: true },
+)
+
+function goToImage(imageId: string) {
+  if (!projectId.value) {
+    return
+  }
+  router.push({ path: `/image/${imageId}`, query: { project: projectId.value } })
+}
+
+function goToPreviousImage() {
+  if (previousImage.value) {
+    goToImage(previousImage.value.id)
+  }
+}
+
+function goToNextImage() {
+  if (nextImage.value) {
+    goToImage(nextImage.value.id)
+  }
+}
 
 function shouldConfirmTagCreation(error: string | null): boolean {
   return error?.includes('Confirm creation before adding it as a shared tag.') ?? false
@@ -55,10 +112,10 @@ function getTagRoleLabel(tag: ProjectTag): string | null {
   return 'Protected'
 }
 
-function getTagSourceLabel(tag: ProjectTag): string {
+function getTagSourceLabel(tag: ProjectTag): string | null {
   const catalogSources = Object.keys(tag.catalog_ids)
   if (!catalogSources.length) {
-    return 'shared'
+    return null
   }
   if (selectedProject.value && tag.catalog_ids[selectedProject.value.tagging_mode]) {
     return selectedProject.value.tagging_mode
@@ -131,6 +188,30 @@ async function removeTag(tag: ProjectTag) {
       <h2 class="image-name">
         {{ imageStore.currentImage.filename }}
       </h2>
+      <div class="image-nav">
+        <button
+          data-testid="previous-image-button"
+          class="btn btn-secondary"
+          :disabled="!previousImage"
+          @click="goToPreviousImage"
+        >
+          Previous
+        </button>
+        <span
+          v-if="imageStore.images.length"
+          class="image-position"
+        >
+          {{ currentImageIndex + 1 }} / {{ imageStore.images.length }}
+        </span>
+        <button
+          data-testid="next-image-button"
+          class="btn btn-secondary"
+          :disabled="!nextImage"
+          @click="goToNextImage"
+        >
+          Next
+        </button>
+      </div>
       <p class="meta">
         Discovered {{ new Date(imageStore.currentImage.discovered_at).toLocaleString() }}
       </p>
@@ -140,9 +221,12 @@ async function removeTag(tag: ProjectTag) {
       >
         Mode: <strong>{{ selectedProject.tagging_mode }}</strong>
       </p>
+      <p class="meta">
+        {{ formatTagCount(imageStore.currentImage.tag_count) }}
+      </p>
 
       <div class="tags-section">
-        <h3>Tags</h3>
+        <h3>Tags ({{ imageStore.currentImage.tag_count }})</h3>
         <p class="tags-help">
           Trigger and class tags are protected here. Unknown tags require confirmation before creation.
         </p>
@@ -161,7 +245,10 @@ async function removeTag(tag: ProjectTag) {
               v-if="getTagRoleLabel(tag)"
               class="tag-badge tag-role"
             >{{ getTagRoleLabel(tag) }}</span>
-            <span class="tag-badge tag-source">{{ getTagSourceLabel(tag) }}</span>
+            <span
+              v-if="getTagSourceLabel(tag)"
+              class="tag-badge tag-source"
+            >{{ getTagSourceLabel(tag) }}</span>
             <button
               class="tag-remove"
               aria-label="Remove tag"
@@ -230,6 +317,17 @@ async function removeTag(tag: ProjectTag) {
   font-size: 1.1rem;
   font-weight: 600;
   word-break: break-all;
+}
+
+.image-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.image-position {
+  color: #666;
+  font-size: 0.85rem;
 }
 
 .meta {
@@ -337,5 +435,10 @@ async function removeTag(tag: ProjectTag) {
 .btn-primary {
   background: #4a4e8a;
   color: #fff;
+}
+
+.btn-secondary {
+  background: #eceff8;
+  color: #2f356f;
 }
 </style>

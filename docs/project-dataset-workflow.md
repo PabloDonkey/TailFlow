@@ -315,7 +315,9 @@ The expected flow is:
 4. inspect its metadata (`trigger_tag`, `class_tag`, `tagging_mode`, image counts, missing-state if applicable)
 5. upload images from the UI into the selected project when working remotely
 6. run sync when the filesystem changes
-7. handle missing projects gracefully by surfacing that the folder is gone or moved and disabling actions that require the filesystem path
-8. work on image tags for images currently tracked from the project's `dataset/` folder when the project is present
-9. tag images in either `e621` or `booru` mode while always keeping globally shared user-defined tags available
+7. browse the gallery with per-image tag counts and open an image detail view without losing project context
+8. move between previous and next images directly from the image detail view when reviewing a project dataset
+9. handle missing projects gracefully by surfacing that the folder is gone or moved and disabling actions that require the filesystem path
+10. work on image tags for images currently tracked from the project's `dataset/` folder when the project is present
+11. tag images in either `e621` or `booru` mode while always keeping globally shared user-defined tags available
 10. keep trigger/class tags protected on the image detail screen and edit them only from the project metadata screen

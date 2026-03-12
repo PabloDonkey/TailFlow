@@ -1,17 +1,70 @@
 """Tests for project discovery and sync API endpoints."""
 
 import io
+import uuid
 from pathlib import Path
 
 import pytest
 from httpx import AsyncClient
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.tag import Tag
 from app.schemas.project import ProjectCreate
 from app.services.projects import create_project
 from tests.conftest import make_png_bytes
+
+
+@pytest.mark.asyncio
+async def test_list_projects_reads_lowercase_tagging_mode_rows(
+    client: AsyncClient, session: AsyncSession
+) -> None:
+    project_id = str(uuid.uuid4())
+    await session.execute(
+        text(
+            """
+            INSERT INTO projects (
+                id,
+                name,
+                folder_name,
+                root_path,
+                dataset_path,
+                trigger_tag,
+                class_tag,
+                tagging_mode,
+                created_at,
+                updated_at
+            ) VALUES (
+                :id,
+                :name,
+                :folder_name,
+                :root_path,
+                :dataset_path,
+                :trigger_tag,
+                :class_tag,
+                :tagging_mode,
+                CURRENT_TIMESTAMP,
+                CURRENT_TIMESTAMP
+            )
+            """
+        ),
+        {
+            "id": project_id,
+            "name": "Lowercase Mode",
+            "folder_name": "lowercase-mode",
+            "root_path": "/tmp/projects",
+            "dataset_path": "/tmp/projects/lowercase-mode/dataset",
+            "trigger_tag": "lowercase-mode",
+            "class_tag": "subject",
+            "tagging_mode": "e621",
+        },
+    )
+    await session.commit()
+
+    response = await client.get("/api/projects")
+
+    assert response.status_code == 200
+    assert response.json()[0]["tagging_mode"] == "e621"
 
 
 @pytest.mark.asyncio
@@ -389,6 +442,7 @@ async def test_project_image_tagging_and_tag_preservation_across_sync(
     images = listed.json()
     assert len(images) == 1
     image_id = images[0]["id"]
+    assert images[0]["tag_count"] == 2
 
     add_tags = await client.post(
         f"/api/projects/{project_id}/images/{image_id}/tags",
@@ -397,6 +451,7 @@ async def test_project_image_tagging_and_tag_preservation_across_sync(
     assert add_tags.status_code == 200
     tag_names = [tag["name"] for tag in add_tags.json()["tags"]]
     assert tag_names == ["tag-project", "subject", "portrait", "style-a"]
+    assert add_tags.json()["tag_count"] == 4
     assert [tag["position"] for tag in add_tags.json()["tags"]] == [0, 1, 2, 3]
     assert [tag["is_protected"] for tag in add_tags.json()["tags"]] == [
         True,
@@ -412,6 +467,11 @@ async def test_project_image_tagging_and_tag_preservation_across_sync(
     assert remove_tag.status_code == 200
     tag_names_after_remove = [tag["name"] for tag in remove_tag.json()["tags"]]
     assert tag_names_after_remove == ["tag-project", "subject", "style-a"]
+    assert remove_tag.json()["tag_count"] == 3
+
+    relisted = await client.get(f"/api/projects/{project_id}/images")
+    assert relisted.status_code == 200
+    assert relisted.json()[0]["tag_count"] == 3
 
     blocked_remove = await client.post(
         f"/api/projects/{project_id}/images/{image_id}/tags",
@@ -435,6 +495,7 @@ async def test_project_image_tagging_and_tag_preservation_across_sync(
     assert restored_image.status_code == 200
     restored_tag_names = [tag["name"] for tag in restored_image.json()["tags"]]
     assert restored_tag_names == ["tag-project", "subject", "style-a"]
+    assert restored_image.json()["tag_count"] == 3
 
 
 @pytest.mark.asyncio

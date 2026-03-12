@@ -9,6 +9,10 @@ const imageStore = useImageStore()
 const projectStore = useProjectStore()
 const router = useRouter()
 
+function formatTagCount(tagCount: number): string {
+  return `${tagCount} tag${tagCount === 1 ? '' : 's'}`
+}
+
 onMounted(async () => {
   if (!projectStore.projects.length) {
     await projectStore.fetchProjects()
@@ -89,7 +93,7 @@ watch(
             class="name"
             :title="img.filename"
           >{{ img.filename }}</span>
-          <span class="tag-count">{{ img.relative_path }}</span>
+          <span class="tag-count">{{ formatTagCount(img.tag_count) }}</span>
         </div>
       </div>
     </div>
@@ -142,7 +146,7 @@ h1 {
 }
 
 .card-info {
-  padding: 0;
+  padding: 0.55rem 0.65rem;
   display: flex;
   justify-content: space-between;
   align-items: center;

@@ -3,7 +3,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -70,6 +70,25 @@ async def _read_project_image_tags(
         )
         for link in links
     ]
+
+
+async def _read_project_image_tag_counts(
+    session: AsyncSession,
+    project_id: uuid.UUID,
+    image_ids: list[uuid.UUID],
+) -> dict[uuid.UUID, int]:
+    if not image_ids:
+        return {}
+
+    result = await session.execute(
+        select(DatasetImageTag.image_id, func.count(DatasetImageTag.tag_id))
+        .where(
+            DatasetImageTag.project_id == project_id,
+            DatasetImageTag.image_id.in_(image_ids),
+        )
+        .group_by(DatasetImageTag.image_id)
+    )
+    return {image_id: tag_count for image_id, tag_count in result.all()}
 
 
 @router.get("/onboarding/status", response_model=ProjectOnboardingStatus)
@@ -222,7 +241,22 @@ async def list_project_images_route(
         .order_by(DatasetImage.discovered_at.desc())
     )
     images = result.scalars().all()
-    return [ProjectImageSummary.model_validate(image) for image in images]
+    tag_counts = await _read_project_image_tag_counts(
+        session,
+        project.id,
+        [image.id for image in images],
+    )
+    return [
+        ProjectImageSummary(
+            id=image.id,
+            project_id=image.project_id,
+            relative_path=image.relative_path,
+            filename=image.filename,
+            discovered_at=image.discovered_at,
+            tag_count=tag_counts.get(image.id, 0),
+        )
+        for image in images
+    ]
 
 
 @router.get("/{project_id}/images/{image_id}", response_model=ProjectImageRead)
@@ -253,6 +287,7 @@ async def get_project_image_route(
         relative_path=image.relative_path,
         filename=image.filename,
         discovered_at=image.discovered_at,
+        tag_count=len(tags),
         removed_at=image.removed_at,
         tags=tags,
     )
@@ -325,6 +360,7 @@ async def update_project_image_tags_route(
         relative_path=image.relative_path,
         filename=image.filename,
         discovered_at=image.discovered_at,
+        tag_count=len(tags),
         removed_at=image.removed_at,
         tags=tags,
     )

@@ -139,7 +139,10 @@ async def _resolve_sync_project_tag(
 
     if tag is None:
         logger.info(
-            "Creating shared user-defined tag '%s' during sync for project %s in %s mode.",
+            (
+                "Creating shared user-defined tag '%s' during sync for "
+                "project %s in %s mode."
+            ),
             name,
             project.id,
             project.tagging_mode.value,
@@ -150,7 +153,10 @@ async def _resolve_sync_project_tag(
         return tag
 
     logger.info(
-        "Skipping sidecar tag '%s' for project %s because it is not available in %s mode.",
+        (
+            "Skipping sidecar tag '%s' for project %s because it is not "
+            "available in %s mode."
+        ),
         name,
         project.id,
         project.tagging_mode.value,

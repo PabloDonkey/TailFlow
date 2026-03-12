@@ -137,8 +137,10 @@ describe('API schemas', () => {
       relative_path: 'dataset/a.png',
       filename: 'a.png',
       discovered_at: '2026-01-01T00:00:00Z',
+      tag_count: 3,
     })
     expect(summary.filename).toBe('a.png')
+    expect(summary.tag_count).toBe(3)
 
     const read = ProjectImageReadSchema.parse({
       ...summary,
