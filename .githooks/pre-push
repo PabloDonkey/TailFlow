@@ -2,6 +2,14 @@
 
 set -eu
 
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+if [ "${SKIP_QUALITY_HOOKS:-}" = "1" ]; then
+    echo "Skipping quality hooks because SKIP_QUALITY_HOOKS=1."
+    exit 0
+fi
+
 ALLOW_VAR="${ALLOW_MAIN_PUSH:-}"
 if [ "$ALLOW_VAR" = "1" ]; then
     exit 0
@@ -15,5 +23,28 @@ while read -r local_ref local_sha remote_ref remote_sha; do
         exit 1
     fi
 done
+
+if [ ! -x "backend/.venv/bin/python" ]; then
+    echo "Missing backend virtualenv at backend/.venv." >&2
+    echo "Run 'make install' (or the PowerShell install command) and retry." >&2
+    exit 1
+fi
+
+if [ ! -d "frontend/node_modules" ]; then
+    echo "Missing frontend dependencies at frontend/node_modules." >&2
+    echo "Run 'make install' (or the PowerShell install command) and retry." >&2
+    exit 1
+fi
+
+echo "Running backend ruff check..."
+( cd backend && ./.venv/bin/python -m ruff check . )
+
+echo "Running backend mypy..."
+( cd backend && ./.venv/bin/python -m mypy . )
+
+echo "Running frontend eslint..."
+( cd frontend && npm run lint )
+
+echo "Pre-push quality checks passed."
 
 exit 0
