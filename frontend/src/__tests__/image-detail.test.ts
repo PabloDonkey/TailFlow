@@ -2,6 +2,30 @@ import { mount, flushPromises } from '@vue/test-utils'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import ImageDetailPage from '../pages/ImageDetailPage.vue'
 
+function compareImages(
+  a: { filename: string; tag_count: number },
+  b: { filename: string; tag_count: number },
+  sortOption: string,
+): number {
+  const compareByName = (left: { filename: string }, right: { filename: string }) =>
+    left.filename.localeCompare(right.filename, undefined, {
+      numeric: true,
+      sensitivity: 'base',
+    })
+
+  switch (sortOption) {
+    case 'name-desc':
+      return compareByName(b, a)
+    case 'tag-count-asc':
+      return a.tag_count - b.tag_count || compareByName(a, b)
+    case 'tag-count-desc':
+      return b.tag_count - a.tag_count || compareByName(a, b)
+    case 'name-asc':
+    default:
+      return compareByName(a, b)
+  }
+}
+
 const mocks = vi.hoisted(() => ({
   route: {
     params: { id: 'image-1' },
@@ -13,7 +37,7 @@ const mocks = vi.hoisted(() => ({
         id: 'image-0',
         project_id: 'project-1',
         relative_path: 'prev.png',
-        filename: 'prev.png',
+        filename: 'alpha.png',
         discovered_at: '2026-01-01T00:00:00Z',
         tag_count: 1,
       },
@@ -29,11 +53,14 @@ const mocks = vi.hoisted(() => ({
         id: 'image-2',
         project_id: 'project-1',
         relative_path: 'next.png',
-        filename: 'next.png',
+        filename: 'zebra.png',
         discovered_at: '2026-01-01T00:00:00Z',
         tag_count: 4,
       },
     ],
+    get sortedImages() {
+      return [...this.images].sort((a, b) => compareImages(a, b, this.sortOption))
+    },
     currentImage: {
       id: 'image-1',
       project_id: 'project-1',
@@ -63,6 +90,7 @@ const mocks = vi.hoisted(() => ({
     },
     loading: false,
     error: null as string | null,
+    sortOption: 'name-asc',
     fetchImages: vi.fn().mockResolvedValue(undefined),
     fetchImage: vi.fn().mockResolvedValue(undefined),
     updateTags: vi.fn(),
@@ -104,6 +132,7 @@ vi.mock('../api', async () => {
 describe('ImageDetailPage', () => {
   beforeEach(() => {
     mocks.imageStore.error = null
+    mocks.imageStore.sortOption = 'name-asc'
     mocks.imageStore.fetchImages.mockClear()
     mocks.imageStore.fetchImage.mockClear()
     mocks.imageStore.updateTags.mockReset()
@@ -125,15 +154,25 @@ describe('ImageDetailPage', () => {
     expect(wrapper.text()).toContain('Tags (2)')
     expect(wrapper.text()).toContain('2 tags')
     expect(wrapper.text()).not.toContain('shared')
+    expect(wrapper.text()).toContain('of 3')
+    expect(
+      (wrapper.get('[data-testid="image-number-input"]').element as HTMLInputElement).value,
+    ).toBe('1')
 
     await wrapper.get('[data-testid="previous-image-button"]').trigger('click')
     await wrapper.get('[data-testid="next-image-button"]').trigger('click')
+    await wrapper.get('[data-testid="image-number-input"]').setValue('3')
+    await wrapper.get('[data-testid="image-number-input"]').trigger('keyup.enter')
 
     expect(mocks.router.push).toHaveBeenNthCalledWith(1, {
       path: '/image/image-0',
       query: { project: 'project-1' },
     })
     expect(mocks.router.push).toHaveBeenNthCalledWith(2, {
+      path: '/image/image-2',
+      query: { project: 'project-1' },
+    })
+    expect(mocks.router.push).toHaveBeenNthCalledWith(3, {
       path: '/image/image-2',
       query: { project: 'project-1' },
     })

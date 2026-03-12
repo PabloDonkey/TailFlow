@@ -1,13 +1,45 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import type { ProjectImageRead, ProjectImageSummary } from '../api'
 import * as api from '../api'
+
+export type ImageSortOption =
+  | 'name-asc'
+  | 'name-desc'
+  | 'tag-count-asc'
+  | 'tag-count-desc'
+
+function compareByName(a: ProjectImageSummary, b: ProjectImageSummary): number {
+  return a.filename.localeCompare(b.filename, undefined, {
+    numeric: true,
+    sensitivity: 'base',
+  })
+}
 
 export const useImageStore = defineStore('images', () => {
   const images = ref<ProjectImageSummary[]>([])
   const currentImage = ref<ProjectImageRead | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const sortOption = ref<ImageSortOption>('name-asc')
+
+  const sortedImages = computed(() => {
+    const sorted = [...images.value]
+    sorted.sort((a, b) => {
+      switch (sortOption.value) {
+        case 'name-desc':
+          return compareByName(b, a)
+        case 'tag-count-asc':
+          return a.tag_count - b.tag_count || compareByName(a, b)
+        case 'tag-count-desc':
+          return b.tag_count - a.tag_count || compareByName(a, b)
+        case 'name-asc':
+        default:
+          return compareByName(a, b)
+      }
+    })
+    return sorted
+  })
 
   async function fetchImages(projectId: string) {
     loading.value = true
@@ -60,5 +92,15 @@ export const useImageStore = defineStore('images', () => {
     }
   }
 
-  return { images, currentImage, loading, error, fetchImages, fetchImage, updateTags }
+  return {
+    images,
+    sortedImages,
+    currentImage,
+    loading,
+    error,
+    sortOption,
+    fetchImages,
+    fetchImage,
+    updateTags,
+  }
 })

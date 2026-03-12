@@ -13,28 +13,30 @@ const projectStore = useProjectStore()
 const newTag = ref('')
 const errorMsg = ref<string | null>(null)
 const projectId = ref<string | null>(null)
+const imageJumpInput = ref('1')
 const selectedProject = computed(() => projectStore.selectedProject)
+const orderedImages = computed(() => imageStore.sortedImages)
 
 const currentImageIndex = computed(() => {
   const currentImageId = imageStore.currentImage?.id
   if (!currentImageId) {
     return -1
   }
-  return imageStore.images.findIndex((image) => image.id === currentImageId)
+  return orderedImages.value.findIndex((image) => image.id === currentImageId)
 })
 
 const previousImage = computed(() => {
   if (currentImageIndex.value <= 0) {
     return null
   }
-  return imageStore.images[currentImageIndex.value - 1] ?? null
+  return orderedImages.value[currentImageIndex.value - 1] ?? null
 })
 
 const nextImage = computed(() => {
   if (currentImageIndex.value < 0) {
     return null
   }
-  return imageStore.images[currentImageIndex.value + 1] ?? null
+  return orderedImages.value[currentImageIndex.value + 1] ?? null
 })
 
 function formatTagCount(tagCount: number): string {
@@ -68,6 +70,12 @@ async function loadImageContext() {
   await imageStore.fetchImage(resolvedProjectId, id)
 }
 
+watch(currentImageIndex, (index) => {
+  if (index >= 0) {
+    imageJumpInput.value = String(index + 1)
+  }
+})
+
 watch(
   () => [route.params.id, route.query.project],
   async () => {
@@ -81,6 +89,27 @@ function goToImage(imageId: string) {
     return
   }
   router.push({ path: `/image/${imageId}`, query: { project: projectId.value } })
+}
+
+function goToImageByIndex(index: number) {
+  const target = orderedImages.value[index]
+  if (target) {
+    goToImage(target.id)
+  }
+}
+
+function submitImageJump() {
+  const requested = Number.parseInt(imageJumpInput.value, 10)
+  if (!Number.isFinite(requested)) {
+    imageJumpInput.value = currentImageIndex.value >= 0 ? String(currentImageIndex.value + 1) : '1'
+    return
+  }
+  const clampedIndex = Math.min(
+    Math.max(requested, 1),
+    orderedImages.value.length,
+  ) - 1
+  imageJumpInput.value = String(clampedIndex + 1)
+  goToImageByIndex(clampedIndex)
 }
 
 function goToPreviousImage() {
@@ -197,12 +226,20 @@ async function removeTag(tag: ProjectTag) {
         >
           Previous
         </button>
-        <span
-          v-if="imageStore.images.length"
-          class="image-position"
+        <label
+          v-if="orderedImages.length"
+          class="image-selector"
         >
-          {{ currentImageIndex + 1 }} / {{ imageStore.images.length }}
-        </span>
+          <input
+            v-model="imageJumpInput"
+            data-testid="image-number-input"
+            class="image-select"
+            inputmode="numeric"
+            @keyup.enter="submitImageJump"
+            @blur="submitImageJump"
+          >
+          <span class="image-position">of {{ orderedImages.length }}</span>
+        </label>
         <button
           data-testid="next-image-button"
           class="btn btn-secondary"
@@ -322,12 +359,28 @@ async function removeTag(tag: ProjectTag) {
 .image-nav {
   display: flex;
   align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
   gap: 0.75rem;
+}
+
+.image-selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .image-position {
   color: #666;
   font-size: 0.85rem;
+}
+
+.image-select {
+  min-width: 7rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
 }
 
 .meta {
