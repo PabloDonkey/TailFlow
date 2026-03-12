@@ -22,6 +22,7 @@ from app.schemas.project import (
     ProjectSyncResponse,
     ProjectUpdate,
 )
+from app.services.tagging import get_or_create_tag
 
 ALLOWED_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
@@ -76,14 +77,12 @@ def _parse_sidecar_tag_names(sidecar_content: str) -> list[str]:
     return _normalize_unique_tag_names(sidecar_content.split(","))
 
 
-async def get_or_create_shared_tag(session: AsyncSession, name: str) -> Tag:
-    result = await session.execute(select(Tag).where(Tag.name == name))
-    tag = result.scalar_one_or_none()
-    if tag is None:
-        tag = Tag(name=name, catalog_ids={})
-        session.add(tag)
-        await session.flush()
-    return tag
+def _validate_distinct_project_tags(trigger_tag: str, class_tag: str) -> None:
+    if trigger_tag == class_tag:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Project trigger_tag and class_tag must be different.",
+        )
 
 
 def _tag_is_available_in_mode(tag: Tag, tagging_mode: TaggingMode) -> bool:
@@ -116,7 +115,7 @@ async def _resolve_manual_project_tag(
             project.id,
             project.tagging_mode.value,
         )
-        return await get_or_create_shared_tag(session, name)
+        return await get_or_create_tag(session, name)
 
     if _tag_is_available_in_mode(tag, project.tagging_mode):
         return tag
@@ -147,7 +146,7 @@ async def _resolve_sync_project_tag(
             project.id,
             project.tagging_mode.value,
         )
-        return await get_or_create_shared_tag(session, name)
+        return await get_or_create_tag(session, name)
 
     if _tag_is_available_in_mode(tag, project.tagging_mode):
         return tag
@@ -188,7 +187,7 @@ async def ensure_project_image_tag_assignments(
         [project.trigger_tag, project.class_tag]
     )
     required_tags = [
-        await get_or_create_shared_tag(session, tag_name)
+        await get_or_create_tag(session, tag_name)
         for tag_name in required_tag_names
     ]
     required_tag_ids = {tag.id for tag in required_tags}
@@ -282,6 +281,7 @@ async def create_project(
 ) -> Project:
     root_path = settings.projects_root_path_resolved
     folder_name = payload.folder_name.strip()
+    trigger_tag = payload.trigger_tag.strip() if payload.trigger_tag else folder_name
     class_tag = payload.class_tag.strip()
 
     if not folder_name:
@@ -294,6 +294,7 @@ async def create_project(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="class_tag must not be empty.",
         )
+    _validate_distinct_project_tags(trigger_tag, class_tag)
 
     existing = await session.execute(
         select(Project).where(Project.folder_name == folder_name)
@@ -322,9 +323,7 @@ async def create_project(
             folder_name=folder_name,
             root_path=str(root_path),
             dataset_path=str(dataset_dir),
-            trigger_tag=(
-                payload.trigger_tag.strip() if payload.trigger_tag else folder_name
-            ),
+            trigger_tag=trigger_tag,
             class_tag=class_tag,
             tagging_mode=payload.tagging_mode,
             missing_at=None,
@@ -458,6 +457,8 @@ async def update_project_metadata(
                 detail="class_tag must not be empty.",
             )
         project.class_tag = new_class_tag
+
+    _validate_distinct_project_tags(new_trigger_tag, new_class_tag)
 
     if payload.tagging_mode is not None:
         project.tagging_mode = payload.tagging_mode

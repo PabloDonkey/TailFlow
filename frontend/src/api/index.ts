@@ -3,11 +3,12 @@ import { z } from 'zod'
 // ─── Schema definitions ──────────────────────────────────────────────────────
 
 export const TaggingModeSchema = z.enum(['e621', 'booru'])
+const CatalogIdsSchema = z.partialRecord(TaggingModeSchema, z.string())
 
 export const TagSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
-  catalog_ids: z.record(z.string(), z.string()),
+  catalog_ids: CatalogIdsSchema,
   category: z.string().nullable(),
   created_at: z.string().datetime({ offset: true }),
 })
@@ -47,7 +48,7 @@ export const ProjectSyncResponseSchema = z.object({
 export const ProjectTagSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
-  catalog_ids: z.record(z.string(), z.string()),
+  catalog_ids: CatalogIdsSchema,
   category: z.string().nullable(),
   position: z.number().int(),
   is_protected: z.boolean(),

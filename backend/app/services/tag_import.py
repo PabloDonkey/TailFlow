@@ -138,10 +138,15 @@ async def import_tag_catalog(
     target_path = csv_path or get_catalog_asset_path(source)
     rows = load_tag_import_rows(target_path)
 
-    existing_result = await session.execute(select(Tag))
-    tags_by_name = {
-        tag.name: tag for tag in existing_result.scalars().all()
-    }
+    tags_by_name: dict[str, Tag]
+    unique_names = {row.name for row in rows}
+    if unique_names:
+        existing_result = await session.execute(
+            select(Tag).where(Tag.name.in_(unique_names))
+        )
+        tags_by_name = {tag.name: tag for tag in existing_result.scalars().all()}
+    else:
+        tags_by_name = {}
 
     created = 0
     merged = 0

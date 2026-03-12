@@ -10,7 +10,7 @@ Document the planned work for:
 - protecting project trigger/class tags on every image
 - importing comma-separated sidecar `.txt` tags during dataset sync
 
-This document is a design artifact only. It does not implement the import script or change the current backend/frontend code.
+This document was originally written as a design artifact before the import script and related backend/frontend changes were implemented. The “Current state” section below describes the repository state prior to this work and is retained for historical context.
 
 ## Current state
 

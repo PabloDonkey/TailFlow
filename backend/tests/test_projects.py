@@ -259,6 +259,30 @@ async def test_create_project_creates_directory_and_dataset(
 
 
 @pytest.mark.asyncio
+async def test_create_project_rejects_equal_trigger_and_class_tags(
+    client: AsyncClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+
+    response = await client.post(
+        "/api/projects",
+        json={
+            "folder_name": "same-tags-project",
+            "trigger_tag": "same-tag",
+            "class_tag": "same-tag",
+        },
+    )
+
+    assert response.status_code == 400
+    assert (
+        response.json()["detail"]
+        == "Project trigger_tag and class_tag must be different."
+    )
+
+
+@pytest.mark.asyncio
 async def test_create_project_cleans_directory_when_commit_fails(
     session: AsyncSession,
     tmp_path: Path,
@@ -346,6 +370,31 @@ async def test_update_project_tags_metadata(
     assert payload["trigger_tag"] == "new-trigger"
     assert payload["class_tag"] == "new-class"
     assert payload["tagging_mode"] == "booru"
+
+
+@pytest.mark.asyncio
+async def test_update_project_metadata_rejects_equal_trigger_and_class_tags(
+    client: AsyncClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+    created = await client.post(
+        "/api/projects",
+        json={"folder_name": "equal-update", "class_tag": "base"},
+    )
+    project_id = created.json()["project"]["id"]
+
+    updated = await client.patch(
+        f"/api/projects/{project_id}",
+        json={"trigger_tag": "same-tag", "class_tag": "same-tag"},
+    )
+
+    assert updated.status_code == 400
+    assert (
+        updated.json()["detail"]
+        == "Project trigger_tag and class_tag must be different."
+    )
 
 
 @pytest.mark.asyncio

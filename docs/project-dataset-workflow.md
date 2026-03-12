@@ -320,4 +320,4 @@ The expected flow is:
 9. handle missing projects gracefully by surfacing that the folder is gone or moved and disabling actions that require the filesystem path
 10. work on image tags for images currently tracked from the project's `dataset/` folder when the project is present
 11. tag images in either `e621` or `booru` mode while always keeping globally shared user-defined tags available
-10. keep trigger/class tags protected on the image detail screen and edit them only from the project metadata screen
+12. keep trigger/class tags protected on the image detail screen and edit them only from the project metadata screen
