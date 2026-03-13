@@ -47,6 +47,7 @@ Before starting development work:
 1. Read `.project/dev-loop.md`
 2. Check `.project/tasks.md`
 3. Follow UI rules in `.github/ui-contract.md` if present.
+4. When a Decision Trigger occurs, create a new entry in `DECISIONS.md` before implementing the change.
 
 When finishing a work session:
 
