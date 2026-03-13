@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: install run stop
+.PHONY: install run stop test test-backend test-frontend
 
 install:
 	@set -euo pipefail; \
@@ -80,3 +80,23 @@ stop:
 	if [ "$$stopped" -eq 0 ]; then \
 		echo "No TailFlow dev processes found."; \
 	fi
+
+test: test-backend test-frontend
+
+test-backend:
+	@set -euo pipefail; \
+	if [ ! -x backend/.venv/bin/python ]; then \
+		echo "Missing backend virtualenv at backend/.venv."; \
+		echo "Run: make install"; \
+		exit 1; \
+	fi; \
+	cd backend && ./.venv/bin/python -m pytest
+
+test-frontend:
+	@set -euo pipefail; \
+	if [ ! -d frontend/node_modules ]; then \
+		echo "Missing frontend dependencies."; \
+		echo "Run: make install"; \
+		exit 1; \
+	fi; \
+	cd frontend && npm run test

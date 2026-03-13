@@ -10,3 +10,5 @@
 - [x] Add regression tests for `TagRead` catalog ID value validation.
 - [x] Make `.githooks/pre-push` Python path resolution work for Unix and Windows virtualenv layouts.
 - [x] Run targeted backend validation: `backend/tests/test_tags.py`.
+- [x] Document `make test`, `make test-backend`, and `make test-frontend` in `AGENTS.MD`.
+- [x] Document `make test`, `make test-backend`, and `make test-frontend` in `README.md`.

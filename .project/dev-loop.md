@@ -2,7 +2,7 @@
 
 ## Current Feature
 
-PR #11 unresolved reviewer fixes
+PR #11 follow-up docs updates
 
 ## Current Step
 
@@ -16,31 +16,26 @@ REFINE
 
 ## Objective
 
-Apply and validate unresolved review fixes from Copilot PR review comments.
+Keep project docs aligned with new Makefile test commands.
 
 ## Files involved
 
-- backend/app/schemas/tag.py
-- backend/tests/test_tags.py
-- .githooks/pre-push
+- AGENTS.MD
+- README.md
 
 ## Implementation Plan
 
-1. tighten `TagRead.catalog_ids` validation against null/non-string values
-2. make pre-push Python interpreter detection portable across Unix/Windows venv layouts
-3. add regression tests for strict catalog ID value validation
-4. run targeted backend validation
+1. update AGENTS.MD root workflow commands
+2. update README root shortcut commands
 
 ## Progress
 
-- Implemented strict `TagRead` catalog ID value validation.
-- Updated `.githooks/pre-push` to resolve Python from both Unix and Windows virtualenv paths.
-- Added regression tests in `backend/tests/test_tags.py` for null/non-string catalog ID values.
-- Verified with `backend/tests/test_tags.py` (9 passed).
+- Added `make test`, `make test-backend`, and `make test-frontend` to AGENTS.MD root workflow references.
+- Added `make test`, `make test-backend`, and `make test-frontend` to README Linux root shortcuts.
 
 ## Next Action
 
-Resolve/mark the corresponding PR review threads based on these updates.
+Keep README and AGENTS command docs in sync when Makefile targets change.
 
 ## Notes
 

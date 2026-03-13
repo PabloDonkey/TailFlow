@@ -200,6 +200,9 @@ Linux:
 ```bash
 make install
 make run
+make test
+make test-backend
+make test-frontend
 ```
 
 Windows (PowerShell):
