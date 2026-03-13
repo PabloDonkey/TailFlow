@@ -279,6 +279,8 @@ async def create_project(
     root_path = settings.projects_root_path_resolved
     folder_name = payload.folder_name.strip()
     trigger_tag = payload.trigger_tag.strip() if payload.trigger_tag else folder_name
+    if not trigger_tag:
+        trigger_tag = folder_name
     class_tag = payload.class_tag.strip()
 
     if not folder_name:
