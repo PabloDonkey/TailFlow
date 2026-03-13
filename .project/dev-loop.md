@@ -44,6 +44,10 @@ Define a frontend refactor plan for a mobile+desktop responsive one-page tagging
 
 Define the exact shell regions for desktop/mobile, the first-pass component tree, and the phased migration order from current pages into the new one-page frontend structure.
 
+## Notes / Resources
+
+See .project/tasks/frontend-one-page-responsive-refactor-planning/
+
 ## Notes
 
 Update this file when stopping a development session so work can resume easily.
