@@ -12,6 +12,7 @@ import {
   ProjectOnboardingConfigureResponseSchema,
   ProjectOnboardingStatusSchema,
   ProjectUpdatePayloadSchema,
+  ProjectTagSchema,
 } from '../api'
 
 describe('API schemas', () => {
@@ -50,6 +51,31 @@ describe('API schemas', () => {
         catalog_ids: {},
         category: null,
         created_at: '2026-01-01T00:00:00Z',
+      })
+    ).toThrow()
+  })
+
+  it('rejects Tag with unknown catalog_ids key', () => {
+    expect(() =>
+      TagSchema.parse({
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        name: 'x',
+        catalog_ids: { unknown_catalog: '123' },
+        category: null,
+        created_at: '2026-01-01T00:00:00Z',
+      })
+    ).toThrow()
+  })
+
+  it('rejects ProjectTag with unknown catalog_ids key', () => {
+    expect(() =>
+      ProjectTagSchema.parse({
+        id: '550e8400-e29b-41d4-a716-446655440016',
+        name: 'portrait',
+        catalog_ids: { unknown_catalog: '42' },
+        category: 'general',
+        position: 0,
+        is_protected: false,
       })
     ).toThrow()
   })
