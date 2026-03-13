@@ -2,6 +2,10 @@
 
 ## TODO
 
+- [ ] Define exact shell regions for desktop and mobile in the one-page tagging workspace.
+- [ ] Define the initial component tree for the frontend refactor.
+- [ ] Define the phased migration order from current routes/pages to the new shell structure.
+
 ## IN PROGRESS
 
 - [ ] Plan frontend one-page responsive refactor (desktop + mobile), including IA choice and phased migration steps.
