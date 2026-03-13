@@ -272,9 +272,6 @@ async def import_project_image_sidecar_tags(
         existing_tag_ids.add(tag.id)
         next_position += 1
 
-    await ensure_project_image_tag_assignments(session, project, image)
-
-
 async def create_project(
     session: AsyncSession,
     payload: ProjectCreate,
