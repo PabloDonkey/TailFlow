@@ -96,6 +96,6 @@ describe('useImageStore – updateTags patches images in-place', () => {
 
     await store.updateTags('proj-1', 'img-unknown', ['tag-a'], [])
 
-    expect(store.images[0].tag_count).toBe(0)
+    expect(store.images[0]?.tag_count).toBe(0)
   })
 })
