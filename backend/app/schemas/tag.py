@@ -68,7 +68,11 @@ class TagRead(BaseModel):
             return {}
         if not isinstance(value, dict):
             raise ValueError("catalog_ids must be a mapping.")
-        normalized = {
-            str(raw_key): str(raw_id) for raw_key, raw_id in value.items()
-        }
+        normalized: dict[str, str] = {}
+        for raw_key, raw_id in value.items():
+            if raw_id is None:
+                raise ValueError("catalog_ids values must not be null.")
+            if not isinstance(raw_id, str):
+                raise ValueError("catalog_ids values must be strings.")
+            normalized[str(raw_key)] = raw_id
         return _normalize_catalog_ids(normalized)

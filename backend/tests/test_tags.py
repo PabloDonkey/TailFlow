@@ -1,7 +1,13 @@
 """Tests for tag API endpoints."""
 
+import uuid
+from datetime import UTC, datetime
+
 import pytest
 from httpx import AsyncClient
+from pydantic import ValidationError
+
+from app.schemas.tag import TagRead
 
 
 @pytest.mark.asyncio
@@ -73,3 +79,29 @@ async def test_create_tag_rejects_unknown_catalog_key(client: AsyncClient) -> No
         json={"name": "wolf", "catalog_ids": {"user": "123"}},
     )
     assert response.status_code == 422
+
+
+def test_tag_read_rejects_null_catalog_id_values() -> None:
+    with pytest.raises(ValidationError):
+        TagRead.model_validate(
+            {
+                "id": str(uuid.uuid4()),
+                "name": "wolf",
+                "catalog_ids": {"e621": None},
+                "category": "species",
+                "created_at": datetime.now(UTC).isoformat(),
+            }
+        )
+
+
+def test_tag_read_rejects_non_string_catalog_id_values() -> None:
+    with pytest.raises(ValidationError):
+        TagRead.model_validate(
+            {
+                "id": str(uuid.uuid4()),
+                "name": "wolf",
+                "catalog_ids": {"e621": 123},
+                "category": "species",
+                "created_at": datetime.now(UTC).isoformat(),
+            }
+        )

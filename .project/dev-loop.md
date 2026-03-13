@@ -2,11 +2,11 @@
 
 ## Current Feature
 
-Initial project setup
+PR #11 unresolved reviewer fixes
 
 ## Current Step
 
-PLAN
+REFINE
 
 Possible values:
 PLAN
@@ -16,25 +16,31 @@ REFINE
 
 ## Objective
 
-Set up the project development workflow and define the first feature.
+Apply and validate unresolved review fixes from Copilot PR review comments.
 
 ## Files involved
 
-None yet
+- backend/app/schemas/tag.py
+- backend/tests/test_tags.py
+- .githooks/pre-push
 
 ## Implementation Plan
 
-1. define architecture
-2. create first components
-3. implement initial UI
+1. tighten `TagRead.catalog_ids` validation against null/non-string values
+2. make pre-push Python interpreter detection portable across Unix/Windows venv layouts
+3. add regression tests for strict catalog ID value validation
+4. run targeted backend validation
 
 ## Progress
 
-Development loop system initialized.
+- Implemented strict `TagRead` catalog ID value validation.
+- Updated `.githooks/pre-push` to resolve Python from both Unix and Windows virtualenv paths.
+- Added regression tests in `backend/tests/test_tags.py` for null/non-string catalog ID values.
+- Verified with `backend/tests/test_tags.py` (9 passed).
 
 ## Next Action
 
-Define the first feature to implement.
+Resolve/mark the corresponding PR review threads based on these updates.
 
 ## Notes
 

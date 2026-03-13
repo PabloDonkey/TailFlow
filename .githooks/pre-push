@@ -24,7 +24,14 @@ while read -r local_ref local_sha remote_ref remote_sha; do
     fi
 done
 
-if [ ! -x "backend/.venv/bin/python" ]; then
+BACKEND_PYTHON=""
+if [ -x "backend/.venv/bin/python" ]; then
+    BACKEND_PYTHON="./.venv/bin/python"
+elif [ -x "backend/.venv/Scripts/python.exe" ]; then
+    BACKEND_PYTHON="./.venv/Scripts/python.exe"
+fi
+
+if [ -z "$BACKEND_PYTHON" ]; then
     echo "Missing backend virtualenv at backend/.venv." >&2
     echo "Run 'make install' (or the PowerShell install command) and retry." >&2
     exit 1
@@ -37,10 +44,10 @@ if [ ! -d "frontend/node_modules" ]; then
 fi
 
 echo "Running backend ruff check..."
-( cd backend && ./.venv/bin/python -m ruff check . )
+( cd backend && "$BACKEND_PYTHON" -m ruff check . )
 
 echo "Running backend mypy..."
-( cd backend && ./.venv/bin/python -m mypy . )
+( cd backend && "$BACKEND_PYTHON" -m mypy . )
 
 echo "Running frontend eslint..."
 ( cd frontend && npm run lint )
