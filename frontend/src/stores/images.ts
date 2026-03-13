@@ -83,6 +83,15 @@ export const useImageStore = defineStore('images', () => {
         createMissing,
       )
       currentImage.value = updated
+      const idx = images.value.findIndex((img) => img.id === id)
+      if (idx !== -1) {
+        images.value[idx] = {
+          ...images.value[idx],
+          tag_count: updated.tag_count,
+          filename: updated.filename,
+          relative_path: updated.relative_path,
+        }
+      }
       return updated
     } catch (e) {
       error.value = String(e)
