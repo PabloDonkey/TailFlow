@@ -183,6 +183,15 @@ async def ensure_project_image_tag_assignments(
 ) -> None:
     await session.flush()
 
+    if (
+        project.trigger_tag is not None
+        and project.class_tag is not None
+        and project.trigger_tag == project.class_tag
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Project trigger_tag and class_tag must be different.",
+        )
     required_tag_names = _normalize_unique_tag_names(
         [project.trigger_tag, project.class_tag]
     )
