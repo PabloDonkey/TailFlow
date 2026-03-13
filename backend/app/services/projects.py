@@ -500,7 +500,10 @@ async def update_project_image_tags(
     if blocked_names:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail="Protected trigger and class tags cannot be removed from an image.",
+            detail=(
+                "Protected trigger and class tags cannot be removed from an image: "
+                + ", ".join(blocked_names)
+            ),
         )
 
     await ensure_project_image_tag_assignments(session, project, image)
