@@ -44,6 +44,10 @@ Define a frontend refactor plan for a mobile+desktop responsive one-page tagging
 
 Select the primary IA model (A or B), then break it into a concrete page/component migration plan.
 
+## Notes / Resources
+
+See .project/tasks/frontend-one-page-responsive-refactor-planning/
+
 ## Notes
 
 Update this file when stopping a development session so work can resume easily.
