@@ -7,17 +7,21 @@ The repository is split into `backend/` for the API and persistence layer, and `
 
 ## Repo AI context
 
-Persistent AI context for this repository lives under `.ai/`:
+Persistent AI directives for this repository live under `.ai/`:
 
 - `.ai/rule.md` - directive or instructional project rules
-- `.ai/memory.md` - dated, non-directive project memory entries using ISO 8601 timestamps
+
+Active development context for this repository lives under `.project/`:
+
+- `.project/dev-loop.md` - current development loop state
+- `.project/tasks.md` - current task board
 
 Bootstrap expectation for future sessions:
 
 1. Read `.ai/rule.md` on startup before planning or implementation work.
-2. Read `.ai/memory.md` on startup after `.ai/rule.md`.
-3. Add new directive or instructional guidance to `.ai/rule.md`.
-4. Add new non-directive project facts to `.ai/memory.md`, and date each entry with an ISO 8601 timestamp.
+2. Read `.project/dev-loop.md`.
+3. Check `.project/tasks.md`.
+4. Add new directive or instructional guidance to `.ai/rule.md`.
 
 ## Feature documentation
 

@@ -4,6 +4,8 @@
 
 ## IN PROGRESS
 
+- [ ] Plan frontend one-page responsive refactor (desktop + mobile), including IA choice and phased migration steps.
+
 ## DONE
 
 - [x] Tighten `TagRead.catalog_ids` response validation to reject null/non-string values.
