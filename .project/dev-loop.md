@@ -6,7 +6,7 @@ Frontend one-page responsive refactor planning
 
 ## Current Step
 
-IMPLEMENT
+TEST
 
 Possible values:
 PLAN
@@ -16,7 +16,7 @@ REFINE
 
 ## Objective
 
-Implement Phase 1 of the frontend one-page refactor by scaffolding the workspace shell while preserving existing route behavior.
+Implement Phase 2 of the frontend one-page refactor by extracting image browsing/viewing/tag-inspector UI into workspace panels while preserving existing route behavior.
 
 ## Files involved
 
@@ -27,6 +27,9 @@ Implement Phase 1 of the frontend one-page refactor by scaffolding the workspace
 - frontend/src/components/layout/AppShell.vue
 - frontend/src/components/layout/AppHeader.vue
 - frontend/src/components/layout/WorkspaceLayout.vue
+- frontend/src/components/layout/WorkspaceImageViewerPanel.vue
+- frontend/src/components/sidebar/WorkspaceImageBrowserPanel.vue
+- frontend/src/components/inspector/WorkspaceTagInspectorPanel.vue
 - frontend/src/pages/GalleryPage.vue
 - frontend/src/pages/ImageDetailPage.vue
 - frontend/src/pages/TagsPage.vue
@@ -38,7 +41,9 @@ Implement Phase 1 of the frontend one-page refactor by scaffolding the workspace
 1. scaffold shell primitives (header + layout + app shell)
 2. add `WorkspacePage` and wire non-breaking `/workspace` route
 3. keep existing routes operational during migration
-4. begin Phase 2 extraction of gallery/detail/tags into shell panels
+4. extract image browser, image viewer, and tag inspector into workspace panel components
+5. wire panel orchestration in `WorkspacePage` (selection + prev/next/jump + tag edits)
+6. validate each iteration with error checks and focused tests
 
 ## Progress
 
@@ -50,10 +55,21 @@ Implement Phase 1 of the frontend one-page refactor by scaffolding the workspace
 - Created `implementation-checklist-phase1.md` from saved planning notes.
 - Added initial shell scaffolding: `AppShell`, `AppHeader`, `WorkspaceLayout`, and `WorkspacePage`.
 - Added a non-breaking `/workspace` route and navigation entry for preview.
+- Implemented Phase 2 panel components:
+	- `WorkspaceImageBrowserPanel`
+	- `WorkspaceImageViewerPanel`
+	- `WorkspaceTagInspectorPanel`
+- Wired panel orchestration in `WorkspacePage` using existing stores while preserving legacy routes.
+- Ran targeted compile/error checks for all modified Phase 2 frontend files.
+- Updated agent workflow guidance to require plan-first + iterative validation loops.
+- Refactored `GalleryPage` to reuse `WorkspaceImageBrowserPanel` while preserving `/image/:id?project=...` navigation behavior.
+- Refactored `ImageDetailPage` to compose `WorkspaceImageViewerPanel` + `WorkspaceTagInspectorPanel` while preserving route-driven image context and next/previous/jump behavior.
+- Ran focused frontend validation: `npm run test -- src/__tests__/gallery-page.test.ts src/__tests__/image-detail.test.ts` (pass).
+- Ran UI contract review on Phase 2 workspace components and route composition.
 
 ## Next Action
 
-Start Phase 2 by extracting image browsing and tagging UI from current pages into workspace panel components, then mount them inside `WorkspacePage`.
+Address non-blocking UI contract follow-ups (component size and logic extraction), then run a broader frontend validation pass for the Phase 2 refactor.
 
 ## Notes / Resources
 

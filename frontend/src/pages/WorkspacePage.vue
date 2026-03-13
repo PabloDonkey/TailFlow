@@ -1,29 +1,96 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, watch } from 'vue'
 import AppShell from '../components/layout/AppShell.vue'
 import AppHeader from '../components/layout/AppHeader.vue'
 import WorkspaceLayout from '../components/layout/WorkspaceLayout.vue'
-import AppSectionTitle from '../components/ui/AppSectionTitle.vue'
-import AppText from '../components/ui/AppText.vue'
-import AppErrorText from '../components/ui/AppErrorText.vue'
+import WorkspaceImageBrowserPanel from '../components/sidebar/WorkspaceImageBrowserPanel.vue'
+import WorkspaceImageViewerPanel from '../components/layout/WorkspaceImageViewerPanel.vue'
+import WorkspaceTagInspectorPanel from '../components/inspector/WorkspaceTagInspectorPanel.vue'
 import { useProjectStore } from '../stores/projects'
+import { useImageStore } from '../stores/images'
 
 const projectStore = useProjectStore()
+const imageStore = useImageStore()
 const selectedProject = computed(() => projectStore.selectedProject)
-const message = ref<string | null>(null)
+const orderedImages = computed(() => imageStore.sortedImages)
+
+const currentImageIndex = computed(() => {
+  const currentImageId = imageStore.currentImage?.id
+  if (!currentImageId) {
+    return -1
+  }
+  return orderedImages.value.findIndex((image) => image.id === currentImageId)
+})
 
 onMounted(async () => {
   if (!projectStore.projects.length) {
     await projectStore.fetchProjects()
   }
+  if (projectStore.selectedProjectId) {
+    await imageStore.fetchImages(projectStore.selectedProjectId)
+    const firstImage = imageStore.sortedImages[0]
+    if (firstImage) {
+      await imageStore.fetchImage(projectStore.selectedProjectId, firstImage.id)
+    }
+  }
 })
 
+watch(
+  () => projectStore.selectedProjectId,
+  async (projectId) => {
+    if (!projectId) {
+      imageStore.images = []
+      imageStore.currentImage = null
+      return
+    }
+    await imageStore.fetchImages(projectId)
+    const firstImage = imageStore.sortedImages[0]
+    if (firstImage) {
+      await imageStore.fetchImage(projectId, firstImage.id)
+    } else {
+      imageStore.currentImage = null
+    }
+  },
+)
+
+async function selectImage(imageId: string) {
+  if (!projectStore.selectedProjectId) {
+    return
+  }
+  await imageStore.fetchImage(projectStore.selectedProjectId, imageId)
+}
+
 function openProjectPicker() {
-  message.value = 'Project picker panel scaffolded; implementation comes in the next phase.'
+  void 0
 }
 
 function openOverflow() {
-  message.value = 'Workspace actions menu scaffolded; implementation comes in the next phase.'
+  void 0
+}
+
+async function goToImageByIndex(index: number) {
+  if (!projectStore.selectedProjectId) {
+    return
+  }
+  const targetImage = orderedImages.value[index]
+  if (!targetImage) {
+    return
+  }
+  await imageStore.fetchImage(projectStore.selectedProjectId, targetImage.id)
+}
+
+async function goToPreviousImage() {
+  if (currentImageIndex.value <= 0) {
+    return
+  }
+  await goToImageByIndex(currentImageIndex.value - 1)
+}
+
+async function goToNextImage() {
+  if (currentImageIndex.value < 0 || currentImageIndex.value >= orderedImages.value.length - 1) {
+    return
+  }
+  await goToImageByIndex(currentImageIndex.value + 1)
 }
 </script>
 
@@ -39,58 +106,30 @@ function openOverflow() {
 
     <WorkspaceLayout>
       <template #left>
-        <AppSectionTitle>Image Browser</AppSectionTitle>
-        <AppText class="mt-3">
-          Desktop panel scaffold. Gallery logic moves here in Phase 2.
-        </AppText>
+        <WorkspaceImageBrowserPanel
+          :selected-project-id="projectStore.selectedProjectId"
+          @select-image="selectImage"
+        />
       </template>
 
-      <section>
-        <AppSectionTitle>Tagging Workspace</AppSectionTitle>
-        <AppText class="mt-3">
-          This page scaffolds the future one-page workspace shell.
-          Existing routes remain active during migration.
-        </AppText>
-
-        <AppText
-          v-if="projectStore.loading"
-          class="mt-3"
-        >
-          Loading projects…
-        </AppText>
-        <AppErrorText
-          v-else-if="projectStore.error"
-          class="mt-3"
-        >
-          {{ projectStore.error }}
-        </AppErrorText>
-        <AppText
-          v-else-if="!selectedProject"
-          class="mt-3"
-        >
-          No project selected yet.
-        </AppText>
-        <AppText
-          v-else
-          class="mt-3"
-        >
-          Selected project: <strong>{{ selectedProject.name }}</strong>
-        </AppText>
-
-        <AppText
-          v-if="message"
-          class="mt-3"
-          tone="muted"
-        >
-          {{ message }}
-        </AppText>
-      </section>
+      <WorkspaceImageViewerPanel
+        :project-id="projectStore.selectedProjectId"
+        :selected-project="selectedProject"
+        :current-image="imageStore.currentImage"
+        :ordered-images="orderedImages"
+        :current-image-index="currentImageIndex"
+        :loading="projectStore.loading || imageStore.loading"
+        :error="projectStore.error || imageStore.error"
+        @previous="goToPreviousImage"
+        @next="goToNextImage"
+        @jump="goToImageByIndex"
+      />
 
       <template #right>
-        <AppSectionTitle>Tag Inspector</AppSectionTitle>
-        <AppText class="mt-3">
-          Desktop panel scaffold. Image tags/editor move here in Phase 2.
-        </AppText>
+        <WorkspaceTagInspectorPanel
+          :project-id="projectStore.selectedProjectId"
+          :selected-project="selectedProject"
+        />
       </template>
     </WorkspaceLayout>
   </AppShell>
