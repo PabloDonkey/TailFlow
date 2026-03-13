@@ -45,6 +45,7 @@ Reusable components must:
 - emit events for user actions
 - avoid hardcoded business data
 - support slots when flexible composition is needed
+- prefer design-system UI primitives (for example, shared typography components) instead of raw repeated HTML tags with ad hoc page-level styling
 
 Do not generate repeated static HTML blocks when a component is appropriate.
 

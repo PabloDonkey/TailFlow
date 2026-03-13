@@ -1,81 +1,33 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
+import NavLink from '@/components/ui/NavLink.vue'
 
 const route = useRoute()
 const showNavigation = computed(() => route.path !== '/onboarding')
 </script>
 
 <template>
-  <div id="app-root">
+  <div class="flex min-h-dvh flex-col">
     <nav
       v-if="showNavigation"
-      class="nav-bar"
+      class="sticky top-0 z-[100] flex justify-around bg-[var(--tf-color-header-bg)] px-4 py-3"
     >
-      <RouterLink to="/projects">
+      <NavLink to="/workspace">
+        Workspace
+      </NavLink>
+      <NavLink to="/projects">
         Projects
-      </RouterLink>
-      <RouterLink to="/gallery">
+      </NavLink>
+      <NavLink to="/gallery">
         Gallery
-      </RouterLink>
-      <RouterLink to="/tags">
+      </NavLink>
+      <NavLink to="/tags">
         Tags
-      </RouterLink>
+      </NavLink>
     </nav>
-    <main class="page-content">
+    <main class="mx-auto w-full max-w-[768px] flex-1 p-4">
       <RouterView />
     </main>
   </div>
 </template>
-
-<style>
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-body {
-  font-family: system-ui, -apple-system, sans-serif;
-  background: #f5f5f5;
-  color: #222;
-}
-
-#app-root {
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-}
-
-.nav-bar {
-  display: flex;
-  justify-content: space-around;
-  background: #1a1a2e;
-  padding: 0.75rem 1rem;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-
-.nav-bar a {
-  color: #e0e0e0;
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 0.95rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
-}
-
-.nav-bar a.router-link-active {
-  color: #fff;
-  background: #4a4e8a;
-}
-
-.page-content {
-  flex: 1;
-  padding: 1rem;
-  max-width: 768px;
-  width: 100%;
-  margin: 0 auto;
-}
-</style>

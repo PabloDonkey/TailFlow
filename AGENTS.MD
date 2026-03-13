@@ -45,6 +45,7 @@ Reusable Copilot skills for this workflow:
 
 - `.copilot/skills/start-dev-session.md` (trigger: `start-dev-sess`)
 - `.copilot/skills/update-dev-loop.md` (trigger: `update-dev-loop`)
+- `.copilot/skills/ui-contract-review.md` (trigger: `ui-contract-review`)
 
 Before starting development work:
 

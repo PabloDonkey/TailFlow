@@ -2,13 +2,11 @@
 
 ## TODO
 
-- [ ] Define exact shell regions for desktop and mobile in the one-page tagging workspace.
-- [ ] Define the initial component tree for the frontend refactor.
-- [ ] Define the phased migration order from current routes/pages to the new shell structure.
+- [ ] Extract image browser and tag inspector into workspace panel components (Phase 2).
 
 ## IN PROGRESS
 
-- [ ] Plan frontend one-page responsive refactor (desktop + mobile), including IA choice and phased migration steps.
+- [ ] Implement Phase 1 workspace shell scaffolding while preserving existing routes.
 
 ## DONE
 
@@ -20,3 +18,8 @@
 - [x] Document `make test`, `make test-backend`, and `make test-frontend` in `README.md`.
 - [x] Add `When to Create a New Decision` trigger rules to `DECISIONS.md`.
 - [x] Add Decision Trigger workflow rule to `AGENTS.MD`.
+- [x] Define exact shell regions for desktop and mobile in the one-page tagging workspace.
+- [x] Define the initial component tree for the frontend refactor.
+- [x] Define the phased migration order from current routes/pages to the new shell structure.
+- [x] Save planning artifacts for frontend one-page responsive refactor under `.project/tasks/frontend-one-page-responsive-refactor-planning/`.
+- [x] Convert saved planning notes into an implementation checklist for Phase 1 shell scaffolding.
