@@ -2,7 +2,7 @@
 
 ## Current Feature
 
-PR #11 follow-up docs updates
+Architecture Decision Log trigger integration
 
 ## Current Step
 
@@ -16,26 +16,26 @@ REFINE
 
 ## Objective
 
-Keep project docs aligned with new Makefile test commands.
+Make ADR creation conditions explicit and integrate trigger handling into the documented workflow.
 
 ## Files involved
 
+- DECISIONS.md
 - AGENTS.MD
-- README.md
 
 ## Implementation Plan
 
-1. update AGENTS.MD root workflow commands
-2. update README root shortcut commands
+1. define Decision Trigger rules in DECISIONS.md
+2. add trigger-to-ADR workflow rule in AGENTS.MD
 
 ## Progress
 
-- Added `make test`, `make test-backend`, and `make test-frontend` to AGENTS.MD root workflow references.
-- Added `make test`, `make test-backend`, and `make test-frontend` to README Linux root shortcuts.
+- Added a new `When to Create a New Decision` section in `DECISIONS.md` with explicit Decision Triggers and an ADR checklist.
+- Added a new development workflow rule in `AGENTS.MD`: when a Decision Trigger occurs, create a `DECISIONS.md` entry before implementation.
 
 ## Next Action
 
-Keep README and AGENTS command docs in sync when Makefile targets change.
+Use the trigger list during planning and PR review to decide when to open the next ADR entry.
 
 ## Notes
 
