@@ -146,6 +146,7 @@ Use the root `Makefile` for the standard setup:
 ```bash
 make install
 make run
+make test
 ```
 
 Important commands by area:
@@ -170,6 +171,11 @@ npm run test
 npm run lint
 npm run typecheck
 npm run build
+
+# Root shortcuts
+make test
+make test-backend
+make test-frontend
 ```
 
 ### Continuous integration

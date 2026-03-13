@@ -2,12 +2,23 @@
 import { onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProjectStore } from '../stores/projects'
-import { useImageStore } from '../stores/images'
+import { useImageStore, type ImageSortOption } from '../stores/images'
 import { getProjectImageFileUrl } from '../api'
 
 const imageStore = useImageStore()
 const projectStore = useProjectStore()
 const router = useRouter()
+
+const sortOptions: Array<{ value: ImageSortOption; label: string }> = [
+  { value: 'name-asc', label: 'Name ↑' },
+  { value: 'name-desc', label: 'Name ↓' },
+  { value: 'tag-count-asc', label: 'Tags ↑' },
+  { value: 'tag-count-desc', label: 'Tags ↓' },
+]
+
+function formatTagCount(tagCount: number): string {
+  return `${tagCount} tag${tagCount === 1 ? '' : 's'}`
+}
 
 onMounted(async () => {
   if (!projectStore.projects.length) {
@@ -39,7 +50,28 @@ watch(
 
 <template>
   <div class="gallery-page">
-    <h1>Gallery</h1>
+    <div class="gallery-header">
+      <h1>Gallery</h1>
+      <label
+        v-if="projectStore.selectedProjectId && imageStore.sortedImages.length"
+        class="sort-control"
+      >
+        <span>Sort</span>
+        <select
+          v-model="imageStore.sortOption"
+          data-testid="gallery-sort"
+          class="sort-select"
+        >
+          <option
+            v-for="option in sortOptions"
+            :key="option.value"
+            :value="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </select>
+      </label>
+    </div>
 
     <p
       v-if="!projectStore.selectedProjectId"
@@ -60,7 +92,7 @@ watch(
       {{ imageStore.error }}
     </p>
     <p
-      v-else-if="!imageStore.images.length"
+      v-else-if="!imageStore.sortedImages.length"
       class="empty"
     >
       No images yet. <RouterLink to="/projects">
@@ -73,7 +105,7 @@ watch(
       class="grid"
     >
       <div
-        v-for="img in imageStore.images"
+        v-for="img in imageStore.sortedImages"
         :key="img.id"
         class="card"
         @click="goToImage(img.id)"
@@ -89,7 +121,7 @@ watch(
             class="name"
             :title="img.filename"
           >{{ img.filename }}</span>
-          <span class="tag-count">{{ img.relative_path }}</span>
+          <span class="tag-count">{{ formatTagCount(img.tag_count) }}</span>
         </div>
       </div>
     </div>
@@ -103,8 +135,31 @@ watch(
   gap: 1rem;
 }
 
+.gallery-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 h1 {
   font-size: 1.5rem;
+}
+
+.sort-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.sort-select {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background: #fff;
 }
 
 .error {
@@ -142,7 +197,7 @@ h1 {
 }
 
 .card-info {
-  padding: 0;
+  padding: 0.55rem 0.65rem;
   display: flex;
   justify-content: space-between;
   align-items: center;

@@ -6,7 +6,6 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from app.core.logging import VALID_LOG_LEVELS
 
-
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 ENV_FILE_PATH = BACKEND_ROOT / ".env"
 ENV_EXAMPLE_FILE_PATH = BACKEND_ROOT / ".env.example"

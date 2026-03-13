@@ -8,9 +8,11 @@ import {
   ProjectImageUploadResponseSchema,
   ProjectImageSummarySchema,
   ProjectImageReadSchema,
+  ProjectImageTagUpdateSchema,
   ProjectOnboardingConfigureResponseSchema,
   ProjectOnboardingStatusSchema,
   ProjectUpdatePayloadSchema,
+  ProjectTagSchema,
 } from '../api'
 
 describe('API schemas', () => {
@@ -18,11 +20,13 @@ describe('API schemas', () => {
     const raw = {
       id: '550e8400-e29b-41d4-a716-446655440000',
       name: 'cat',
+      catalog_ids: { e621: '123' },
       category: 'animal',
       created_at: '2026-01-01T00:00:00Z',
     }
     const tag = TagSchema.parse(raw)
     expect(tag.name).toBe('cat')
+    expect(tag.catalog_ids).toEqual({ e621: '123' })
     expect(tag.category).toBe('animal')
   })
 
@@ -30,10 +34,12 @@ describe('API schemas', () => {
     const raw = {
       id: '550e8400-e29b-41d4-a716-446655440000',
       name: 'misc',
+      catalog_ids: {},
       category: null,
       created_at: '2026-01-01T00:00:00Z',
     }
     const tag = TagSchema.parse(raw)
+    expect(tag.catalog_ids).toEqual({})
     expect(tag.category).toBeNull()
   })
 
@@ -42,8 +48,34 @@ describe('API schemas', () => {
       TagSchema.parse({
         id: 'not-a-uuid',
         name: 'x',
+        catalog_ids: {},
         category: null,
         created_at: '2026-01-01T00:00:00Z',
+      })
+    ).toThrow()
+  })
+
+  it('rejects Tag with unknown catalog_ids key', () => {
+    expect(() =>
+      TagSchema.parse({
+        id: '550e8400-e29b-41d4-a716-446655440000',
+        name: 'x',
+        catalog_ids: { unknown_catalog: '123' },
+        category: null,
+        created_at: '2026-01-01T00:00:00Z',
+      })
+    ).toThrow()
+  })
+
+  it('rejects ProjectTag with unknown catalog_ids key', () => {
+    expect(() =>
+      ProjectTagSchema.parse({
+        id: '550e8400-e29b-41d4-a716-446655440016',
+        name: 'portrait',
+        catalog_ids: { unknown_catalog: '42' },
+        category: 'general',
+        position: 0,
+        is_protected: false,
       })
     ).toThrow()
   })
@@ -57,11 +89,13 @@ describe('API schemas', () => {
       dataset_path: '/tmp/projects/project-a/dataset',
       trigger_tag: 'project-a',
       class_tag: 'character',
+      tagging_mode: 'e621',
       last_synced_at: '2026-01-01T00:00:00Z',
       missing_at: null,
     }
     const project = ProjectSchema.parse(raw)
     expect(project.folder_name).toBe('project-a')
+    expect(project.tagging_mode).toBe('e621')
     expect(project.missing_at).toBeNull()
   })
 
@@ -99,6 +133,7 @@ describe('API schemas', () => {
         dataset_path: '/tmp/projects/project-new/dataset',
         trigger_tag: 'project-new',
         class_tag: 'style',
+        tagging_mode: 'booru',
         last_synced_at: null,
         missing_at: null,
       },
@@ -106,6 +141,7 @@ describe('API schemas', () => {
 
     const result = ProjectCreateResponseSchema.parse(raw)
     expect(result.project.folder_name).toBe('project-new')
+    expect(result.project.tagging_mode).toBe('booru')
   })
 
   it('parses project image upload response', () => {
@@ -127,23 +163,44 @@ describe('API schemas', () => {
       relative_path: 'dataset/a.png',
       filename: 'a.png',
       discovered_at: '2026-01-01T00:00:00Z',
+      tag_count: 3,
     })
     expect(summary.filename).toBe('a.png')
+    expect(summary.tag_count).toBe(3)
 
     const read = ProjectImageReadSchema.parse({
       ...summary,
       removed_at: null,
-      tags: [{ id: '550e8400-e29b-41d4-a716-446655440016', name: 'portrait' }],
+      tags: [{
+        id: '550e8400-e29b-41d4-a716-446655440016',
+        name: 'portrait',
+        catalog_ids: { e621: '10' },
+        category: 'general',
+        position: 2,
+        is_protected: false,
+      }],
     })
     expect(read.tags[0]?.name).toBe('portrait')
+    expect(read.tags[0]?.position).toBe(2)
+  })
+
+  it('parses project image tag update payload with create-missing flag', () => {
+    const payload = ProjectImageTagUpdateSchema.parse({
+      add: ['new-shared-tag'],
+      remove: [],
+      create_missing: true,
+    })
+    expect(payload.create_missing).toBe(true)
   })
 
   it('parses project update payload', () => {
     const payload = ProjectUpdatePayloadSchema.parse({
       trigger_tag: 'trigger-x',
       class_tag: 'class-y',
+      tagging_mode: 'booru',
     })
     expect(payload.trigger_tag).toBe('trigger-x')
+    expect(payload.tagging_mode).toBe('booru')
   })
 
   it('parses onboarding status response', () => {

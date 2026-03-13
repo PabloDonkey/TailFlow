@@ -2,13 +2,23 @@ import uuid
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, String, Uuid
+from sqlalchemy import DateTime, Enum, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.core.enums import TaggingMode
 from app.db.base import Base
 
 if TYPE_CHECKING:
-    from app.models.dataset_image import DatasetImage, DatasetImageTag, ProjectTag
+    from app.models.dataset_image import DatasetImage, DatasetImageTag
+
+
+TAGGING_MODE_ENUM = Enum(
+    TaggingMode,
+    name="tagging_mode",
+    native_enum=False,
+    length=16,
+    values_callable=lambda enum_cls: [member.value for member in enum_cls],
+)
 
 
 class Project(Base):
@@ -21,6 +31,11 @@ class Project(Base):
     dataset_path: Mapped[str] = mapped_column(String(2048), nullable=False)
     trigger_tag: Mapped[str] = mapped_column(String(255), nullable=False)
     class_tag: Mapped[str] = mapped_column(String(255), nullable=False)
+    tagging_mode: Mapped[TaggingMode] = mapped_column(
+        TAGGING_MODE_ENUM,
+        nullable=False,
+        default=TaggingMode.E621,
+    )
     last_synced_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
@@ -39,12 +54,6 @@ class Project(Base):
 
     dataset_images: Mapped[list["DatasetImage"]] = relationship(
         "DatasetImage",
-        back_populates="project",
-        cascade="all, delete-orphan",
-        lazy="selectin",
-    )
-    tags: Mapped[list["ProjectTag"]] = relationship(
-        "ProjectTag",
         back_populates="project",
         cascade="all, delete-orphan",
         lazy="selectin",

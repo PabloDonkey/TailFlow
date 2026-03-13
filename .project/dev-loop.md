@@ -2,11 +2,11 @@
 
 ## Current Feature
 
-Initial project setup
+PR #11 follow-up docs updates
 
 ## Current Step
 
-PLAN
+REFINE
 
 Possible values:
 PLAN
@@ -16,25 +16,26 @@ REFINE
 
 ## Objective
 
-Set up the project development workflow and define the first feature.
+Keep project docs aligned with new Makefile test commands.
 
 ## Files involved
 
-None yet
+- AGENTS.MD
+- README.md
 
 ## Implementation Plan
 
-1. define architecture
-2. create first components
-3. implement initial UI
+1. update AGENTS.MD root workflow commands
+2. update README root shortcut commands
 
 ## Progress
 
-Development loop system initialized.
+- Added `make test`, `make test-backend`, and `make test-frontend` to AGENTS.MD root workflow references.
+- Added `make test`, `make test-backend`, and `make test-frontend` to README Linux root shortcuts.
 
 ## Next Action
 
-Define the first feature to implement.
+Keep README and AGENTS command docs in sync when Makefile targets change.
 
 ## Notes
 

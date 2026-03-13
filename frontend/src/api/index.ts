@@ -2,9 +2,13 @@ import { z } from 'zod'
 
 // ─── Schema definitions ──────────────────────────────────────────────────────
 
+export const TaggingModeSchema = z.enum(['e621', 'booru'])
+const CatalogIdsSchema = z.partialRecord(TaggingModeSchema, z.string())
+
 export const TagSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
+  catalog_ids: CatalogIdsSchema,
   category: z.string().nullable(),
   created_at: z.string().datetime({ offset: true }),
 })
@@ -21,6 +25,7 @@ export const ProjectSchema = z.object({
   dataset_path: z.string(),
   trigger_tag: z.string(),
   class_tag: z.string(),
+  tagging_mode: TaggingModeSchema,
   last_synced_at: z.string().datetime({ offset: true }).nullable(),
   missing_at: z.string().datetime({ offset: true }).nullable(),
 })
@@ -43,6 +48,10 @@ export const ProjectSyncResponseSchema = z.object({
 export const ProjectTagSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
+  catalog_ids: CatalogIdsSchema,
+  category: z.string().nullable(),
+  position: z.number().int(),
+  is_protected: z.boolean(),
 })
 
 export const ProjectImageSummarySchema = z.object({
@@ -51,6 +60,7 @@ export const ProjectImageSummarySchema = z.object({
   relative_path: z.string(),
   filename: z.string(),
   discovered_at: z.string().datetime({ offset: true }),
+  tag_count: z.number().int(),
 })
 
 export const ProjectImageReadSchema = ProjectImageSummarySchema.extend({
@@ -61,11 +71,13 @@ export const ProjectImageReadSchema = ProjectImageSummarySchema.extend({
 export const ProjectImageTagUpdateSchema = z.object({
   add: z.array(z.string()),
   remove: z.array(z.string()),
+  create_missing: z.boolean().optional(),
 })
 
 export const ProjectUpdatePayloadSchema = z.object({
   trigger_tag: z.string().optional(),
   class_tag: z.string().optional(),
+  tagging_mode: TaggingModeSchema.optional(),
 })
 
 export const ProjectCreatePayloadSchema = z.object({
@@ -73,6 +85,7 @@ export const ProjectCreatePayloadSchema = z.object({
   class_tag: z.string().min(1),
   name: z.string().optional(),
   trigger_tag: z.string().optional(),
+  tagging_mode: TaggingModeSchema.optional(),
 })
 
 export const ProjectCreateResponseSchema = z.object({
@@ -99,6 +112,7 @@ export const ProjectOnboardingConfigureResponseSchema = z.object({
 // ─── Inferred types ──────────────────────────────────────────────────────────
 
 export type Tag = z.infer<typeof TagSchema>
+export type TaggingMode = z.infer<typeof TaggingModeSchema>
 export type ClassifyResponse = z.infer<typeof ClassifyResponseSchema>
 export type Project = z.infer<typeof ProjectSchema>
 export type ProjectDiscoverResponse = z.infer<typeof ProjectDiscoverResponseSchema>
@@ -106,6 +120,7 @@ export type ProjectSyncResponse = z.infer<typeof ProjectSyncResponseSchema>
 export type ProjectCreatePayload = z.infer<typeof ProjectCreatePayloadSchema>
 export type ProjectCreateResponse = z.infer<typeof ProjectCreateResponseSchema>
 export type ProjectImageUploadResponse = z.infer<typeof ProjectImageUploadResponseSchema>
+export type ProjectTag = z.infer<typeof ProjectTagSchema>
 export type ProjectImageSummary = z.infer<typeof ProjectImageSummarySchema>
 export type ProjectImageRead = z.infer<typeof ProjectImageReadSchema>
 export type ProjectUpdatePayload = z.infer<typeof ProjectUpdatePayloadSchema>
@@ -225,11 +240,16 @@ export async function updateProjectImageTags(
   imageId: string,
   add: string[],
   remove: string[],
+  createMissing = false,
 ): Promise<ProjectImageRead> {
   return fetchJSON(ProjectImageReadSchema, `${BASE}/projects/${projectId}/images/${imageId}/tags`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(ProjectImageTagUpdateSchema.parse({ add, remove })),
+    body: JSON.stringify(ProjectImageTagUpdateSchema.parse({
+      add,
+      remove,
+      create_missing: createMissing,
+    })),
   })
 }
 

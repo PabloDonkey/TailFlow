@@ -4,9 +4,11 @@ from typing import TYPE_CHECKING
 
 from sqlalchemy import (
     BigInteger,
+    Boolean,
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Integer,
     String,
     UniqueConstraint,
     Uuid,
@@ -17,6 +19,7 @@ from app.db.base import Base
 
 if TYPE_CHECKING:
     from app.models.project import Project
+    from app.models.tag import Tag
 
 
 class DatasetImage(Base):
@@ -53,35 +56,6 @@ class DatasetImage(Base):
         overlaps="project,tag,image_tag_links",
     )
 
-
-class ProjectTag(Base):
-    __tablename__ = "project_tags"
-    __table_args__ = (
-        UniqueConstraint("project_id", "name", name="uq_project_tag_name"),
-        UniqueConstraint("id", "project_id", name="uq_project_tag_id_project"),
-    )
-
-    id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True, default=uuid.uuid4)
-    project_id: Mapped[uuid.UUID] = mapped_column(
-        Uuid, ForeignKey("projects.id"), nullable=False
-    )
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC)
-    )
-
-    project: Mapped["Project"] = relationship(
-        "Project", back_populates="tags", lazy="selectin"
-    )
-    image_tag_links: Mapped[list["DatasetImageTag"]] = relationship(
-        "DatasetImageTag",
-        back_populates="tag",
-        cascade="all, delete-orphan",
-        lazy="selectin",
-        overlaps="dataset_image,project,image_tag_links",
-    )
-
-
 class DatasetImageTag(Base):
     __tablename__ = "dataset_image_tag"
     __table_args__ = (
@@ -90,17 +64,19 @@ class DatasetImageTag(Base):
             ["dataset_images.id", "dataset_images.project_id"],
             name="fk_dataset_image_tag_image_project",
         ),
-        ForeignKeyConstraint(
-            ["tag_id", "project_id"],
-            ["project_tags.id", "project_tags.project_id"],
-            name="fk_dataset_image_tag_tag_project",
-        ),
+        UniqueConstraint("image_id", "position", name="uq_dataset_image_tag_position"),
     )
 
     image_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
-    tag_id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
+    tag_id: Mapped[uuid.UUID] = mapped_column(
+        Uuid, ForeignKey("tags.id"), primary_key=True
+    )
     project_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("projects.id"), nullable=False
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    is_protected: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
     )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=lambda: datetime.now(UTC)
@@ -112,8 +88,8 @@ class DatasetImageTag(Base):
         lazy="selectin",
         overlaps="project,tag,image_tag_links",
     )
-    tag: Mapped["ProjectTag"] = relationship(
-        "ProjectTag",
+    tag: Mapped["Tag"] = relationship(
+        "Tag",
         back_populates="image_tag_links",
         lazy="selectin",
         overlaps="dataset_image,project,image_tag_links",

@@ -3,8 +3,9 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.api.deps import db_session
 from app.core.config import (
@@ -15,19 +16,19 @@ from app.core.config import (
     is_projects_root_configured,
     settings,
 )
-from app.models.dataset_image import DatasetImage, DatasetImageTag, ProjectTag
+from app.models.dataset_image import DatasetImage, DatasetImageTag
 from app.models.project import Project
 from app.schemas.project import (
     ProjectCreate,
     ProjectCreateResponse,
     ProjectDiscoverResponse,
-    ProjectOnboardingConfigure,
-    ProjectOnboardingConfigureResponse,
-    ProjectOnboardingStatus,
     ProjectImageRead,
     ProjectImageSummary,
     ProjectImageTagUpdate,
     ProjectImageUploadResponse,
+    ProjectOnboardingConfigure,
+    ProjectOnboardingConfigureResponse,
+    ProjectOnboardingStatus,
     ProjectRead,
     ProjectSyncResponse,
     ProjectTagRead,
@@ -45,10 +46,59 @@ from app.services.projects import (
 router = APIRouter(prefix="/projects", tags=["projects"])
 
 
+async def _read_project_image_tags(
+    session: AsyncSession, project: Project, image: DatasetImage
+) -> list[ProjectTagRead]:
+    tag_link_result = await session.execute(
+        select(DatasetImageTag)
+        .options(selectinload(DatasetImageTag.tag))
+        .where(
+            DatasetImageTag.project_id == project.id,
+            DatasetImageTag.image_id == image.id,
+        )
+        .order_by(DatasetImageTag.position.asc(), DatasetImageTag.created_at.asc())
+    )
+    links = tag_link_result.scalars().all()
+    return [
+        ProjectTagRead(
+            id=link.tag.id,
+            name=link.tag.name,
+            catalog_ids=dict(link.tag.catalog_ids),
+            category=link.tag.category,
+            position=link.position,
+            is_protected=link.is_protected,
+        )
+        for link in links
+    ]
+
+
+async def _read_project_image_tag_counts(
+    session: AsyncSession,
+    project_id: uuid.UUID,
+    image_ids: list[uuid.UUID],
+) -> dict[uuid.UUID, int]:
+    if not image_ids:
+        return {}
+
+    result = await session.execute(
+        select(DatasetImageTag.image_id, func.count(DatasetImageTag.tag_id))
+        .where(
+            DatasetImageTag.project_id == project_id,
+            DatasetImageTag.image_id.in_(image_ids),
+        )
+        .group_by(DatasetImageTag.image_id)
+    )
+    return {image_id: tag_count for image_id, tag_count in result.all()}
+
+
 @router.get("/onboarding/status", response_model=ProjectOnboardingStatus)
 async def onboarding_status_route() -> ProjectOnboardingStatus:
     configured = is_projects_root_configured()
-    current_path = str(settings.projects_root_path) if settings.projects_root_path else None
+    current_path = (
+        str(settings.projects_root_path)
+        if settings.projects_root_path
+        else None
+    )
     return ProjectOnboardingStatus(
         configured=configured,
         projects_root_path=current_path,
@@ -73,7 +123,10 @@ async def onboarding_configure_route(
     if not env_path.exists():
         example_path = get_backend_env_example_file_path()
         if example_path.exists():
-            env_path.write_text(example_path.read_text(encoding="utf-8"), encoding="utf-8")
+            env_path.write_text(
+                example_path.read_text(encoding="utf-8"),
+                encoding="utf-8",
+            )
         else:
             env_path.write_text("", encoding="utf-8")
 
@@ -188,7 +241,22 @@ async def list_project_images_route(
         .order_by(DatasetImage.discovered_at.desc())
     )
     images = result.scalars().all()
-    return [ProjectImageSummary.model_validate(image) for image in images]
+    tag_counts = await _read_project_image_tag_counts(
+        session,
+        project.id,
+        [image.id for image in images],
+    )
+    return [
+        ProjectImageSummary(
+            id=image.id,
+            project_id=image.project_id,
+            relative_path=image.relative_path,
+            filename=image.filename,
+            discovered_at=image.discovered_at,
+            tag_count=tag_counts.get(image.id, 0),
+        )
+        for image in images
+    ]
 
 
 @router.get("/{project_id}/images/{image_id}", response_model=ProjectImageRead)
@@ -211,23 +279,7 @@ async def get_project_image_route(
             detail="Project image not found.",
         )
 
-    tag_link_result = await session.execute(
-        select(DatasetImageTag).where(
-            DatasetImageTag.project_id == project.id,
-            DatasetImageTag.image_id == image.id,
-        )
-    )
-    links = tag_link_result.scalars().all()
-    tags: list[ProjectTagRead] = []
-    if links:
-        tag_ids = [link.tag_id for link in links]
-        tag_result = await session.execute(
-            select(ProjectTag).where(ProjectTag.id.in_(tag_ids))
-        )
-        tags = [
-            ProjectTagRead.model_validate(tag)
-            for tag in tag_result.scalars().all()
-        ]
+    tags = await _read_project_image_tags(session, project, image)
 
     return ProjectImageRead(
         id=image.id,
@@ -235,6 +287,7 @@ async def get_project_image_route(
         relative_path=image.relative_path,
         filename=image.filename,
         discovered_at=image.discovered_at,
+        tag_count=len(tags),
         removed_at=image.removed_at,
         tags=tags,
     )
@@ -290,25 +343,16 @@ async def update_project_image_tags_route(
             detail="Project image not found.",
         )
 
-    await update_project_image_tags(session, project, image, body.add, body.remove)
-
-    tag_link_result = await session.execute(
-        select(DatasetImageTag).where(
-            DatasetImageTag.project_id == project.id,
-            DatasetImageTag.image_id == image.id,
-        )
+    await update_project_image_tags(
+        session,
+        project,
+        image,
+        body.add,
+        body.remove,
+        create_missing=body.create_missing,
     )
-    links = tag_link_result.scalars().all()
-    tags: list[ProjectTagRead] = []
-    if links:
-        tag_ids = [link.tag_id for link in links]
-        tag_result = await session.execute(
-            select(ProjectTag).where(ProjectTag.id.in_(tag_ids))
-        )
-        tags = [
-            ProjectTagRead.model_validate(tag)
-            for tag in tag_result.scalars().all()
-        ]
+
+    tags = await _read_project_image_tags(session, project, image)
 
     return ProjectImageRead(
         id=image.id,
@@ -316,6 +360,7 @@ async def update_project_image_tags_route(
         relative_path=image.relative_path,
         filename=image.filename,
         discovered_at=image.discovered_at,
+        tag_count=len(tags),
         removed_at=image.removed_at,
         tags=tags,
     )

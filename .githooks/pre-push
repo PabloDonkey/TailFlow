@@ -1,0 +1,57 @@
+#!/bin/sh
+
+set -eu
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+cd "$REPO_ROOT"
+
+if [ "${SKIP_QUALITY_HOOKS:-}" = "1" ]; then
+    echo "Skipping quality hooks because SKIP_QUALITY_HOOKS=1."
+    exit 0
+fi
+
+ALLOW_VAR="${ALLOW_MAIN_PUSH:-}"
+if [ "$ALLOW_VAR" = "1" ]; then
+    exit 0
+fi
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+    if [ "$remote_ref" = "refs/heads/main" ]; then
+        echo "Push blocked: direct pushes to 'main' are not allowed." >&2
+        echo "Open a feature branch and submit a PR instead." >&2
+        echo "Temporary override: set ALLOW_MAIN_PUSH=1 for this push." >&2
+        exit 1
+    fi
+done
+
+BACKEND_PYTHON=""
+if [ -x "backend/.venv/bin/python" ]; then
+    BACKEND_PYTHON="./.venv/bin/python"
+elif [ -x "backend/.venv/Scripts/python.exe" ]; then
+    BACKEND_PYTHON="./.venv/Scripts/python.exe"
+fi
+
+if [ -z "$BACKEND_PYTHON" ]; then
+    echo "Missing backend virtualenv at backend/.venv." >&2
+    echo "Run 'make install' (or the PowerShell install command) and retry." >&2
+    exit 1
+fi
+
+if [ ! -d "frontend/node_modules" ]; then
+    echo "Missing frontend dependencies at frontend/node_modules." >&2
+    echo "Run 'make install' (or the PowerShell install command) and retry." >&2
+    exit 1
+fi
+
+echo "Running backend ruff check..."
+( cd backend && "$BACKEND_PYTHON" -m ruff check . )
+
+echo "Running backend mypy..."
+( cd backend && "$BACKEND_PYTHON" -m mypy . )
+
+echo "Running frontend eslint..."
+( cd frontend && npm run lint )
+
+echo "Pre-push quality checks passed."
+
+exit 0
