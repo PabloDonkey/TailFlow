@@ -28,6 +28,33 @@ Current documented features:
 
 - `docs/project-dataset-workflow.md` - filesystem-backed project discovery, dataset handling, metadata persistence, sync behavior, and class diagram
 
+## UI contract
+
+Frontend UI implementation and planning guidance lives in `.github/ui-contract.md`.
+When a task involves frontend UI planning or implementation, read `.github/ui-contract.md` before planning or coding.
+
+## Development Workflow
+
+This repository uses a **Development Loop system** stored in `.project/dev-loop.md`.
+
+Reusable Copilot skills for this workflow:
+
+- `.copilot/skills/start-dev-session.md` (trigger: `start-dev-sess`)
+- `.copilot/skills/update-dev-loop.md` (trigger: `update-dev-loop`)
+
+Before starting development work:
+
+1. Read `.project/dev-loop.md`
+2. Check `.project/tasks.md`
+3. Follow UI rules in `.github/ui-contract.md` if present.
+
+When finishing a work session:
+
+* update `.project/dev-loop.md`
+* update `.project/tasks.md`
+
+The goal is to maintain enough context so development can resume quickly after interruptions.
+
 ## Tech stack
 
 ### Backend
