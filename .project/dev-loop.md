@@ -2,11 +2,11 @@
 
 ## Current Feature
 
-Architecture Decision Log trigger integration
+Frontend one-page responsive refactor planning
 
 ## Current Step
 
-REFINE
+PLAN
 
 Possible values:
 PLAN
@@ -16,26 +16,33 @@ REFINE
 
 ## Objective
 
-Make ADR creation conditions explicit and integrate trigger handling into the documented workflow.
+Define a frontend refactor plan for a mobile+desktop responsive one-page tagging workflow with secondary actions hidden behind contextual navigation.
 
 ## Files involved
 
-- DECISIONS.md
-- AGENTS.MD
+- .github/ui-contract.md
+- frontend/src/router/index.ts
+- frontend/src/pages/GalleryPage.vue
+- frontend/src/pages/ImageDetailPage.vue
+- frontend/src/pages/TagsPage.vue
+- frontend/src/pages/OnboardingPage.vue
 
 ## Implementation Plan
 
-1. define Decision Trigger rules in DECISIONS.md
-2. add trigger-to-ADR workflow rule in AGENTS.MD
+1. choose primary navigation model (floating action menu vs collapsible side panel)
+2. define target information architecture for project selection, tagging workspace, and secondary views
+3. map current routes/pages to one-page shell behavior and responsive panel behavior
+4. produce phased refactor backlog with low-risk implementation order
 
 ## Progress
 
-- Added a new `When to Create a New Decision` section in `DECISIONS.md` with explicit Decision Triggers and an ADR checklist.
-- Added a new development workflow rule in `AGENTS.MD`: when a Decision Trigger occurs, create a `DECISIONS.md` entry before implementation.
+- Updated `.github/ui-contract.md` to v2 with clearer component, layout, and implementation rules.
+- Brainstormed two navigation models for the refactor: Option A (floating action menu) and Option B (collapsible side panel).
+- Produced ASCII wireframes for both options on desktop and mobile.
 
 ## Next Action
 
-Use the trigger list during planning and PR review to decide when to open the next ADR entry.
+Select the primary IA model (A or B), then break it into a concrete page/component migration plan.
 
 ## Notes
 
