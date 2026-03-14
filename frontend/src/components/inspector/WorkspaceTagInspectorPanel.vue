@@ -55,16 +55,21 @@ const {
 
       <TagList
         :tags="currentImage.tags"
-        :getTagRoleLabel="getTagRoleLabel"
-        :getTagSourceLabel="getTagSourceLabel"
-        :onRemove="removeTag"
+        :get-tag-role-label="getTagRoleLabel"
+        :get-tag-source-label="getTagSourceLabel"
+        :on-remove="removeTag"
       >
         <template #empty>
-          <AppText tone="muted">No tags yet.</AppText>
+          <AppText tone="muted">
+            No tags yet.
+          </AppText>
         </template>
       </TagList>
 
-      <TagAddInput v-model="newTag" @add="addTag" />
+      <TagAddInput
+        v-model="newTag"
+        @add="addTag"
+      />
 
       <AppErrorText v-if="errorMsg">
         {{ errorMsg }}

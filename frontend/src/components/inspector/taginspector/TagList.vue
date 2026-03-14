@@ -1,4 +1,4 @@
-defineProps<{
+
 <script setup lang="ts">
 import type { ProjectTag } from '../../../api'
 import TagListItem from './TagListItem.vue'
@@ -12,18 +12,23 @@ defineProps<{
 </script>
 
 <template>
-  <div v-if="tags.length" class="flex flex-wrap gap-1.5">
+  <div
+    v-if="tags.length"
+    class="flex flex-wrap gap-1.5"
+  >
     <TagListItem
       v-for="tag in tags"
       :key="tag.id"
       :tag="tag"
-      :getTagRoleLabel="getTagRoleLabel"
-      :getTagSourceLabel="getTagSourceLabel"
-      :onRemove="onRemove"
+      :get-tag-role-label="getTagRoleLabel"
+      :get-tag-source-label="getTagSourceLabel"
+      :on-remove="onRemove"
     />
   </div>
   <div v-else>
-    <slot name="empty">No tags yet.</slot>
+    <slot name="empty">
+      No tags yet.
+    </slot>
   </div>
 </template>
 
