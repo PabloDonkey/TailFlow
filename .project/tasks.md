@@ -2,7 +2,6 @@
 
 ## TODO
 
-- [ ] Split `WorkspaceTagInspectorPanel` into smaller subcomponents to stay within UI contract target size.
 - [ ] Move tag mutation UI logic from `WorkspaceTagInspectorPanel` into a composable or store helper.
 - [ ] Run broader frontend validation for Phase 2 (`npm run test`, optional `npm run lint`).
 
@@ -14,6 +13,7 @@
 
 - [x] Run UI contract review for Phase 2 workspace panel refactor.
 - [x] Run focused frontend tests for Phase 2 workspace panel flow.
+- [x] Split `WorkspaceTagInspectorPanel` into smaller subcomponents to stay within UI contract target size.
 - [x] Refactor `GalleryPage` / `ImageDetailPage` to reuse shared workspace panel logic.
 - [x] Extract image browser, image viewer, and tag inspector into workspace panel components (Phase 2).
 - [x] Update workflow guidance in `AGENTS.MD` and `.ai/rule.md` to require plan-first, iterative implementation with focused validation at each step.

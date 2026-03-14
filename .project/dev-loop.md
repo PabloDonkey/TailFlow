@@ -66,10 +66,12 @@ Implement Phase 2 of the frontend one-page refactor by extracting image browsing
 - Refactored `ImageDetailPage` to compose `WorkspaceImageViewerPanel` + `WorkspaceTagInspectorPanel` while preserving route-driven image context and next/previous/jump behavior.
 - Ran focused frontend validation: `npm run test -- src/__tests__/gallery-page.test.ts src/__tests__/image-detail.test.ts` (pass).
 - Ran UI contract review on Phase 2 workspace components and route composition.
+- Refactored `WorkspaceTagInspectorPanel` to orchestrate inspector subcomponents (`TagInspectorTagList`, `TagInspectorMutationControls`, `TagInspectorTagMetadata`) while preserving existing store interactions and behavior.
+- Re-ran focused frontend validation after the split: `npm run test -- src/__tests__/image-detail.test.ts src/__tests__/gallery-page.test.ts` (pass).
 
 ## Next Action
 
-Address non-blocking UI contract follow-ups (component size and logic extraction), then run a broader frontend validation pass for the Phase 2 refactor.
+Address remaining non-blocking UI contract follow-up (extract tag mutation logic into a composable/store helper), then run a broader frontend validation pass for the Phase 2 refactor.
 
 ## Notes / Resources
 
