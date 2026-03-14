@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute } from 'vue-router'
-import NavLink from '@/components/ui/NavLink.vue'
+import NavLink from './components/ui/NavLink.vue'
 
 const route = useRoute()
 const showNavigation = computed(() => route.path !== '/onboarding')
