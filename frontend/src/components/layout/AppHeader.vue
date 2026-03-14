@@ -5,6 +5,7 @@ import AppText from '../ui/AppText.vue'
 
 defineProps<{
   projectName?: string
+  overflowOpen?: boolean
 }>()
 
 defineEmits<{
@@ -36,6 +37,8 @@ defineEmits<{
 
     <AppButton
       aria-label="Open workspace actions"
+      aria-haspopup="menu"
+      :aria-expanded="overflowOpen ? 'true' : 'false'"
       @click="$emit('openOverflow')"
     >
       ⋮

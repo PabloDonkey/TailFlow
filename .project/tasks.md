@@ -2,14 +2,21 @@
 
 ## TODO
 
-- [ ] Capture final cleanup follow-ups for Phase 2 and pick next implementation target.
+- [ ] Start next Phase 3 slice: introduce a project picker panel/sheet from the workspace header action.
 
 ## IN PROGRESS
 
-- [ ] Prepare next development-loop step after Phase 2 validation completion.
+- [ ] Implement workspace-first migration steps incrementally with focused validation.
 
 ## DONE
 
+- [x] Replace placeholder workspace overflow interaction with an explicit actions menu/sheet.
+- [x] Validate actions menu/sheet slice with frontend checks (`npm run test`, `npm run lint`).
+- [x] Move tags experience into a secondary workspace panel path while keeping `/tags` route available.
+- [x] Reuse a shared tags library panel component in both `WorkspacePage` and `TagsPage`.
+- [x] Validate tags panel migration with frontend checks (`npm run test`, `npm run lint`).
+- [x] Switch default and post-onboarding navigation to workspace-first (`/` and onboarding now route to `/workspace`).
+- [x] Validate workspace-first routing slice with frontend tests (`npm run test`).
 - [x] Move tag mutation UI logic from `WorkspaceTagInspectorPanel` into `frontend/src/composables/useTagMutations.ts`.
 - [x] Run broader frontend validation for Phase 2 (`npm run test`, `npm run lint`).
 - [x] Run UI contract review for Phase 2 workspace panel refactor.

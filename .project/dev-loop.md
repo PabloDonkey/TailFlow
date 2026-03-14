@@ -2,11 +2,11 @@
 
 ## Current Feature
 
-Frontend one-page responsive refactor planning
+Frontend one-page responsive refactor (Phase 3 workspace-first migration)
 
 ## Current Step
 
-REFINE
+IMPLEMENT
 
 Possible values:
 PLAN
@@ -16,7 +16,7 @@ REFINE
 
 ## Objective
 
-Implement Phase 2 of the frontend one-page refactor by extracting image browsing/viewing/tag-inspector UI into workspace panels while preserving existing route behavior.
+Implement Phase 3 workspace-first migration slices while preserving compatibility for legacy routes.
 
 ## Files involved
 
@@ -26,9 +26,11 @@ Implement Phase 2 of the frontend one-page refactor by extracting image browsing
 - frontend/src/pages/WorkspacePage.vue
 - frontend/src/components/layout/AppShell.vue
 - frontend/src/components/layout/AppHeader.vue
+- frontend/src/components/layout/WorkspaceActionsMenu.vue
 - frontend/src/components/layout/WorkspaceLayout.vue
 - frontend/src/components/layout/WorkspaceImageViewerPanel.vue
 - frontend/src/components/sidebar/WorkspaceImageBrowserPanel.vue
+- frontend/src/components/sidebar/WorkspaceTagsLibraryPanel.vue
 - frontend/src/components/inspector/WorkspaceTagInspectorPanel.vue
 - frontend/src/composables/useTagMutations.ts
 - frontend/src/pages/GalleryPage.vue
@@ -45,6 +47,8 @@ Implement Phase 2 of the frontend one-page refactor by extracting image browsing
 4. extract image browser, image viewer, and tag inspector into workspace panel components
 5. wire panel orchestration in `WorkspacePage` (selection + prev/next/jump + tag edits)
 6. validate each iteration with error checks and focused tests
+7. switch default and onboarding redirects to `/workspace` while keeping legacy routes operational
+8. move secondary flows (starting with tags library) into workspace panels/drawers incrementally
 
 ## Progress
 
@@ -71,10 +75,18 @@ Implement Phase 2 of the frontend one-page refactor by extracting image browsing
 - Re-ran focused frontend validation after the split: `npm run test -- src/__tests__/image-detail.test.ts src/__tests__/gallery-page.test.ts` (pass).
 - Extracted tag mutation logic from `WorkspaceTagInspectorPanel` into shared composable `frontend/src/composables/useTagMutations.ts` and kept inspector rendering/orchestration behavior unchanged.
 - Ran broader frontend validation after extraction: `npm run test` (all tests passing) and `npm run lint` (pass).
+- Implemented workspace-first routing slice: default `/` redirect now points to `/workspace`, and onboarding completion/configured redirects now route to `/workspace`.
+- Validated the routing slice with `npm run test` (all frontend tests passing).
+- Implemented tags-library secondary panel path in workspace flow by wiring `openOverflow` to toggle a reusable `WorkspaceTagsLibraryPanel` in the right panel.
+- Refactored `/tags` route rendering to reuse `WorkspaceTagsLibraryPanel` so route compatibility is preserved during migration.
+- Validated the tags-library migration slice with `npm run test` (pass) and `npm run lint` (pass).
+- Replaced placeholder overflow behavior with an explicit `WorkspaceActionsMenu` (desktop + mobile-safe) and wired action handlers to switch between tag inspector and tags library panel states.
+- Added overflow accessibility state to `AppHeader` via `aria-haspopup` and `aria-expanded` binding.
+- Validated actions menu slice with `npm run test` (pass) and `npm run lint` (pass).
 
 ## Next Action
 
-Close out Phase 2 stabilization notes and define the next concrete implementation slice for the one-page responsive workspace refactor.
+Implement the next Phase 3 slice by wiring the header project-picker action to a concrete panel/sheet for project switching (desktop + mobile-safe) while preserving current route compatibility.
 
 ## Notes / Resources
 

@@ -23,7 +23,7 @@ onMounted(async () => {
     status.value = onboardingStatus
 
     if (onboardingStatus.configured) {
-      await router.replace('/projects')
+      await router.replace('/workspace')
       return
     }
 
@@ -56,7 +56,7 @@ async function saveProjectsRootPath() {
   saving.value = true
   try {
     await configureOnboardingProjectsRootPath(value)
-    await router.replace('/projects')
+    await router.replace('/workspace')
   } catch (e) {
     error.value = String(e)
   } finally {

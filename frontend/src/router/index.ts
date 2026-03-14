@@ -10,7 +10,7 @@ import WorkspacePage from '../pages/WorkspacePage.vue'
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', redirect: '/projects' },
+    { path: '/', redirect: '/workspace' },
     { path: '/onboarding', component: OnboardingPage },
     { path: '/projects', component: UploadPage },
     { path: '/upload', redirect: '/projects' },
@@ -34,7 +34,7 @@ router.beforeEach(async (to) => {
   }
 
   if (status.configured && to.path === '/onboarding') {
-    return { path: '/projects' }
+    return { path: '/workspace' }
   }
 
   return true

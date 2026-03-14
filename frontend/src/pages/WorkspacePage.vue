@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import AppShell from '../components/layout/AppShell.vue'
 import AppHeader from '../components/layout/AppHeader.vue'
+import WorkspaceActionsMenu from '../components/layout/WorkspaceActionsMenu.vue'
 import WorkspaceLayout from '../components/layout/WorkspaceLayout.vue'
 import WorkspaceImageBrowserPanel from '../components/sidebar/WorkspaceImageBrowserPanel.vue'
+import WorkspaceTagsLibraryPanel from '../components/sidebar/WorkspaceTagsLibraryPanel.vue'
 import WorkspaceImageViewerPanel from '../components/layout/WorkspaceImageViewerPanel.vue'
 import WorkspaceTagInspectorPanel from '../components/inspector/WorkspaceTagInspectorPanel.vue'
 import { useProjectStore } from '../stores/projects'
@@ -13,6 +15,8 @@ const projectStore = useProjectStore()
 const imageStore = useImageStore()
 const selectedProject = computed(() => projectStore.selectedProject)
 const orderedImages = computed(() => imageStore.sortedImages)
+const showActionsMenu = ref(false)
+const showTagsLibrary = ref(false)
 
 const currentImageIndex = computed(() => {
   const currentImageId = imageStore.currentImage?.id
@@ -65,7 +69,25 @@ function openProjectPicker() {
 }
 
 function openOverflow() {
-  void 0
+  showActionsMenu.value = !showActionsMenu.value
+}
+
+function closeTagsLibrary() {
+  showTagsLibrary.value = false
+}
+
+function closeActionsMenu() {
+  showActionsMenu.value = false
+}
+
+function showTagsLibraryPanel() {
+  showTagsLibrary.value = true
+  closeActionsMenu()
+}
+
+function showTagInspectorPanel() {
+  showTagsLibrary.value = false
+  closeActionsMenu()
 }
 
 async function goToImageByIndex(index: number) {
@@ -99,8 +121,16 @@ async function goToNextImage() {
     <template #header>
       <AppHeader
         :project-name="selectedProject?.name"
+        :overflow-open="showActionsMenu"
         @open-project-picker="openProjectPicker"
         @open-overflow="openOverflow"
+      />
+      <WorkspaceActionsMenu
+        v-if="showActionsMenu"
+        :show-tags-library="showTagsLibrary"
+        @close="closeActionsMenu"
+        @show-tags-library="showTagsLibraryPanel"
+        @show-inspector="showTagInspectorPanel"
       />
     </template>
 
@@ -126,7 +156,13 @@ async function goToNextImage() {
       />
 
       <template #right>
+        <WorkspaceTagsLibraryPanel
+          v-if="showTagsLibrary"
+          :show-close="true"
+          @close="closeTagsLibrary"
+        />
         <WorkspaceTagInspectorPanel
+          v-else
           :project-id="projectStore.selectedProjectId"
           :selected-project="selectedProject"
         />

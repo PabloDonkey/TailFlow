@@ -18,12 +18,12 @@ Introduce the new one-page workspace shell structure without breaking existing r
 - [x] Create `WorkspaceLayout` component for desktop/mobile panel regions
 - [x] Create `WorkspacePage` scaffold that composes shell components
 - [x] Wire `/workspace` route while preserving current default redirects/navigation
-- [ ] Add panel components (`ImageBrowserPanel`, `ImageWorkspace`, `TagInspector`) and move existing page logic into them
-- [ ] Switch default post-onboarding route from `/projects` to `/workspace`
+- [x] Add panel components (`ImageBrowserPanel`, `ImageWorkspace`, `TagInspector`) and move existing page logic into them
+- [x] Switch default post-onboarding route from `/projects` to `/workspace`
 - [ ] Remove legacy top nav links once workspace shell is fully operational
 
 ## Validation
 
-- [ ] Frontend tests pass
+- [x] Frontend tests pass
 - [ ] Existing routes still render
 - [ ] `/workspace` loads and displays responsive shell regions
