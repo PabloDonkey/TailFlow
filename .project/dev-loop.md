@@ -6,7 +6,7 @@ Frontend one-page responsive refactor planning
 
 ## Current Step
 
-TEST
+REFINE
 
 Possible values:
 PLAN
@@ -30,6 +30,7 @@ Implement Phase 2 of the frontend one-page refactor by extracting image browsing
 - frontend/src/components/layout/WorkspaceImageViewerPanel.vue
 - frontend/src/components/sidebar/WorkspaceImageBrowserPanel.vue
 - frontend/src/components/inspector/WorkspaceTagInspectorPanel.vue
+- frontend/src/composables/useTagMutations.ts
 - frontend/src/pages/GalleryPage.vue
 - frontend/src/pages/ImageDetailPage.vue
 - frontend/src/pages/TagsPage.vue
@@ -68,10 +69,12 @@ Implement Phase 2 of the frontend one-page refactor by extracting image browsing
 - Ran UI contract review on Phase 2 workspace components and route composition.
 - Refactored `WorkspaceTagInspectorPanel` to orchestrate inspector subcomponents (`TagInspectorTagList`, `TagInspectorMutationControls`, `TagInspectorTagMetadata`) while preserving existing store interactions and behavior.
 - Re-ran focused frontend validation after the split: `npm run test -- src/__tests__/image-detail.test.ts src/__tests__/gallery-page.test.ts` (pass).
+- Extracted tag mutation logic from `WorkspaceTagInspectorPanel` into shared composable `frontend/src/composables/useTagMutations.ts` and kept inspector rendering/orchestration behavior unchanged.
+- Ran broader frontend validation after extraction: `npm run test` (all tests passing) and `npm run lint` (pass).
 
 ## Next Action
 
-Address remaining non-blocking UI contract follow-up (extract tag mutation logic into a composable/store helper), then run a broader frontend validation pass for the Phase 2 refactor.
+Close out Phase 2 stabilization notes and define the next concrete implementation slice for the one-page responsive workspace refactor.
 
 ## Notes / Resources
 

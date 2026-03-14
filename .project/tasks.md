@@ -2,15 +2,16 @@
 
 ## TODO
 
-- [ ] Move tag mutation UI logic from `WorkspaceTagInspectorPanel` into a composable or store helper.
-- [ ] Run broader frontend validation for Phase 2 (`npm run test`, optional `npm run lint`).
+- [ ] Capture final cleanup follow-ups for Phase 2 and pick next implementation target.
 
 ## IN PROGRESS
 
-- [ ] Validate and stabilize Phase 2 workspace panel extraction with broader frontend checks.
+- [ ] Prepare next development-loop step after Phase 2 validation completion.
 
 ## DONE
 
+- [x] Move tag mutation UI logic from `WorkspaceTagInspectorPanel` into `frontend/src/composables/useTagMutations.ts`.
+- [x] Run broader frontend validation for Phase 2 (`npm run test`, `npm run lint`).
 - [x] Run UI contract review for Phase 2 workspace panel refactor.
 - [x] Run focused frontend tests for Phase 2 workspace panel flow.
 - [x] Split `WorkspaceTagInspectorPanel` into smaller subcomponents to stay within UI contract target size.

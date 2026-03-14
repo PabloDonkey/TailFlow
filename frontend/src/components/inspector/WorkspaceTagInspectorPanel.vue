@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import type { Project } from '../../api'
+import type { Project, ProjectTag } from '../../api'
+import { useTagMutations } from '../../composables/useTagMutations'
 import { useImageStore } from '../../stores/images'
 import AppSectionTitle from '../ui/AppSectionTitle.vue'
 import AppText from '../ui/AppText.vue'
 import TagInspectorMutationControls from './TagInspectorMutationControls.vue'
 import TagInspectorTagList from './TagInspectorTagList.vue'
-import { useTagMutation } from './taginspector/useTagMutation'
 
 const props = defineProps<{
   projectId: string | null
@@ -15,22 +15,57 @@ const props = defineProps<{
 
 const imageStore = useImageStore()
 const newTag = ref('')
-const errorMsg = ref<string | null>(null)
 const currentImage = computed(() => imageStore.currentImage)
+const projectIdRef = computed(() => props.projectId)
+
+function getTagRoleLabel(tag: ProjectTag): string | null {
+  if (!tag.is_protected) {
+    return null
+  }
+  if (tag.position === 0) {
+    return 'Trigger'
+  }
+  if (tag.position === 1) {
+    return 'Class'
+  }
+  return 'Protected'
+}
+
+function getTagSourceLabel(tag: ProjectTag): string | null {
+  const catalogSources = Object.keys(tag.catalog_ids)
+  if (!catalogSources.length) {
+    return null
+  }
+  if (
+    props.selectedProject &&
+    props.selectedProject.tagging_mode &&
+    tag.catalog_ids[props.selectedProject.tagging_mode as keyof typeof tag.catalog_ids]
+  ) {
+    return props.selectedProject.tagging_mode
+  }
+  return catalogSources.join(', ')
+}
 
 const {
-  getTagRoleLabel,
-  getTagSourceLabel,
+  mutationError,
+  mutationLoading,
   addTag,
   removeTag
-} = useTagMutation({
+} = useTagMutations({
   imageStore,
-  projectId: props.projectId,
-  selectedProject: props.selectedProject,
-  currentImage,
-  newTag,
-  errorMsg
+  projectId: projectIdRef,
+  currentImage
 })
+
+async function handleAddTag() {
+  if (mutationLoading.value) {
+    return
+  }
+  const added = await addTag(newTag.value)
+  if (added) {
+    newTag.value = ''
+  }
+}
 </script>
 
 <template>
@@ -60,8 +95,8 @@ const {
 
       <TagInspectorMutationControls
         v-model="newTag"
-        :error-msg="errorMsg"
-        @add="addTag"
+        :error-msg="mutationError"
+        @add="handleAddTag"
       />
     </template>
   </section>
