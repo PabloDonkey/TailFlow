@@ -3,6 +3,15 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useProjectStore } from '../stores/projects'
 import type { TaggingMode } from '../api'
 
+const props = withDefaults(
+  defineProps<{
+    detailsOnly?: boolean
+  }>(),
+  {
+    detailsOnly: false,
+  },
+)
+
 const projectStore = useProjectStore()
 
 const selectedProject = computed(() => projectStore.selectedProject)
@@ -164,7 +173,10 @@ async function saveProjectMetadata() {
       {{ projectStore.lastDiscover.marked_missing_projects }} marked missing.
     </p>
 
-    <section class="create-project">
+    <section
+      v-if="!props.detailsOnly"
+      class="create-project"
+    >
       <h2>Create Project</h2>
       <div class="form-grid">
         <label>
@@ -236,7 +248,10 @@ async function saveProjectMetadata() {
     </section>
 
     <div class="content-grid">
-      <section class="project-list">
+      <section
+        v-if="!props.detailsOnly"
+        class="project-list"
+      >
         <h2>Available Projects</h2>
         <p
           v-if="!projectStore.projects.length"

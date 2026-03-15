@@ -2,7 +2,6 @@
 
 ## TODO
 
-1. [pending] Complete Slice A in `.project/tasks/2_project-manager-mode-refactor[in-progress]/implementation-checklist-phase1.md`.
 1. [pending] Complete Slice B in `.project/tasks/2_project-manager-mode-refactor[in-progress]/implementation-checklist-phase1.md`.
 1. [pending] Complete Slice C in `.project/tasks/2_project-manager-mode-refactor[in-progress]/implementation-checklist-phase1.md`.
 1. [pending] Complete Slice D in `.project/tasks/2_project-manager-mode-refactor[in-progress]/implementation-checklist-phase1.md`.
@@ -11,10 +10,11 @@
 
 ## IN PROGRESS
 
-1. [in-progress] Start project manager mode refactor using `.project/tasks/2_project-manager-mode-refactor[in-progress]/implementation-checklist-phase1.md`.
+1. [in-progress] Execute Slice B (left project browser panel with top create button) from `.project/tasks/2_project-manager-mode-refactor[in-progress]/implementation-checklist-phase1.md`.
 
 ## DONE
 
+1. [finished] Complete Slice A workspace mode/layout routing in `WorkspacePage` (tagging/projects/tag-library conditional rendering).
 1. [finished] Create Phase 6 implementation branch `feature/workspace-router-convergence-phase6`.
 1. [finished] Add Phase 6 planning checklist at `.project/tasks/1_frontend-one-page-responsive-refactor-planning[closed]/implementation-checklist-phase6.md`.
 1. [finished] Complete Phase 6 Slice A route policy lock for `/projects`, `/gallery`, `/image/:id`, and `/tags`.

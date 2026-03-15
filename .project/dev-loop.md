@@ -167,10 +167,18 @@ Implement project manager mode with a two-panel layout (left project browser, ri
 - Completed Phase 6 Slice A route policy lock with explicit keep/redirect decisions.
 - Implemented initial Phase 6 Slice B redirects in `frontend/src/router/index.ts` for `/gallery`, `/image/:id`, and `/tags`.
 - Added workspace query hydration in `frontend/src/pages/WorkspacePage.vue` for `panel`, `project`, and `image` query values.
+- Started project-manager refactor branch `feature/project-manager-mode-refactor-phase1`.
+- Added phase checklist at `.project/tasks/2_project-manager-mode-refactor[in-progress]/implementation-checklist-phase1.md`.
+- Completed Slice A in `WorkspacePage` with explicit workspace modes (`tagging`, `projects`, `tag-library`) and conditional rendering:
+	- projects mode hides image browser + image viewer and shows project-manager layout scaffold.
+	- tag-library mode renders single-layout full-width tags view.
+	- tagging mode preserves existing browser/viewer/inspector flow.
+- Updated `UploadPage`/`WorkspaceRightPanel` integration so projects view can render details-only panel content.
+- Validated Slice A via focused tests (`workspace-layout`, `workspace-overlays`, `upload-page`) and broader frontend checks (`npm run lint`, `npm run build`).
 
 ## Next Action
 
-Execute Phase 1 Slice A implementation for workspace mode orchestration and conditional layout visibility.
+Implement Phase 1 Slice B by extracting a dedicated left `ProjectBrowserPanel` component with top create button and project-card list.
 
 ## Notes / Resources
 

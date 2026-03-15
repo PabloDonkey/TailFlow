@@ -21,7 +21,10 @@ const emit = defineEmits<{
     :show-close="true"
     @close="emit('closeTagsLibrary')"
   />
-  <UploadPage v-else-if="activePanel === 'projects'" />
+  <UploadPage
+    v-else-if="activePanel === 'projects'"
+    :details-only="true"
+  />
   <WorkspaceTagInspectorPanel
     v-else
     :project-id="projectId"

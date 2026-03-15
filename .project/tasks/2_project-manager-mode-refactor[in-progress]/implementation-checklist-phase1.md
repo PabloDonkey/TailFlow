@@ -23,10 +23,10 @@ Also make Tag Library a full-width single-layout mode.
 
 ### Slice A — Workspace Mode State + Layout Routing
 
-1. [pending] Introduce explicit workspace mode orchestration (`tagging`, `projects`, `tag-library`) in `WorkspacePage`.
-1. [pending] Route workspace action/menu events and query `panel` values into mode switching.
-1. [pending] Hide image browser + image viewer when mode is `projects`.
-1. [pending] Hide non-tag-library surfaces when mode is `tag-library`.
+1. [finished] Introduce explicit workspace mode orchestration (`tagging`, `projects`, `tag-library`) in `WorkspacePage`.
+1. [finished] Route workspace action/menu events and query `panel` values into mode switching.
+1. [finished] Hide image browser + image viewer when mode is `projects`.
+1. [finished] Hide non-tag-library surfaces when mode is `tag-library`.
 
 ### Slice B — Project Browser Panel (Left)
 
