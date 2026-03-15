@@ -32,6 +32,7 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - frontend/src/components/layout/WorkspaceMobilePanelContent.vue
 - frontend/src/components/layout/WorkspaceRightPanel.vue
 - frontend/src/components/layout/WorkspaceHeaderOverlays.vue
+- frontend/src/components/layout/WorkspaceHeaderSection.vue
 - frontend/src/components/layout/WorkspaceLayout.vue
 - frontend/src/components/layout/WorkspaceImageViewerPanel.vue
 - frontend/src/components/sidebar/WorkspaceImageBrowserPanel.vue
@@ -122,10 +123,13 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - Extracted header overlays (`WorkspaceProjectPickerPanel` + `WorkspaceActionsMenu`) into dedicated composition component `WorkspaceHeaderOverlays`.
 - Refactored `WorkspacePage` header slot to consume `WorkspaceHeaderOverlays` and remove inline overlay branch markup.
 - Validated header overlay composition extraction with `npm run lint` (pass) and `npm run test` (pass).
+- Extracted header slot composition (`AppHeader` + `WorkspaceHeaderOverlays`) into dedicated component `WorkspaceHeaderSection`.
+- Refactored `WorkspacePage` to consume `WorkspaceHeaderSection` and remove inline header-slot composition markup.
+- Ran broader Phase 3 stabilization sweep: `npm run lint` (pass), `npm run test` (pass), `npm run build` (pass).
 
 ## Next Action
 
-Implement the next Phase 3 slice by extracting header slot composition (`AppHeader` + `WorkspaceHeaderOverlays`) into a dedicated workspace header component to further simplify `WorkspacePage` structure.
+Define the next post-Phase-3 implementation target (for example router simplification or legacy route convergence) and capture acceptance criteria before starting the next migration phase.
 
 ## Notes / Resources
 

@@ -27,14 +27,14 @@ Continue the one-page workspace migration by reducing `WorkspacePage` complexity
 - [x] Extract desktop right-panel switcher into `frontend/src/components/layout/WorkspaceRightPanel.vue`
 - [x] Extract mobile panel content switcher into `frontend/src/components/layout/WorkspaceMobilePanelContent.vue`
 - [x] Extract header overlays composition into `frontend/src/components/layout/WorkspaceHeaderOverlays.vue`
+- [x] Extract header slot composition into `frontend/src/components/layout/WorkspaceHeaderSection.vue`
 
 ## Remaining Slices
 
-- [ ] Extract header slot composition (`AppHeader` + `WorkspaceHeaderOverlays`) into a dedicated workspace header component
-- [ ] Run a broader stabilization pass and confirm no regressions in workspace/legacy route behavior
+- [ ] Define the next post-Phase-3 migration target and acceptance criteria
 
 ## Validation Log
 
 - [x] Repeated slice-level validation with `npm run lint`
 - [x] Repeated slice-level validation with `npm run test`
-- [ ] Final Phase 3 broader validation and cleanup sweep
+- [x] Final Phase 3 broader validation and cleanup sweep (`npm run lint`, `npm run test`, `npm run build`)

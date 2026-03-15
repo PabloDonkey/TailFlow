@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import AppShell from '../components/layout/AppShell.vue'
-import AppHeader from '../components/layout/AppHeader.vue'
-import WorkspaceHeaderOverlays from '../components/layout/WorkspaceHeaderOverlays.vue'
+import WorkspaceHeaderSection from '../components/layout/WorkspaceHeaderSection.vue'
 import WorkspaceMobileQuickActions from '../components/layout/WorkspaceMobileQuickActions.vue'
 import WorkspaceMobilePanelContent from '../components/layout/WorkspaceMobilePanelContent.vue'
 import WorkspaceMobilePanelSheet from '../components/layout/WorkspaceMobilePanelSheet.vue'
@@ -79,15 +78,8 @@ function closeTagsLibrary() {
 <template>
   <AppShell :full-width="true">
     <template #header>
-      <AppHeader
+      <WorkspaceHeaderSection
         :project-name="selectedProject?.name"
-        :project-picker-open="showProjectPicker"
-        :overflow-open="showActionsMenu"
-        @open-project-picker="openProjectPicker"
-        @open-overflow="openOverflow"
-      />
-
-      <WorkspaceHeaderOverlays
         :show-project-picker="showProjectPicker"
         :show-actions-menu="showActionsMenu"
         :show-tags-library="showTagsLibrary"
@@ -95,6 +87,8 @@ function closeTagsLibrary() {
         :selected-project-id="projectStore.selectedProjectId"
         :loading="projectStore.loading"
         :error="projectStore.error"
+        @open-project-picker="openProjectPicker"
+        @open-overflow="openOverflow"
         @close-project-picker="closeProjectPicker"
         @refresh-projects="refreshProjects"
         @select-project="selectProjectFromPicker"

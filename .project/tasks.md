@@ -2,7 +2,7 @@
 
 ## TODO
 
-- [ ] Start next Phase 3 slice: extract header slot composition (`AppHeader` + overlay composition) into a dedicated workspace header component.
+- [ ] Define next post-Phase-3 implementation target and acceptance criteria.
 
 ## IN PROGRESS
 
@@ -10,6 +10,8 @@
 
 ## DONE
 
+- [x] Extract header slot composition into `frontend/src/components/layout/WorkspaceHeaderSection.vue`.
+- [x] Run broader Phase 3 frontend stabilization checks (`npm run lint`, `npm run test`, `npm run build`).
 - [x] Extract workspace header overlays into `frontend/src/components/layout/WorkspaceHeaderOverlays.vue`.
 - [x] Validate header overlay composition extraction with frontend checks (`npm run lint`, `npm run test`).
 - [x] Extract workspace mobile panel content switcher into `frontend/src/components/layout/WorkspaceMobilePanelContent.vue`.
