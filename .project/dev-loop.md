@@ -30,6 +30,7 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - frontend/src/components/layout/WorkspaceLayout.vue
 - frontend/src/components/layout/WorkspaceImageViewerPanel.vue
 - frontend/src/components/sidebar/WorkspaceImageBrowserPanel.vue
+- frontend/src/components/sidebar/WorkspaceProjectPickerPanel.vue
 - frontend/src/components/sidebar/WorkspaceTagsLibraryPanel.vue
 - frontend/src/components/inspector/WorkspaceTagInspectorPanel.vue
 - frontend/src/composables/useTagMutations.ts
@@ -83,10 +84,14 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - Replaced placeholder overflow behavior with an explicit `WorkspaceActionsMenu` (desktop + mobile-safe) and wired action handlers to switch between tag inspector and tags library panel states.
 - Added overflow accessibility state to `AppHeader` via `aria-haspopup` and `aria-expanded` binding.
 - Validated actions menu slice with `npm run test` (pass) and `npm run lint` (pass).
+- Wired header project-picker action to a concrete `WorkspaceProjectPickerPanel` (desktop + mobile-safe), including refresh, selection, and close actions.
+- Added project-picker accessibility state to `AppHeader` via `aria-haspopup` and `aria-expanded` binding.
+- Ensured workspace overlays are mutually exclusive by closing actions menu when opening project picker (and vice versa).
+- Validated project picker slice with `npm run test` (pass) and `npm run lint` (pass).
 
 ## Next Action
 
-Implement the next Phase 3 slice by wiring the header project-picker action to a concrete panel/sheet for project switching (desktop + mobile-safe) while preserving current route compatibility.
+Implement the next Phase 3 slice by adding explicit mobile quick actions for image navigation and panel switching while preserving existing desktop behavior and route compatibility.
 
 ## Notes / Resources
 

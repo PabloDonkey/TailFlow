@@ -5,6 +5,7 @@ import AppText from '../ui/AppText.vue'
 
 defineProps<{
   projectName?: string
+  projectPickerOpen?: boolean
   overflowOpen?: boolean
 }>()
 
@@ -18,6 +19,8 @@ defineEmits<{
   <header class="sticky top-0 z-[110] grid grid-cols-[auto_1fr_auto] items-center gap-3 bg-[var(--tf-color-header-bg)] px-[0.8rem] py-[0.65rem] text-[var(--tf-color-header-text)] lg:px-4 lg:py-[0.8rem]">
     <AppButton
       aria-label="Open project picker"
+      aria-haspopup="menu"
+      :aria-expanded="projectPickerOpen ? 'true' : 'false'"
       @click="$emit('openProjectPicker')"
     >
       ☰

@@ -5,6 +5,7 @@ import AppHeader from '../components/layout/AppHeader.vue'
 import WorkspaceActionsMenu from '../components/layout/WorkspaceActionsMenu.vue'
 import WorkspaceLayout from '../components/layout/WorkspaceLayout.vue'
 import WorkspaceImageBrowserPanel from '../components/sidebar/WorkspaceImageBrowserPanel.vue'
+import WorkspaceProjectPickerPanel from '../components/sidebar/WorkspaceProjectPickerPanel.vue'
 import WorkspaceTagsLibraryPanel from '../components/sidebar/WorkspaceTagsLibraryPanel.vue'
 import WorkspaceImageViewerPanel from '../components/layout/WorkspaceImageViewerPanel.vue'
 import WorkspaceTagInspectorPanel from '../components/inspector/WorkspaceTagInspectorPanel.vue'
@@ -15,6 +16,7 @@ const projectStore = useProjectStore()
 const imageStore = useImageStore()
 const selectedProject = computed(() => projectStore.selectedProject)
 const orderedImages = computed(() => imageStore.sortedImages)
+const showProjectPicker = ref(false)
 const showActionsMenu = ref(false)
 const showTagsLibrary = ref(false)
 
@@ -65,10 +67,12 @@ async function selectImage(imageId: string) {
 }
 
 function openProjectPicker() {
-  void 0
+  showProjectPicker.value = !showProjectPicker.value
+  showActionsMenu.value = false
 }
 
 function openOverflow() {
+  showProjectPicker.value = false
   showActionsMenu.value = !showActionsMenu.value
 }
 
@@ -78,6 +82,21 @@ function closeTagsLibrary() {
 
 function closeActionsMenu() {
   showActionsMenu.value = false
+}
+
+function closeProjectPicker() {
+  showProjectPicker.value = false
+}
+
+function refreshProjects() {
+  void projectStore.fetchProjects()
+}
+
+function selectProjectFromPicker(projectId: string) {
+  if (projectStore.selectedProjectId !== projectId) {
+    projectStore.selectProject(projectId)
+  }
+  closeProjectPicker()
 }
 
 function showTagsLibraryPanel() {
@@ -121,9 +140,20 @@ async function goToNextImage() {
     <template #header>
       <AppHeader
         :project-name="selectedProject?.name"
+        :project-picker-open="showProjectPicker"
         :overflow-open="showActionsMenu"
         @open-project-picker="openProjectPicker"
         @open-overflow="openOverflow"
+      />
+      <WorkspaceProjectPickerPanel
+        v-if="showProjectPicker"
+        :projects="projectStore.projects"
+        :selected-project-id="projectStore.selectedProjectId"
+        :loading="projectStore.loading"
+        :error="projectStore.error"
+        @close="closeProjectPicker"
+        @refresh="refreshProjects"
+        @select-project="selectProjectFromPicker"
       />
       <WorkspaceActionsMenu
         v-if="showActionsMenu"

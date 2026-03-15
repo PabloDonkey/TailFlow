@@ -2,7 +2,7 @@
 
 ## TODO
 
-- [ ] Start next Phase 3 slice: introduce a project picker panel/sheet from the workspace header action.
+- [ ] Start next Phase 3 slice: add explicit mobile quick actions for image navigation and panel switching.
 
 ## IN PROGRESS
 
@@ -10,6 +10,8 @@
 
 ## DONE
 
+- [x] Introduce a project picker panel/sheet from the workspace header action.
+- [x] Validate project picker panel/sheet slice with frontend checks (`npm run test`, `npm run lint`).
 - [x] Replace placeholder workspace overflow interaction with an explicit actions menu/sheet.
 - [x] Validate actions menu/sheet slice with frontend checks (`npm run test`, `npm run lint`).
 - [x] Move tags experience into a secondary workspace panel path while keeping `/tags` route available.
