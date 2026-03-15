@@ -2,15 +2,19 @@
 
 ## TODO
 
-- [ ] Execute manual responsive QA using the checklist in `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md`.
-- [ ] Capture and attach Phase 4 desktop/mobile screenshots for PR review.
+- [ ] Add focused route regression coverage for `/gallery`, `/image/:id`, and `/tags` legacy paths after redirect convergence.
+- [ ] Run full frontend validation for Phase 6 slice (`npm run lint`, `npm run test`, `npm run build`).
 
 ## IN PROGRESS
 
-- [ ] Execute manual QA pass and record findings in Phase 4 summary.
+- [ ] Phase 6 Slice B: converge legacy routes to workspace redirects in `frontend/src/router/index.ts`.
+- [ ] Phase 6 Slice C: validate workspace query hydration (`panel`, `project`, `image`) in `frontend/src/pages/WorkspacePage.vue`.
 
 ## DONE
 
+- [x] Create Phase 6 implementation branch `feature/workspace-router-convergence-phase6`.
+- [x] Add Phase 6 planning checklist at `.project/tasks/frontend-one-page-responsive-refactor-planning/implementation-checklist-phase6.md`.
+- [x] Complete Phase 6 Slice A route policy lock for `/projects`, `/gallery`, `/image/:id`, and `/tags`.
 - [x] Add 200ms delayed loading indicator behavior in workspace image viewer and image browser to prevent fast-load flash.
 - [x] Split image store loading state (`imagesLoading`, `imageLoading`, `tagMutationLoading`) so image browser loading appears only on project image-list fetch.
 - [x] Hide viewer previous/next/jump controls in mobile mode (`WorkspaceImageViewerPanel`).

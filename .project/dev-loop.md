@@ -2,7 +2,7 @@
 
 ## Current Feature
 
-Frontend one-page responsive refactor (Phase 4 workspace UX convergence)
+Frontend one-page responsive refactor (Phase 6 router convergence)
 
 ## Current Step
 
@@ -16,7 +16,7 @@ REFINE
 
 ## Objective
 
-Implement Phase 4 workspace UX convergence slices (layout/scroll containment, tagging-focused workspace content, and overlay interaction fixes) while preserving route compatibility.
+Converge legacy frontend routes into workspace-first navigation while preserving compatibility through safe redirects and workspace query hydration.
 
 ## Files involved
 
@@ -51,15 +51,15 @@ Implement Phase 4 workspace UX convergence slices (layout/scroll containment, ta
 - frontend/src/pages/TagsPage.vue
 - frontend/src/pages/OnboardingPage.vue
 - .project/tasks/frontend-one-page-responsive-refactor-planning/implementation-checklist-phase3.md
+- .project/tasks/frontend-one-page-responsive-refactor-planning/implementation-checklist-phase6.md
 
 ## Implementation Plan
 
-1. remove workspace shell width caps and enforce panel-scoped overflow in desktop layout
-2. refactor image viewer panel to maximize image viewport without page scroll while preserving aspect ratio
-3. move tagging metadata (mode/count) into inspector context and remove non-essential viewer metadata
-4. hide remove affordance for protected tags in inspector list
-5. fix overlay positioning/dismissal behavior for project picker and workspace actions on desktop/mobile
-6. run focused frontend checks after each slice; run broader lint/test/build after phase completion
+1. lock route policy for legacy paths (`/projects`, `/gallery`, `/image/:id`, `/tags`)
+2. implement redirect mapping in `frontend/src/router/index.ts` toward workspace query targets
+3. hydrate workspace panel/project/image state from route query in `WorkspacePage`
+4. validate route behavior with focused tests and then full frontend lint/test/build
+5. close out tracker artifacts and document any remaining compatibility shims
 
 ## Progress
 
@@ -152,10 +152,15 @@ Implement Phase 4 workspace UX convergence slices (layout/scroll containment, ta
 - Updated viewer loading bindings to use `imageLoading` and tag mutation loading to use `tagMutationLoading`.
 - Added a shared delayed-loading composable (`200ms` threshold) and applied it to workspace image viewer/browser loading indicators to avoid fast loading flashes.
 - Re-validated with focused tests (`gallery-page`, `image-detail`, `workspace-overlays`, `workspace-layout`) and full frontend checks (pass).
+- Created Phase 6 implementation branch: `feature/workspace-router-convergence-phase6`.
+- Added Phase 6 checklist artifact at `.project/tasks/frontend-one-page-responsive-refactor-planning/implementation-checklist-phase6.md`.
+- Completed Phase 6 Slice A route policy lock with explicit keep/redirect decisions.
+- Implemented initial Phase 6 Slice B redirects in `frontend/src/router/index.ts` for `/gallery`, `/image/:id`, and `/tags`.
+- Added workspace query hydration in `frontend/src/pages/WorkspacePage.vue` for `panel`, `project`, and `image` query values.
 
 ## Next Action
 
-Execute manual desktop/mobile workspace QA with screenshot capture and complete the QA Result Log in the Phase 4 summary.
+Run focused frontend tests for route convergence behavior and fix any regressions before broad frontend validation.
 
 ## Notes / Resources
 

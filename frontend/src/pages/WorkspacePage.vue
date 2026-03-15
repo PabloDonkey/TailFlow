@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import AppShell from '../components/layout/AppShell.vue'
 import WorkspaceHeaderSection from '../components/layout/WorkspaceHeaderSection.vue'
 import WorkspaceMobileQuickActions from '../components/layout/WorkspaceMobileQuickActions.vue'
@@ -17,6 +18,7 @@ import { useImageStore } from '../stores/images'
 
 const projectStore = useProjectStore()
 const imageStore = useImageStore()
+const route = useRoute()
 const selectedProject = computed(() => projectStore.selectedProject)
 const showTagsLibrary = ref(false)
 const imageBrowserMemoKey = computed(() => {
@@ -99,6 +101,64 @@ function handleShowTagInspectorPanel() {
     openMobilePanel('inspector')
   }
 }
+
+function queryValue(key: string): string | null {
+  const rawValue = route.query[key]
+  return typeof rawValue === 'string' ? rawValue : null
+}
+
+watch(
+  () => queryValue('panel'),
+  (panel) => {
+    if (panel === 'tags') {
+      showTagsLibraryPanel()
+      if (isMobileViewport()) {
+        openMobilePanel('tags')
+      }
+      return
+    }
+
+    showTagInspectorPanel()
+
+    if (panel === 'browser' && isMobileViewport()) {
+      openMobilePanel('browser')
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  () => [queryValue('project'), projectStore.projects.length] as const,
+  ([projectFromQuery]) => {
+    if (!projectFromQuery || projectFromQuery === projectStore.selectedProjectId) {
+      return
+    }
+
+    const projectExists = projectStore.projects.some((project) => project.id === projectFromQuery)
+    if (!projectExists) {
+      return
+    }
+
+    projectStore.selectProject(projectFromQuery)
+  },
+  { immediate: true },
+)
+
+watch(
+  () => [queryValue('image'), projectStore.selectedProjectId] as const,
+  async ([imageFromQuery, selectedProjectId]) => {
+    if (!imageFromQuery || !selectedProjectId) {
+      return
+    }
+
+    if (imageStore.currentImage?.id === imageFromQuery) {
+      return
+    }
+
+    await selectImage(imageFromQuery)
+  },
+  { immediate: true },
+)
 
 </script>
 
