@@ -3,13 +3,13 @@ import { computed, ref } from 'vue'
 import AppShell from '../components/layout/AppShell.vue'
 import AppHeader from '../components/layout/AppHeader.vue'
 import WorkspaceMobileQuickActions from '../components/layout/WorkspaceMobileQuickActions.vue'
+import WorkspaceMobilePanelContent from '../components/layout/WorkspaceMobilePanelContent.vue'
 import WorkspaceMobilePanelSheet from '../components/layout/WorkspaceMobilePanelSheet.vue'
 import WorkspaceActionsMenu from '../components/layout/WorkspaceActionsMenu.vue'
 import WorkspaceRightPanel from '../components/layout/WorkspaceRightPanel.vue'
 import WorkspaceLayout from '../components/layout/WorkspaceLayout.vue'
 import WorkspaceImageBrowserPanel from '../components/sidebar/WorkspaceImageBrowserPanel.vue'
 import WorkspaceProjectPickerPanel from '../components/sidebar/WorkspaceProjectPickerPanel.vue'
-import WorkspaceTagsLibraryPanel from '../components/sidebar/WorkspaceTagsLibraryPanel.vue'
 import WorkspaceImageViewerPanel from '../components/layout/WorkspaceImageViewerPanel.vue'
 import { useWorkspaceHeaderActions } from '../composables/useWorkspaceHeaderActions'
 import { useWorkspaceOverlayState } from '../composables/useWorkspaceOverlayState'
@@ -150,21 +150,11 @@ function closeTagsLibrary() {
       :title="mobilePanelTitle"
       @close="closeMobilePanel"
     >
-      <WorkspaceImageBrowserPanel
-        v-if="mobilePanel === 'browser'"
+      <WorkspaceMobilePanelContent
+        :panel="mobilePanel"
         :selected-project-id="projectStore.selectedProjectId"
-        @select-image="handleSelectImage"
-      />
-
-      <WorkspaceTagInspectorPanel
-        v-else-if="mobilePanel === 'inspector'"
-        :project-id="projectStore.selectedProjectId"
         :selected-project="selectedProject"
-      />
-
-      <WorkspaceTagsLibraryPanel
-        v-else
-        :show-close="false"
+        @select-image="handleSelectImage"
       />
     </WorkspaceMobilePanelSheet>
   </AppShell>

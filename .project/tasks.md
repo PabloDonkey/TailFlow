@@ -2,7 +2,7 @@
 
 ## TODO
 
-- [ ] Start next Phase 3 slice: extract workspace mobile panel content switcher (browser/inspector/tags) into a dedicated component.
+- [ ] Start next Phase 3 slice: extract workspace header overlays (project picker + actions menu) into a dedicated header overlay composition component.
 
 ## IN PROGRESS
 
@@ -10,6 +10,8 @@
 
 ## DONE
 
+- [x] Extract workspace mobile panel content switcher into `frontend/src/components/layout/WorkspaceMobilePanelContent.vue`.
+- [x] Validate mobile panel content switcher extraction with frontend checks (`npm run lint`, `npm run test`).
 - [x] Extract workspace desktop right-panel switcher into `frontend/src/components/layout/WorkspaceRightPanel.vue`.
 - [x] Validate desktop right-panel switcher extraction with frontend checks (`npm run lint`, `npm run test`).
 - [x] Extract mobile quick-actions bar into `frontend/src/components/layout/WorkspaceMobileQuickActions.vue`.
