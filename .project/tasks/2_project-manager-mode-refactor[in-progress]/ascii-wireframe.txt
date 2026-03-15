@@ -1,0 +1,31 @@
+Project Manager Mode (Desktop)
+
+[Header: Project | Picker | Actions]
++------------------------------+-----------------------------------------------+
+| Project Browser              | Project Details                               |
+| [Create Project]             | if project selected:                          |
+| --------------------------   | - metadata form                               |
+| [thumb] Project A            | - sync controls                               |
+|        class: character      | - upload controls                             |
+| [thumb] Project B            | if none selected: empty state                 |
+|        class: style          |                                               |
++------------------------------+-----------------------------------------------+
+
+Tag Library Mode (Desktop)
+
+[Header: Project | Picker | Actions]
++--------------------------------------------------------------------------+
+| Tag Library (single full workspace view)                                 |
+| search / filters / list                                                   |
++--------------------------------------------------------------------------+
+
+Project Manager Mode (Mobile)
+
+[Header]
++--------------------------------------------------+
+| Project Browser                                  |
+| [Create Project]                                 |
+| [thumb] Project A                                |
+| [thumb] Project B                                |
++--------------------------------------------------+
+(tap project -> details view in sheet stack)
