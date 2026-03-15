@@ -20,7 +20,7 @@ const projectStore = useProjectStore()
 const imageStore = useImageStore()
 const route = useRoute()
 const selectedProject = computed(() => projectStore.selectedProject)
-const showTagsLibrary = ref(false)
+const activeRightPanel = ref<'inspector' | 'tags' | 'projects'>('inspector')
 const imageBrowserMemoKey = computed(() => {
   const imageSnapshot = imageStore.images
     .map((image) => `${image.id}:${image.tag_count}:${image.filename}`)
@@ -52,7 +52,8 @@ const {
   closeProjectPicker,
   showTagsLibraryPanel,
   showTagInspectorPanel,
-} = useWorkspaceOverlayState({ showTagsLibrary })
+  showProjectsPanel,
+} = useWorkspaceOverlayState({ activeRightPanel })
 
 const mobilePanelTitle = computed(() => {
   if (mobilePanel.value === 'browser') {
@@ -60,6 +61,9 @@ const mobilePanelTitle = computed(() => {
   }
   if (mobilePanel.value === 'inspector') {
     return 'Tag Inspector'
+  }
+  if (mobilePanel.value === 'projects') {
+    return 'Project Manager'
   }
   return 'Tags Library'
 })
@@ -78,7 +82,7 @@ async function handleSelectImage(imageId: string) {
 }
 
 function closeTagsLibrary() {
-  showTagsLibrary.value = false
+  activeRightPanel.value = 'inspector'
 }
 
 function isMobileViewport(): boolean {
@@ -102,6 +106,13 @@ function handleShowTagInspectorPanel() {
   }
 }
 
+function handleShowProjectsPanel() {
+  showProjectsPanel()
+  if (isMobileViewport()) {
+    openMobilePanel('projects')
+  }
+}
+
 function queryValue(key: string): string | null {
   const rawValue = route.query[key]
   return typeof rawValue === 'string' ? rawValue : null
@@ -114,6 +125,14 @@ watch(
       showTagsLibraryPanel()
       if (isMobileViewport()) {
         openMobilePanel('tags')
+      }
+      return
+    }
+
+    if (panel === 'projects') {
+      showProjectsPanel()
+      if (isMobileViewport()) {
+        openMobilePanel('projects')
       }
       return
     }
@@ -169,7 +188,7 @@ watch(
         :project-name="selectedProject?.name"
         :show-project-picker="showProjectPicker"
         :show-actions-menu="showActionsMenu"
-        :show-tags-library="showTagsLibrary"
+        :active-right-panel="activeRightPanel"
         :projects="projectStore.projects"
         :selected-project-id="projectStore.selectedProjectId"
         :loading="projectStore.loading"
@@ -182,6 +201,7 @@ watch(
         @close-actions-menu="closeActionsMenu"
         @show-tags-library-panel="handleShowTagsLibraryPanel"
         @show-tag-inspector-panel="handleShowTagInspectorPanel"
+        @show-projects-panel="handleShowProjectsPanel"
       />
     </template>
 
@@ -209,7 +229,7 @@ watch(
 
       <template #right>
         <WorkspaceRightPanel
-          :show-tags-library="showTagsLibrary"
+          :active-panel="activeRightPanel"
           :project-id="projectStore.selectedProjectId"
           :selected-project="selectedProject"
           @close-tags-library="closeTagsLibrary"

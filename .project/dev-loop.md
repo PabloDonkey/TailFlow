@@ -138,6 +138,10 @@ Converge legacy frontend routes into workspace-first navigation while preserving
 - Implemented Phase 4 Slice C: repositioned project picker/actions overlays below the header and enabled click-outside close on desktop and mobile.
 - Improved header project-title readability with explicit high-contrast text styling.
 - Updated affected test expectations in `frontend/src/__tests__/image-detail.test.ts`.
+- Removed legacy routes/pages (`/projects`, `/gallery`, `/image/:id`, `/tags`) and switched router to workspace/onboarding with catch-all workspace fallback.
+- Integrated project-management UI into workspace actions by adding a projects panel mode in `WorkspaceRightPanel` and `WorkspaceMobilePanelContent`.
+- Removed the app-level nav header in `frontend/src/App.vue` so workspace header is the primary in-app header surface.
+- Removed legacy page/shim tests and validated current coverage set with full frontend lint/test/build (pass).
 - Added focused overlay regression coverage in `frontend/src/__tests__/workspace-overlays.test.ts` for below-header placement and backdrop-close behavior.
 - Completed Phase 6 Slice C by converting `frontend/src/pages/GalleryPage.vue`, `frontend/src/pages/ImageDetailPage.vue`, and `frontend/src/pages/TagsPage.vue` to compatibility redirect shims.
 - Replaced legacy page tests with shim-focused coverage for gallery and image detail flows, and added `frontend/src/__tests__/tags-page.test.ts`.
@@ -164,7 +168,7 @@ Converge legacy frontend routes into workspace-first navigation while preserving
 
 ## Next Action
 
-Prepare a Phase 6 commit with router/shim/test/tracker updates and draft PR notes for review.
+Prepare a Phase 6 commit with legacy-route removal + workspace project-manager integration updates and draft PR notes for review.
 
 ## Notes / Resources
 

@@ -1,12 +1,13 @@
 <script setup lang="ts">
 defineProps<{
-  showTagsLibrary: boolean
+  activeRightPanel: 'inspector' | 'tags' | 'projects'
 }>()
 
 const emit = defineEmits<{
   close: []
   showTagsLibrary: []
   showInspector: []
+  showProjects: []
 }>()
 </script>
 
@@ -29,7 +30,7 @@ const emit = defineEmits<{
         class="w-full rounded-[var(--tf-radius-md)] border-0 bg-transparent px-2 py-2 text-left text-sm text-[var(--tf-color-text-default)] hover:bg-[var(--tf-color-surface-border)]"
         @click="emit('showTagsLibrary')"
       >
-        {{ showTagsLibrary ? 'Tags library visible' : 'Open tags library' }}
+        {{ activeRightPanel === 'tags' ? 'Tags library visible' : 'Open tags library' }}
       </button>
 
       <button
@@ -37,7 +38,15 @@ const emit = defineEmits<{
         class="w-full rounded-[var(--tf-radius-md)] border-0 bg-transparent px-2 py-2 text-left text-sm text-[var(--tf-color-text-default)] hover:bg-[var(--tf-color-surface-border)]"
         @click="emit('showInspector')"
       >
-        Show tag inspector
+        {{ activeRightPanel === 'inspector' ? 'Tag inspector visible' : 'Show tag inspector' }}
+      </button>
+
+      <button
+        type="button"
+        class="w-full rounded-[var(--tf-radius-md)] border-0 bg-transparent px-2 py-2 text-left text-sm text-[var(--tf-color-text-default)] hover:bg-[var(--tf-color-surface-border)]"
+        @click="emit('showProjects')"
+      >
+        {{ activeRightPanel === 'projects' ? 'Project manager visible' : 'Open project manager' }}
       </button>
     </section>
   </div>

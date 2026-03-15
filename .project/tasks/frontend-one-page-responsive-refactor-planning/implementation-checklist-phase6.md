@@ -28,16 +28,16 @@ Converge legacy page routes into the workspace-first flow so `/workspace` remain
 
 Policy decisions:
 
-- `/projects`: keep first-class in Phase 6 for lower migration risk and project management continuity.
-- `/gallery`: redirect to `/workspace?panel=browser`.
-- `/image/:id`: redirect to `/workspace?image=<id>&project=<query.project?>`.
-- `/tags`: redirect to `/workspace?panel=tags`.
+- `/projects`: remove dedicated route and expose project management via workspace header actions panel.
+- `/gallery`: remove dedicated route and page.
+- `/image/:id`: remove dedicated route and page.
+- `/tags`: remove dedicated route and page.
 
 ### Slice B — Router Redirect/State Mapping
 
-- [x] Update `frontend/src/router/index.ts` so legacy routes redirect to workspace-compatible targets.
-- [x] Ensure onboarding guards still work after redirects.
-- [x] Preserve query parameters/state needed to hydrate workspace panel state.
+- [x] Update `frontend/src/router/index.ts` to workspace-only primary routes with fallback to `/workspace`.
+- [x] Ensure onboarding guards still work after route cleanup.
+- [x] Preserve workspace query handling for panel/project/image context.
 
 ### Slice C — Legacy Page Shims
 
@@ -67,4 +67,4 @@ Phase completion checks:
 ## Notes
 
 - Start with smallest behavior-preserving redirects first.
-- Keep compatibility behavior explicit until final refactor completion sign-off.
+- Legacy routes/pages were fully removed in this phase after converging their behavior into workspace panels.

@@ -1,13 +1,14 @@
 import { ref, type Ref } from 'vue'
 
-export type MobileWorkspacePanel = 'browser' | 'inspector' | 'tags'
+export type MobileWorkspacePanel = 'browser' | 'inspector' | 'tags' | 'projects'
+export type WorkspaceRightPanel = 'inspector' | 'tags' | 'projects'
 
 type UseWorkspaceOverlayStateOptions = {
-  showTagsLibrary: Ref<boolean>
+  activeRightPanel: Ref<WorkspaceRightPanel>
 }
 
 export function useWorkspaceOverlayState(options: UseWorkspaceOverlayStateOptions) {
-  const { showTagsLibrary } = options
+  const { activeRightPanel } = options
 
   const showMobilePanel = ref(false)
   const mobilePanel = ref<MobileWorkspacePanel>('browser')
@@ -42,12 +43,17 @@ export function useWorkspaceOverlayState(options: UseWorkspaceOverlayStateOption
   }
 
   function showTagsLibraryPanel() {
-    showTagsLibrary.value = true
+    activeRightPanel.value = 'tags'
     closeActionsMenu()
   }
 
   function showTagInspectorPanel() {
-    showTagsLibrary.value = false
+    activeRightPanel.value = 'inspector'
+    closeActionsMenu()
+  }
+
+  function showProjectsPanel() {
+    activeRightPanel.value = 'projects'
     closeActionsMenu()
   }
 
@@ -64,5 +70,6 @@ export function useWorkspaceOverlayState(options: UseWorkspaceOverlayStateOption
     closeProjectPicker,
     showTagsLibraryPanel,
     showTagInspectorPanel,
+    showProjectsPanel,
   }
 }

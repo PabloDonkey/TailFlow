@@ -27,7 +27,7 @@ describe('Workspace overlays', () => {
   it('keeps workspace actions menu below header and closes on backdrop click', async () => {
     const wrapper = mount(WorkspaceActionsMenu, {
       props: {
-        showTagsLibrary: false,
+        activeRightPanel: 'inspector',
       },
     })
 
