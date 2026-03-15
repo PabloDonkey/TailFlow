@@ -35,6 +35,7 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - frontend/src/components/inspector/WorkspaceTagInspectorPanel.vue
 - frontend/src/composables/useTagMutations.ts
 - frontend/src/composables/useWorkspaceOverlayState.ts
+- frontend/src/composables/useWorkspaceImages.ts
 - frontend/src/pages/GalleryPage.vue
 - frontend/src/pages/ImageDetailPage.vue
 - frontend/src/pages/TagsPage.vue
@@ -96,10 +97,13 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - Extracted workspace overlay/panel orchestration logic into reusable composable `useWorkspaceOverlayState` to simplify `WorkspacePage` state management.
 - Updated `WorkspacePage` to consume composable-provided state/actions for project picker, actions menu, mobile panel controls, and inspector/tags panel switching.
 - Validated overlay-state composable slice with `npm run test` (pass) and `npm run lint` (pass).
+- Extracted workspace image bootstrap/loading and navigation orchestration into reusable composable `useWorkspaceImages`.
+- Refactored `WorkspacePage` to consume composable-provided image state/actions (`orderedImages`, index tracking, select/jump/previous/next handlers).
+- Validated workspace image-orchestration composable slice with `npm run test` (pass) and `npm run lint` (pass).
 
 ## Next Action
 
-Implement the next Phase 3 slice by extracting workspace image-loading orchestration (bootstrap + project watcher + image selection loading flow) into a composable/helper to further reduce `WorkspacePage` complexity.
+Implement the next Phase 3 slice by extracting workspace header action handlers (project refresh + picker selection flow) into a focused composable/helper to continue shrinking `WorkspacePage` orchestration.
 
 ## Notes / Resources
 

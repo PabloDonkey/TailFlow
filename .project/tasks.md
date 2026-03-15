@@ -2,7 +2,7 @@
 
 ## TODO
 
-- [ ] Start next Phase 3 slice: extract workspace image-loading orchestration (project/image watchers + bootstrap) into a composable.
+- [ ] Start next Phase 3 slice: extract workspace header action handlers (project refresh + project selection) into a focused composable/helper.
 
 ## IN PROGRESS
 
@@ -10,6 +10,8 @@
 
 ## DONE
 
+- [x] Extract workspace image-loading orchestration into `frontend/src/composables/useWorkspaceImages.ts`.
+- [x] Validate workspace image-orchestration composable slice with frontend checks (`npm run test`, `npm run lint`).
 - [x] Unify workspace overlay state management into `frontend/src/composables/useWorkspaceOverlayState.ts`.
 - [x] Validate overlay-state composable slice with frontend checks (`npm run test`, `npm run lint`).
 - [x] Add explicit mobile quick actions for image navigation and panel switching.
