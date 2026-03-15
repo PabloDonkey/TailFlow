@@ -9,6 +9,7 @@ import WorkspaceProjectPickerPanel from '../components/sidebar/WorkspaceProjectP
 import WorkspaceTagsLibraryPanel from '../components/sidebar/WorkspaceTagsLibraryPanel.vue'
 import WorkspaceImageViewerPanel from '../components/layout/WorkspaceImageViewerPanel.vue'
 import WorkspaceTagInspectorPanel from '../components/inspector/WorkspaceTagInspectorPanel.vue'
+import { useWorkspaceOverlayState } from '../composables/useWorkspaceOverlayState'
 import { useProjectStore } from '../stores/projects'
 import { useImageStore } from '../stores/images'
 
@@ -16,11 +17,22 @@ const projectStore = useProjectStore()
 const imageStore = useImageStore()
 const selectedProject = computed(() => projectStore.selectedProject)
 const orderedImages = computed(() => imageStore.sortedImages)
-const showMobilePanel = ref(false)
-const mobilePanel = ref<'browser' | 'inspector' | 'tags'>('browser')
-const showProjectPicker = ref(false)
-const showActionsMenu = ref(false)
 const showTagsLibrary = ref(false)
+
+const {
+  showMobilePanel,
+  mobilePanel,
+  showProjectPicker,
+  showActionsMenu,
+  openMobilePanel,
+  closeMobilePanel,
+  openProjectPicker,
+  openOverflow,
+  closeActionsMenu,
+  closeProjectPicker,
+  showTagsLibraryPanel,
+  showTagInspectorPanel,
+} = useWorkspaceOverlayState({ showTagsLibrary })
 
 const currentImageIndex = computed(() => {
   const currentImageId = imageStore.currentImage?.id
@@ -66,38 +78,11 @@ async function selectImage(imageId: string) {
     return
   }
   await imageStore.fetchImage(projectStore.selectedProjectId, imageId)
-  showMobilePanel.value = false
-}
-
-function openMobilePanel(panel: 'browser' | 'inspector' | 'tags') {
-  mobilePanel.value = panel
-  showMobilePanel.value = true
-}
-
-function closeMobilePanel() {
-  showMobilePanel.value = false
-}
-
-function openProjectPicker() {
-  showProjectPicker.value = !showProjectPicker.value
-  showActionsMenu.value = false
-}
-
-function openOverflow() {
-  showProjectPicker.value = false
-  showActionsMenu.value = !showActionsMenu.value
+  closeMobilePanel()
 }
 
 function closeTagsLibrary() {
   showTagsLibrary.value = false
-}
-
-function closeActionsMenu() {
-  showActionsMenu.value = false
-}
-
-function closeProjectPicker() {
-  showProjectPicker.value = false
 }
 
 function refreshProjects() {
@@ -109,16 +94,6 @@ function selectProjectFromPicker(projectId: string) {
     projectStore.selectProject(projectId)
   }
   closeProjectPicker()
-}
-
-function showTagsLibraryPanel() {
-  showTagsLibrary.value = true
-  closeActionsMenu()
-}
-
-function showTagInspectorPanel() {
-  showTagsLibrary.value = false
-  closeActionsMenu()
 }
 
 async function goToImageByIndex(index: number) {

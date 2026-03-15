@@ -34,6 +34,7 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - frontend/src/components/sidebar/WorkspaceTagsLibraryPanel.vue
 - frontend/src/components/inspector/WorkspaceTagInspectorPanel.vue
 - frontend/src/composables/useTagMutations.ts
+- frontend/src/composables/useWorkspaceOverlayState.ts
 - frontend/src/pages/GalleryPage.vue
 - frontend/src/pages/ImageDetailPage.vue
 - frontend/src/pages/TagsPage.vue
@@ -92,10 +93,13 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - Added a mobile workspace panel sheet to expose image browser, tag inspector, and tags library flows that are otherwise desktop-side panels.
 - Updated image selection flow to close the mobile panel after choosing an image.
 - Validated mobile quick actions slice with `npm run test` (pass) and `npm run lint` (pass).
+- Extracted workspace overlay/panel orchestration logic into reusable composable `useWorkspaceOverlayState` to simplify `WorkspacePage` state management.
+- Updated `WorkspacePage` to consume composable-provided state/actions for project picker, actions menu, mobile panel controls, and inspector/tags panel switching.
+- Validated overlay-state composable slice with `npm run test` (pass) and `npm run lint` (pass).
 
 ## Next Action
 
-Implement the next Phase 3 slice by consolidating workspace overlay state (project picker, actions menu, mobile panel) into a composable/helper to reduce page-level orchestration complexity.
+Implement the next Phase 3 slice by extracting workspace image-loading orchestration (bootstrap + project watcher + image selection loading flow) into a composable/helper to further reduce `WorkspacePage` complexity.
 
 ## Notes / Resources
 

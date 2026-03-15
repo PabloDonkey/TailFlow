@@ -2,7 +2,7 @@
 
 ## TODO
 
-- [ ] Start next Phase 3 slice: unify workspace overlay state management into a composable to simplify orchestration.
+- [ ] Start next Phase 3 slice: extract workspace image-loading orchestration (project/image watchers + bootstrap) into a composable.
 
 ## IN PROGRESS
 
@@ -10,6 +10,8 @@
 
 ## DONE
 
+- [x] Unify workspace overlay state management into `frontend/src/composables/useWorkspaceOverlayState.ts`.
+- [x] Validate overlay-state composable slice with frontend checks (`npm run test`, `npm run lint`).
 - [x] Add explicit mobile quick actions for image navigation and panel switching.
 - [x] Validate mobile quick actions slice with frontend checks (`npm run test`, `npm run lint`).
 - [x] Introduce a project picker panel/sheet from the workspace header action.
