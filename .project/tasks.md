@@ -2,13 +2,10 @@
 
 ## TODO
 
-- [ ] Execute manual responsive QA using the checklist in `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md`.
-- [ ] Capture and attach Phase 4 desktop/mobile screenshots for PR review.
 - [ ] Phase 6 Slice C: convert legacy page components into thin compatibility shims or remove direct usage after redirect convergence.
 
 ## IN PROGRESS
 
-- [ ] Execute manual QA pass and record findings in Phase 4 summary.
 - [ ] Phase 6 Slice C: implement remaining compatibility cleanup for legacy page components.
 
 ## DONE
