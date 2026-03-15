@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import type { Project, ProjectTag } from '../../api'
 import { useTagMutations } from '../../composables/useTagMutations'
 import { useImageStore } from '../../stores/images'
+import { getCatalogIdByTaggingMode } from '../../utils/tagCatalog'
 import AppSectionTitle from '../ui/AppSectionTitle.vue'
 import AppText from '../ui/AppText.vue'
 import TagInspectorMutationControls from './TagInspectorMutationControls.vue'
@@ -39,7 +40,7 @@ function getTagSourceLabel(tag: ProjectTag): string | null {
   if (
     props.selectedProject &&
     props.selectedProject.tagging_mode &&
-    tag.catalog_ids[props.selectedProject.tagging_mode as keyof typeof tag.catalog_ids]
+    getCatalogIdByTaggingMode(tag, props.selectedProject.tagging_mode)
   ) {
     return props.selectedProject.tagging_mode
   }

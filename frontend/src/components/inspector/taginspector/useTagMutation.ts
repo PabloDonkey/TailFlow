@@ -1,7 +1,8 @@
-
 import type { Ref } from 'vue'
 import type { ProjectTag, Project, ProjectImageRead } from '../../../api'
 import type { useImageStore } from '../../../stores/images'
+
+import { getCatalogIdByTaggingMode } from '../../utils/tagCatalog'
 
 type UseTagMutationOptions = {
   imageStore: ReturnType<typeof useImageStore>;
@@ -39,7 +40,7 @@ export function useTagMutation(options: UseTagMutationOptions) {
     if (
       selectedProject &&
       selectedProject.tagging_mode &&
-      tag.catalog_ids[selectedProject.tagging_mode as keyof typeof tag.catalog_ids]
+      getCatalogIdByTaggingMode(tag, selectedProject.tagging_mode)
     ) {
       return selectedProject.tagging_mode
     }
