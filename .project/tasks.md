@@ -3,13 +3,15 @@
 ## TODO
 
 - [ ] Run manual responsive QA for desktop/mobile workspace layout and overlay behavior.
+- [ ] Capture and attach Phase 4 desktop/mobile screenshots for PR review.
 
 ## IN PROGRESS
 
-- [ ] Prepare Phase 4 PR summary and screenshots for review.
+- [ ] Execute manual QA pass and record findings in Phase 4 summary.
 
 ## DONE
 
+- [x] Prepare Phase 4 PR summary artifact under `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md`.
 - [x] Add focused regression tests for overlay click-outside dismissal and workspace layout containment.
 - [x] Finalize Phase 4 validation with additional targeted regression tests.
 - [x] Define next post-Phase-3 implementation target and acceptance criteria.

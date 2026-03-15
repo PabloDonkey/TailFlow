@@ -139,10 +139,11 @@ Implement Phase 4 workspace UX convergence slices (layout/scroll containment, ta
 - Updated affected test expectations in `frontend/src/__tests__/image-detail.test.ts`.
 - Added focused overlay regression coverage in `frontend/src/__tests__/workspace-overlays.test.ts` for below-header placement and backdrop-close behavior.
 - Validated with focused frontend tests, then full frontend checks: `npm run lint`, `npm run test`, `npm run build` (pass).
+- Created Phase 4 PR summary artifact at `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md` with scope, acceptance-criteria mapping, and validation evidence.
 
 ## Next Action
 
-Run manual desktop/mobile workspace QA and prepare a concise Phase 4 PR summary (behavior changes + validation evidence).
+Run manual desktop/mobile workspace QA, capture screenshots, and append findings to the Phase 4 PR summary artifact.
 
 ## Notes / Resources
 
