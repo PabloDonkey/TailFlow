@@ -9,6 +9,7 @@ import WorkspaceProjectPickerPanel from '../components/sidebar/WorkspaceProjectP
 import WorkspaceTagsLibraryPanel from '../components/sidebar/WorkspaceTagsLibraryPanel.vue'
 import WorkspaceImageViewerPanel from '../components/layout/WorkspaceImageViewerPanel.vue'
 import WorkspaceTagInspectorPanel from '../components/inspector/WorkspaceTagInspectorPanel.vue'
+import { useWorkspaceHeaderActions } from '../composables/useWorkspaceHeaderActions'
 import { useWorkspaceOverlayState } from '../composables/useWorkspaceOverlayState'
 import { useWorkspaceImages } from '../composables/useWorkspaceImages'
 import { useProjectStore } from '../stores/projects'
@@ -44,6 +45,15 @@ const {
   showTagsLibraryPanel,
   showTagInspectorPanel,
 } = useWorkspaceOverlayState({ showTagsLibrary })
+
+const {
+  refreshProjects,
+  selectProjectFromPicker,
+} = useWorkspaceHeaderActions({
+  projectStore,
+  closeProjectPicker,
+})
+
 async function handleSelectImage(imageId: string) {
   await selectImage(imageId)
   closeMobilePanel()
@@ -51,17 +61,6 @@ async function handleSelectImage(imageId: string) {
 
 function closeTagsLibrary() {
   showTagsLibrary.value = false
-}
-
-function refreshProjects() {
-  void projectStore.fetchProjects()
-}
-
-function selectProjectFromPicker(projectId: string) {
-  if (projectStore.selectedProjectId !== projectId) {
-    projectStore.selectProject(projectId)
-  }
-  closeProjectPicker()
 }
 
 </script>

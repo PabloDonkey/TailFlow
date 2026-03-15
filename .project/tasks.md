@@ -2,7 +2,7 @@
 
 ## TODO
 
-- [ ] Start next Phase 3 slice: extract workspace header action handlers (project refresh + project selection) into a focused composable/helper.
+- [ ] Start next Phase 3 slice: extract mobile quick-actions bar + mobile panel sheet markup from `WorkspacePage` into dedicated components.
 
 ## IN PROGRESS
 
@@ -10,6 +10,8 @@
 
 ## DONE
 
+- [x] Extract workspace header action handlers into `frontend/src/composables/useWorkspaceHeaderActions.ts`.
+- [x] Validate workspace header-actions composable slice with frontend checks (`npm run lint`, `npm run test`).
 - [x] Extract workspace image-loading orchestration into `frontend/src/composables/useWorkspaceImages.ts`.
 - [x] Validate workspace image-orchestration composable slice with frontend checks (`npm run test`, `npm run lint`).
 - [x] Unify workspace overlay state management into `frontend/src/composables/useWorkspaceOverlayState.ts`.
