@@ -42,6 +42,8 @@ ADR creation checklist:
 | ADR-004 | Shared Frontend State Management with Pinia | Accepted | 2026-03-13 |
 | ADR-005 | Runtime API Contract Validation with Zod | Accepted | 2026-03-13 |
 | ADR-006 | Standardized Development Loop and Commands | Accepted | 2026-03-13 |
+| ADR-007 | Concise AI Task Artifact Logging | Accepted | 2026-03-13 |
+| ADR-008 | UI Contract Review Planning Workflow | Accepted | 2026-03-13 |
 
 ---
 
@@ -204,3 +206,57 @@ Use standardized Makefile-driven commands and maintain progress context in `.pro
 - Positive: consistent setup/test/run flow and easier onboarding.
 - Positive: smoother session handoff and resumability.
 - Tradeoff: requires discipline to keep workflow metadata up to date.
+
+---
+
+## ADR-007: Concise AI Task Artifact Logging
+
+**Status:** Accepted  
+**Date:** 2026-03-13
+
+### Context
+
+Saving task artifacts is useful for resumability, but storing or reconstructing long conversation-history summaries slows interactions and creates noisy project artifacts.
+
+### Options considered
+
+- Save full AI session transcripts by default
+- Save concise task-focused artifact logs by default
+- Do not save AI task artifacts at all
+
+### Decision
+
+When persisting AI task artifacts, default to concise artifact logs only. Do not save full conversation transcripts or long prompt/response summaries unless explicitly requested.
+
+### Consequences
+
+- Positive: reduces latency and unnecessary summarization work.
+- Positive: keeps task folders focused on decisions, outputs, and follow-up steps.
+- Tradeoff: some conversational nuance is omitted unless explicitly preserved.
+
+---
+
+## ADR-008: UI Contract Review Planning Workflow
+
+**Status:** Accepted  
+**Date:** 2026-03-13
+
+### Context
+
+The frontend now has a written UI contract, but review requests need a repeatable workflow that finds violations, stays in plan mode, and asks the developer before applying changes.
+
+### Options considered
+
+- Ad-hoc UI review on each request
+- A dedicated UI-contract review skill that plans fixes before implementation
+- Immediate auto-fix behavior without a planning step
+
+### Decision
+
+Use a dedicated `ui-contract-review` skill for frontend UI audits. The workflow must identify contract violations, produce a remediation plan in plan mode, and ask the developer whether to apply fixes or continue planning.
+
+### Consequences
+
+- Positive: makes UI audits consistent and aligned with the written contract.
+- Positive: reduces accidental UI edits before the developer confirms scope.
+- Tradeoff: adds an extra planning step before implementation work.

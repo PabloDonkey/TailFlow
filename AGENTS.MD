@@ -45,13 +45,22 @@ Reusable Copilot skills for this workflow:
 
 - `.copilot/skills/start-dev-session.md` (trigger: `start-dev-sess`)
 - `.copilot/skills/update-dev-loop.md` (trigger: `update-dev-loop`)
+- `.copilot/skills/ui-contract-review.md` (trigger: `ui-contract-review`)
 
 Before starting development work:
 
 1. Read `.project/dev-loop.md`
 2. Check `.project/tasks.md`
-3. Follow UI rules in `.github/ui-contract.md` if present.
-4. When a Decision Trigger occurs, create a new entry in `DECISIONS.md` before implementing the change.
+3. Create or update a short implementation plan with small, verifiable steps before writing code.
+4. For each step, run the smallest relevant validation first (error check, focused test, or targeted command) before moving to the next step.
+5. Follow UI rules in `.github/ui-contract.md` if present.
+6. When a Decision Trigger occurs, create a new entry in `DECISIONS.md` before implementing the change.
+
+During implementation:
+
+1. Keep tasks chunked into small iterations that can be completed and validated independently.
+2. Prefer targeted tests during each iteration, then run broader suites at the end.
+3. After each iteration, update `.project/dev-loop.md` and `.project/tasks.md` when scope/status changes.
 
 When finishing a work session:
 
