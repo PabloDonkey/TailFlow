@@ -30,35 +30,35 @@ Also make Tag Library a full-width single-layout mode.
 
 ### Slice B — Project Browser Panel (Left)
 
-1. [pending] Create a `ProjectBrowserPanel` component for left panel rendering in project manager mode.
-1. [pending] Render Create Project button at top before project cards.
-1. [pending] Render project cards with project name + class tag + status, and thumbnail/placeholder.
-1. [pending] Select project from card click to drive right details panel.
+1. [finished] Create a `ProjectBrowserPanel` component for left panel rendering in project manager mode.
+1. [finished] Render Create Project button at top before project cards.
+1. [finished] Render project cards with project name + class tag + status, and thumbnail/placeholder.
+1. [finished] Select project from card click to drive right details panel.
 
 ### Slice C — Project Details Panel (Right)
 
-1. [pending] Create a `ProjectDetailsPanel` component that hosts metadata + sync + upload sections.
-1. [pending] Reuse existing `UploadPage` logic by extraction or composition.
-1. [pending] Show empty state when no project selected.
+1. [finished] Create a `ProjectDetailsPanel` component that hosts metadata + sync + upload sections.
+1. [finished] Reuse existing `UploadPage` logic by extraction or composition.
+1. [finished] Show empty state when no project selected.
 
 ### Slice D — Create Project Modal
 
-1. [pending] Create modal component to host existing create form fields/validation.
-1. [pending] Open modal from Project Browser button.
-1. [pending] Close modal on cancel/success.
-1. [pending] Refresh/select project state after successful creation.
+1. [finished] Create modal component to host existing create form fields/validation.
+1. [finished] Open modal from Project Browser button.
+1. [finished] Close modal on cancel/success.
+1. [finished] Refresh/select project state after successful creation.
 
 ### Slice E — Tag Library Full-Width Mode
 
-1. [pending] Make tag library render as full-width single-layout mode in workspace.
-1. [pending] Ensure desktop and mobile mode parity for tag library view.
+1. [finished] Make tag library render as full-width single-layout mode in workspace.
+1. [finished] Ensure desktop and mobile mode parity for tag library view.
 
 ### Slice F — Tests + Tracking
 
-1. [pending] Add/adjust tests for workspace mode switching and conditional panel visibility.
-1. [pending] Add tests for project browser card selection and create modal behavior.
-1. [pending] Add tests for tag library full-width mode behavior.
-1. [pending] Update `.project/dev-loop.md` and `.project/tasks.md` as each slice lands.
+1. [finished] Add/adjust tests for workspace mode switching and conditional panel visibility.
+1. [finished] Add tests for project browser card selection and create modal behavior.
+1. [finished] Add tests for tag library full-width mode behavior.
+1. [finished] Update `.project/dev-loop.md` and `.project/tasks.md` as each slice lands.
 
 ## Validation Plan
 

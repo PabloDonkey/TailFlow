@@ -147,7 +147,10 @@ async function saveProjectMetadata() {
 
 <template>
   <div class="projects-page">
-    <div class="header-row">
+    <div
+      v-if="!props.detailsOnly"
+      class="header-row"
+    >
       <h1>Projects</h1>
       <button
         class="btn btn-primary"

@@ -2,18 +2,19 @@
 
 ## TODO
 
-1. [pending] Complete Slice B in `.project/tasks/2_project-manager-mode-refactor[in-progress]/implementation-checklist-phase1.md`.
-1. [pending] Complete Slice C in `.project/tasks/2_project-manager-mode-refactor[in-progress]/implementation-checklist-phase1.md`.
-1. [pending] Complete Slice D in `.project/tasks/2_project-manager-mode-refactor[in-progress]/implementation-checklist-phase1.md`.
-1. [pending] Complete Slice E in `.project/tasks/2_project-manager-mode-refactor[in-progress]/implementation-checklist-phase1.md`.
-1. [pending] Complete Slice F in `.project/tasks/2_project-manager-mode-refactor[in-progress]/implementation-checklist-phase1.md`.
+1. [pending] Define next implementation phase after completing Phase 1 project-manager mode refactor.
 
 ## IN PROGRESS
 
-1. [in-progress] Execute Slice B (left project browser panel with top create button) from `.project/tasks/2_project-manager-mode-refactor[in-progress]/implementation-checklist-phase1.md`.
+1. [in-progress] Plan and scope post-Phase-1 follow-up tasks for project-manager mode refactor.
 
 ## DONE
 
+1. [finished] Complete Slice F by adding workspace mode/project browser/create modal focused tests and running full frontend validation.
+1. [finished] Complete Slice E by validating tag-library full-width mode parity in `WorkspacePage` and adding dedicated mode test coverage.
+1. [finished] Complete Slice D by implementing `ProjectCreateModal` open/close/create flow and wiring it through `WorkspacePage`.
+1. [finished] Complete Slice C by extracting `ProjectDetailsPanel` with explicit no-selection empty state and UploadPage details composition.
+1. [finished] Complete Slice B by extracting `ProjectBrowserPanel` and wiring project-browser left panel composition in `WorkspacePage`.
 1. [finished] Complete Slice A workspace mode/layout routing in `WorkspacePage` (tagging/projects/tag-library conditional rendering).
 1. [finished] Create Phase 6 implementation branch `feature/workspace-router-convergence-phase6`.
 1. [finished] Add Phase 6 planning checklist at `.project/tasks/1_frontend-one-page-responsive-refactor-planning[closed]/implementation-checklist-phase6.md`.

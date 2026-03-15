@@ -8,6 +8,8 @@ import WorkspaceMobilePanelContent from '../components/layout/WorkspaceMobilePan
 import WorkspaceMobilePanelSheet from '../components/layout/WorkspaceMobilePanelSheet.vue'
 import WorkspaceRightPanel from '../components/layout/WorkspaceRightPanel.vue'
 import WorkspaceLayout from '../components/layout/WorkspaceLayout.vue'
+import ProjectBrowserPanel from '../components/projects/ProjectBrowserPanel.vue'
+import ProjectCreateModal from '../components/projects/ProjectCreateModal.vue'
 import WorkspaceImageBrowserPanel from '../components/sidebar/WorkspaceImageBrowserPanel.vue'
 import WorkspaceTagsLibraryPanel from '../components/sidebar/WorkspaceTagsLibraryPanel.vue'
 import WorkspaceImageViewerPanel from '../components/layout/WorkspaceImageViewerPanel.vue'
@@ -22,6 +24,7 @@ const imageStore = useImageStore()
 const route = useRoute()
 const selectedProject = computed(() => projectStore.selectedProject)
 const activeRightPanel = ref<'inspector' | 'tags' | 'projects'>('inspector')
+const showCreateProjectModal = ref(false)
 type WorkspaceMode = 'tagging' | 'projects' | 'tag-library'
 
 const workspaceMode = computed<WorkspaceMode>(() => {
@@ -34,9 +37,6 @@ const workspaceMode = computed<WorkspaceMode>(() => {
   return 'tagging'
 })
 
-const orderedProjects = computed(() =>
-  [...projectStore.projects].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })),
-)
 const imageBrowserMemoKey = computed(() => {
   const imageSnapshot = imageStore.images
     .map((image) => `${image.id}:${image.tag_count}:${image.filename}`)
@@ -102,7 +102,21 @@ function selectProject(projectId: string) {
 }
 
 function openCreateProjectModal() {
-  // Slice D will replace this with a modal flow.
+  showCreateProjectModal.value = true
+}
+
+function closeCreateProjectModal() {
+  showCreateProjectModal.value = false
+}
+
+async function handleProjectCreated(projectId: string) {
+  await projectStore.fetchProjects()
+  projectStore.selectProject(projectId)
+  closeCreateProjectModal()
+}
+
+async function discoverProjectsFromBrowser() {
+  await projectStore.discoverAndRefresh()
 }
 
 function closeTagsLibrary() {
@@ -135,6 +149,18 @@ function handleShowProjectsPanel() {
   if (isMobileViewport()) {
     openMobilePanel('projects')
   }
+}
+
+function handleSelectProjectFromPicker(projectId: string) {
+  selectProjectFromPicker(projectId)
+  handleShowTagInspectorPanel()
+}
+
+function handleShowTaggingForProject(projectId: string) {
+  if (projectStore.selectedProjectId !== projectId) {
+    projectStore.selectProject(projectId)
+  }
+  handleShowTagInspectorPanel()
 }
 
 function queryValue(key: string): string | null {
@@ -221,7 +247,7 @@ watch(
         @open-overflow="openOverflow"
         @close-project-picker="closeProjectPicker"
         @refresh-projects="refreshProjects"
-        @select-project="selectProjectFromPicker"
+        @select-project="handleSelectProjectFromPicker"
         @close-actions-menu="closeActionsMenu"
         @show-tags-library-panel="handleShowTagsLibraryPanel"
         @show-tag-inspector-panel="handleShowTagInspectorPanel"
@@ -268,39 +294,16 @@ watch(
       v-else-if="workspaceMode === 'projects'"
       class="grid min-h-0 grid-cols-1 gap-3 lg:h-full lg:grid-cols-[minmax(240px,320px)_minmax(0,1fr)] lg:items-stretch"
     >
-      <section class="rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-3 lg:h-full lg:min-h-0 lg:overflow-y-auto">
-        <div class="mb-3 flex items-center justify-between gap-2">
-          <h2 class="m-0 text-sm font-semibold text-[var(--tf-color-text-default)]">
-            Project Browser
-          </h2>
-          <button
-            type="button"
-            class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-transparent px-2 py-1 text-xs font-medium text-[var(--tf-color-text-default)]"
-            @click="openCreateProjectModal"
-          >
-            Create Project
-          </button>
-        </div>
-
-        <div class="space-y-2">
-          <button
-            v-for="project in orderedProjects"
-            :key="project.id"
-            type="button"
-            class="flex w-full items-start gap-2 rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-transparent p-2 text-left"
-            :class="project.id === projectStore.selectedProjectId ? 'ring-1 ring-[var(--tf-color-accent)]' : ''"
-            @click="selectProject(project.id)"
-          >
-            <span class="mt-0.5 grid h-10 w-10 place-items-center rounded-[var(--tf-radius-sm)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface-muted)] text-xs text-[var(--tf-color-text-muted)]">
-              IMG
-            </span>
-            <span class="min-w-0 flex-1">
-              <span class="block truncate text-sm font-medium text-[var(--tf-color-text-default)]">{{ project.name }}</span>
-              <span class="block truncate text-xs text-[var(--tf-color-text-muted)]">class: {{ project.class_tag }}</span>
-            </span>
-          </button>
-        </div>
-      </section>
+      <ProjectBrowserPanel
+        :projects="projectStore.projects"
+        :selected-project-id="projectStore.selectedProjectId"
+        :loading="projectStore.loading"
+        :discovering="projectStore.loading"
+        @select-project="selectProject"
+        @open-create-project="openCreateProjectModal"
+        @discover-projects="discoverProjectsFromBrowser"
+        @show-tagging="handleShowTaggingForProject"
+      />
 
       <section class="rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-3 lg:h-full lg:min-h-0 lg:overflow-y-auto">
         <WorkspaceRightPanel
@@ -310,6 +313,12 @@ watch(
           @close-tags-library="closeTagsLibrary"
         />
       </section>
+
+      <ProjectCreateModal
+        v-if="showCreateProjectModal"
+        @close="closeCreateProjectModal"
+        @created="handleProjectCreated"
+      />
     </section>
 
     <section

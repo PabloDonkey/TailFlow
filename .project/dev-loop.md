@@ -175,10 +175,20 @@ Implement project manager mode with a two-panel layout (left project browser, ri
 	- tagging mode preserves existing browser/viewer/inspector flow.
 - Updated `UploadPage`/`WorkspaceRightPanel` integration so projects view can render details-only panel content.
 - Validated Slice A via focused tests (`workspace-layout`, `workspace-overlays`, `upload-page`) and broader frontend checks (`npm run lint`, `npm run build`).
+- Completed Slice B by extracting `frontend/src/components/projects/ProjectBrowserPanel.vue` and wiring it into `WorkspacePage` for projects mode left-panel rendering.
+- Added project card status labels (`Active`/`Missing` from `missing_at`) while preserving thumbnail placeholder, class tag metadata, and card-based project selection behavior.
+- Validated Slice B with focused frontend tests (`workspace-layout`, `workspace-overlays`, `upload-page`) and `npm run lint` (pass).
+- Completed Slice C by introducing `frontend/src/components/projects/ProjectDetailsPanel.vue` and routing projects mode right-panel rendering through it.
+- Implemented explicit no-selection empty state in `ProjectDetailsPanel` and reused existing metadata/sync/upload functionality via `UploadPage` `details-only` composition.
+- Completed Slice D by introducing `frontend/src/components/projects/ProjectCreateModal.vue` and wiring modal open/close/create handlers in `WorkspacePage`.
+- Added focused modal coverage in `frontend/src/__tests__/project-create-modal.test.ts` and validated with focused frontend tests (`workspace-layout`, `workspace-overlays`, `upload-page`, `project-create-modal`) plus `npm run lint` (pass).
+- Confirmed Slice E full-width tag-library mode behavior in workspace and added mode-specific regression coverage in `frontend/src/__tests__/workspace-page-modes.test.ts`.
+- Completed Slice F testing scope with `frontend/src/__tests__/project-browser-panel.test.ts` covering card ordering/selection and create-button interactions.
+- Ran full frontend validation at phase completion: `npm run lint`, `npm run test`, `npm run build` (pass).
 
 ## Next Action
 
-Implement Phase 1 Slice B by extracting a dedicated left `ProjectBrowserPanel` component with top create button and project-card list.
+Plan post-Phase-1 follow-up scope (next feature slice) and prepare the next implementation checklist.
 
 ## Notes / Resources
 
