@@ -2,6 +2,8 @@
 import { computed, ref } from 'vue'
 import AppShell from '../components/layout/AppShell.vue'
 import AppHeader from '../components/layout/AppHeader.vue'
+import WorkspaceMobileQuickActions from '../components/layout/WorkspaceMobileQuickActions.vue'
+import WorkspaceMobilePanelSheet from '../components/layout/WorkspaceMobilePanelSheet.vue'
 import WorkspaceActionsMenu from '../components/layout/WorkspaceActionsMenu.vue'
 import WorkspaceLayout from '../components/layout/WorkspaceLayout.vue'
 import WorkspaceImageBrowserPanel from '../components/sidebar/WorkspaceImageBrowserPanel.vue'
@@ -45,6 +47,16 @@ const {
   showTagsLibraryPanel,
   showTagInspectorPanel,
 } = useWorkspaceOverlayState({ showTagsLibrary })
+
+const mobilePanelTitle = computed(() => {
+  if (mobilePanel.value === 'browser') {
+    return 'Image Browser'
+  }
+  if (mobilePanel.value === 'inspector') {
+    return 'Tag Inspector'
+  }
+  return 'Tags Library'
+})
 
 const {
   refreshProjects,
@@ -129,88 +141,35 @@ function closeTagsLibrary() {
       </template>
     </WorkspaceLayout>
 
-    <section class="sticky bottom-0 z-[105] mt-3 grid grid-cols-5 gap-2 rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-2 lg:hidden">
-      <button
-        type="button"
-        class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-2 text-xs text-[var(--tf-color-text-default)]"
-        :disabled="!previousAvailable"
-        @click="goToPreviousImage"
-      >
-        Prev
-      </button>
-      <button
-        type="button"
-        class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-2 text-xs text-[var(--tf-color-text-default)]"
-        :disabled="!nextAvailable"
-        @click="goToNextImage"
-      >
-        Next
-      </button>
-      <button
-        type="button"
-        class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-2 text-xs text-[var(--tf-color-text-default)]"
-        @click="openMobilePanel('browser')"
-      >
-        Browse
-      </button>
-      <button
-        type="button"
-        class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-2 text-xs text-[var(--tf-color-text-default)]"
-        @click="openMobilePanel('inspector')"
-      >
-        Inspect
-      </button>
-      <button
-        type="button"
-        class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-2 text-xs text-[var(--tf-color-text-default)]"
-        @click="openMobilePanel('tags')"
-      >
-        Tags
-      </button>
-    </section>
+    <WorkspaceMobileQuickActions
+      :previous-available="previousAvailable"
+      :next-available="nextAvailable"
+      @previous="goToPreviousImage"
+      @next="goToNextImage"
+      @open-panel="openMobilePanel"
+    />
 
-    <div
+    <WorkspaceMobilePanelSheet
       v-if="showMobilePanel"
-      class="fixed inset-0 z-[125] lg:hidden"
+      :title="mobilePanelTitle"
+      @close="closeMobilePanel"
     >
-      <button
-        type="button"
-        class="absolute inset-0 bg-black/30"
-        aria-label="Close mobile workspace panel"
-        @click="closeMobilePanel"
+      <WorkspaceImageBrowserPanel
+        v-if="mobilePanel === 'browser'"
+        :selected-project-id="projectStore.selectedProjectId"
+        @select-image="handleSelectImage"
       />
 
-      <section class="absolute bottom-0 left-0 right-0 max-h-[80dvh] overflow-auto rounded-t-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-3">
-        <div class="mb-2 flex items-center justify-between gap-2">
-          <p class="m-0 text-sm font-semibold text-[var(--tf-color-text-title)]">
-            {{ mobilePanel === 'browser' ? 'Image Browser' : mobilePanel === 'inspector' ? 'Tag Inspector' : 'Tags Library' }}
-          </p>
-          <button
-            type="button"
-            class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-1 text-xs text-[var(--tf-color-text-default)]"
-            @click="closeMobilePanel"
-          >
-            Close
-          </button>
-        </div>
+      <WorkspaceTagInspectorPanel
+        v-else-if="mobilePanel === 'inspector'"
+        :project-id="projectStore.selectedProjectId"
+        :selected-project="selectedProject"
+      />
 
-        <WorkspaceImageBrowserPanel
-          v-if="mobilePanel === 'browser'"
-          :selected-project-id="projectStore.selectedProjectId"
-          @select-image="handleSelectImage"
-        />
-
-        <WorkspaceTagInspectorPanel
-          v-else-if="mobilePanel === 'inspector'"
-          :project-id="projectStore.selectedProjectId"
-          :selected-project="selectedProject"
-        />
-
-        <WorkspaceTagsLibraryPanel
-          v-else
-          :show-close="false"
-        />
-      </section>
-    </div>
+      <WorkspaceTagsLibraryPanel
+        v-else
+        :show-close="false"
+      />
+    </WorkspaceMobilePanelSheet>
   </AppShell>
 </template>

@@ -27,6 +27,8 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - frontend/src/components/layout/AppShell.vue
 - frontend/src/components/layout/AppHeader.vue
 - frontend/src/components/layout/WorkspaceActionsMenu.vue
+- frontend/src/components/layout/WorkspaceMobileQuickActions.vue
+- frontend/src/components/layout/WorkspaceMobilePanelSheet.vue
 - frontend/src/components/layout/WorkspaceLayout.vue
 - frontend/src/components/layout/WorkspaceImageViewerPanel.vue
 - frontend/src/components/sidebar/WorkspaceImageBrowserPanel.vue
@@ -104,10 +106,14 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - Extracted workspace header action handlers (project refresh + project selection from picker) into reusable composable `useWorkspaceHeaderActions`.
 - Refactored `WorkspacePage` to consume composable-provided header handlers while preserving existing picker close behavior.
 - Validated workspace header-actions composable slice with `npm run lint` (pass) and `npm run test` (pass).
+- Extracted mobile quick actions bar markup into dedicated component `WorkspaceMobileQuickActions`.
+- Extracted mobile panel sheet overlay/sheet markup into dedicated component `WorkspaceMobilePanelSheet`.
+- Refactored `WorkspacePage` to compose new mobile components while preserving mobile browser/inspector/tags flows.
+- Validated mobile component extraction slice with `npm run lint` (pass) and `npm run test` (pass).
 
 ## Next Action
 
-Implement the next Phase 3 slice by extracting the mobile quick-actions bar and mobile panel sheet markup from `WorkspacePage` into dedicated reusable components to continue reducing page-level UI complexity.
+Implement the next Phase 3 slice by extracting the workspace desktop right-panel switcher (`WorkspaceTagInspectorPanel` vs `WorkspaceTagsLibraryPanel`) into a dedicated composition component to further reduce `WorkspacePage` template complexity.
 
 ## Notes / Resources
 

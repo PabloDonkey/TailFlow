@@ -2,7 +2,7 @@
 
 ## TODO
 
-- [ ] Start next Phase 3 slice: extract mobile quick-actions bar + mobile panel sheet markup from `WorkspacePage` into dedicated components.
+- [ ] Start next Phase 3 slice: extract the workspace desktop right-panel switcher (inspector vs tags library) into a dedicated component.
 
 ## IN PROGRESS
 
@@ -10,6 +10,9 @@
 
 ## DONE
 
+- [x] Extract mobile quick-actions bar into `frontend/src/components/layout/WorkspaceMobileQuickActions.vue`.
+- [x] Extract mobile panel sheet markup into `frontend/src/components/layout/WorkspaceMobilePanelSheet.vue`.
+- [x] Validate mobile component extraction slice with frontend checks (`npm run lint`, `npm run test`).
 - [x] Extract workspace header action handlers into `frontend/src/composables/useWorkspaceHeaderActions.ts`.
 - [x] Validate workspace header-actions composable slice with frontend checks (`npm run lint`, `npm run test`).
 - [x] Extract workspace image-loading orchestration into `frontend/src/composables/useWorkspaceImages.ts`.
