@@ -2,15 +2,27 @@
 
 ## TODO
 
-- [ ] Execute manual responsive QA using the checklist in `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md`.
-- [ ] Capture and attach Phase 4 desktop/mobile screenshots for PR review.
+- [ ] Prepare Phase 6 route-removal commit and PR notes.
 
 ## IN PROGRESS
 
-- [ ] Execute manual QA pass and record findings in Phase 4 summary.
+- [ ] Prepare final Phase 6 changeset summary for review.
 
 ## DONE
 
+- [x] Create Phase 6 implementation branch `feature/workspace-router-convergence-phase6`.
+- [x] Add Phase 6 planning checklist at `.project/tasks/frontend-one-page-responsive-refactor-planning/implementation-checklist-phase6.md`.
+- [x] Complete Phase 6 Slice A route policy lock for `/projects`, `/gallery`, `/image/:id`, and `/tags`.
+- [x] Complete Phase 6 Slice B redirects in `frontend/src/router/index.ts` for `/gallery`, `/image/:id`, and `/tags`.
+- [x] Add workspace query hydration (`panel`, `project`, `image`) in `frontend/src/pages/WorkspacePage.vue`.
+- [x] Add route convergence regression tests in `frontend/src/__tests__/router-convergence.test.ts`.
+- [x] Complete Phase 6 Slice C by converting `GalleryPage.vue`, `ImageDetailPage.vue`, and `TagsPage.vue` to compatibility redirects.
+- [x] Add compatibility redirect tests for legacy pages (`gallery-page`, `image-detail`, `tags-page`).
+- [x] Validate Phase 6 kickoff slice with full frontend checks (`npm run lint`, `npm run test`, `npm run build`).
+- [x] Remove legacy routes and pages (`/projects`, `/gallery`, `/image/:id`, `/tags`) from router/page tree and keep workspace/onboarding as primary flows.
+- [x] Move project management into workspace header actions via right-panel/mobile-panel project manager view.
+- [x] Remove global app-level top navigation header and rely on workspace header composition.
+- [x] Remove obsolete legacy-route shim tests and keep focused workspace/upload coverage.
 - [x] Add 200ms delayed loading indicator behavior in workspace image viewer and image browser to prevent fast-load flash.
 - [x] Split image store loading state (`imagesLoading`, `imageLoading`, `tagMutationLoading`) so image browser loading appears only on project image-list fetch.
 - [x] Hide viewer previous/next/jump controls in mobile mode (`WorkspaceImageViewerPanel`).

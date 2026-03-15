@@ -6,7 +6,7 @@ import WorkspaceProjectPickerPanel from '../sidebar/WorkspaceProjectPickerPanel.
 defineProps<{
   showProjectPicker: boolean
   showActionsMenu: boolean
-  showTagsLibrary: boolean
+  activeRightPanel: 'inspector' | 'tags' | 'projects'
   projects: Project[]
   selectedProjectId: string | null
   loading: boolean
@@ -20,6 +20,7 @@ const emit = defineEmits<{
   closeActionsMenu: []
   showTagsLibraryPanel: []
   showTagInspectorPanel: []
+  showProjectsPanel: []
 }>()
 </script>
 
@@ -37,9 +38,10 @@ const emit = defineEmits<{
 
   <WorkspaceActionsMenu
     v-if="showActionsMenu"
-    :show-tags-library="showTagsLibrary"
+    :active-right-panel="activeRightPanel"
     @close="emit('closeActionsMenu')"
     @show-tags-library="emit('showTagsLibraryPanel')"
     @show-inspector="emit('showTagInspectorPanel')"
+    @show-projects="emit('showProjectsPanel')"
   />
 </template>

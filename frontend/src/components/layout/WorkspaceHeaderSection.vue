@@ -7,7 +7,7 @@ defineProps<{
   projectName?: string
   showProjectPicker: boolean
   showActionsMenu: boolean
-  showTagsLibrary: boolean
+  activeRightPanel: 'inspector' | 'tags' | 'projects'
   projects: Project[]
   selectedProjectId: string | null
   loading: boolean
@@ -23,6 +23,7 @@ const emit = defineEmits<{
   closeActionsMenu: []
   showTagsLibraryPanel: []
   showTagInspectorPanel: []
+  showProjectsPanel: []
 }>()
 </script>
 
@@ -38,7 +39,7 @@ const emit = defineEmits<{
   <WorkspaceHeaderOverlays
     :show-project-picker="showProjectPicker"
     :show-actions-menu="showActionsMenu"
-    :show-tags-library="showTagsLibrary"
+    :active-right-panel="activeRightPanel"
     :projects="projects"
     :selected-project-id="selectedProjectId"
     :loading="loading"
@@ -49,5 +50,6 @@ const emit = defineEmits<{
     @close-actions-menu="emit('closeActionsMenu')"
     @show-tags-library-panel="emit('showTagsLibraryPanel')"
     @show-tag-inspector-panel="emit('showTagInspectorPanel')"
+    @show-projects-panel="emit('showProjectsPanel')"
   />
 </template>

@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import type { Project } from '../../api'
+import UploadPage from '../../pages/UploadPage.vue'
 import WorkspaceTagInspectorPanel from '../inspector/WorkspaceTagInspectorPanel.vue'
 import WorkspaceImageBrowserPanel from '../sidebar/WorkspaceImageBrowserPanel.vue'
 import WorkspaceTagsLibraryPanel from '../sidebar/WorkspaceTagsLibraryPanel.vue'
 
 defineProps<{
-  panel: 'browser' | 'inspector' | 'tags'
+  panel: 'browser' | 'inspector' | 'tags' | 'projects'
   selectedProjectId: string | null
   selectedProject: Project | null
 }>()
@@ -29,7 +30,9 @@ const emit = defineEmits<{
   />
 
   <WorkspaceTagsLibraryPanel
-    v-else
+    v-else-if="panel === 'tags'"
     :show-close="false"
   />
+
+  <UploadPage v-else />
 </template>

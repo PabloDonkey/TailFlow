@@ -1,9 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getOnboardingStatus } from '../api'
-import UploadPage from '../pages/UploadPage.vue'
-import GalleryPage from '../pages/GalleryPage.vue'
-import ImageDetailPage from '../pages/ImageDetailPage.vue'
-import TagsPage from '../pages/TagsPage.vue'
 import OnboardingPage from '../pages/OnboardingPage.vue'
 import WorkspacePage from '../pages/WorkspacePage.vue'
 
@@ -12,12 +8,8 @@ const router = createRouter({
   routes: [
     { path: '/', redirect: '/workspace' },
     { path: '/onboarding', component: OnboardingPage },
-    { path: '/projects', component: UploadPage },
-    { path: '/upload', redirect: '/projects' },
     { path: '/workspace', component: WorkspacePage },
-    { path: '/gallery', component: GalleryPage },
-    { path: '/image/:id', component: ImageDetailPage },
-    { path: '/tags', component: TagsPage },
+    { path: '/:pathMatch(.*)*', redirect: '/workspace' },
   ],
 })
 

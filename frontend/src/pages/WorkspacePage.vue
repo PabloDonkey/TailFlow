@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import AppShell from '../components/layout/AppShell.vue'
 import WorkspaceHeaderSection from '../components/layout/WorkspaceHeaderSection.vue'
 import WorkspaceMobileQuickActions from '../components/layout/WorkspaceMobileQuickActions.vue'
@@ -17,8 +18,9 @@ import { useImageStore } from '../stores/images'
 
 const projectStore = useProjectStore()
 const imageStore = useImageStore()
+const route = useRoute()
 const selectedProject = computed(() => projectStore.selectedProject)
-const showTagsLibrary = ref(false)
+const activeRightPanel = ref<'inspector' | 'tags' | 'projects'>('inspector')
 const imageBrowserMemoKey = computed(() => {
   const imageSnapshot = imageStore.images
     .map((image) => `${image.id}:${image.tag_count}:${image.filename}`)
@@ -50,7 +52,8 @@ const {
   closeProjectPicker,
   showTagsLibraryPanel,
   showTagInspectorPanel,
-} = useWorkspaceOverlayState({ showTagsLibrary })
+  showProjectsPanel,
+} = useWorkspaceOverlayState({ activeRightPanel })
 
 const mobilePanelTitle = computed(() => {
   if (mobilePanel.value === 'browser') {
@@ -58,6 +61,9 @@ const mobilePanelTitle = computed(() => {
   }
   if (mobilePanel.value === 'inspector') {
     return 'Tag Inspector'
+  }
+  if (mobilePanel.value === 'projects') {
+    return 'Project Manager'
   }
   return 'Tags Library'
 })
@@ -76,7 +82,7 @@ async function handleSelectImage(imageId: string) {
 }
 
 function closeTagsLibrary() {
-  showTagsLibrary.value = false
+  activeRightPanel.value = 'inspector'
 }
 
 function isMobileViewport(): boolean {
@@ -100,6 +106,79 @@ function handleShowTagInspectorPanel() {
   }
 }
 
+function handleShowProjectsPanel() {
+  showProjectsPanel()
+  if (isMobileViewport()) {
+    openMobilePanel('projects')
+  }
+}
+
+function queryValue(key: string): string | null {
+  const rawValue = route.query[key]
+  return typeof rawValue === 'string' ? rawValue : null
+}
+
+watch(
+  () => queryValue('panel'),
+  (panel) => {
+    if (panel === 'tags') {
+      showTagsLibraryPanel()
+      if (isMobileViewport()) {
+        openMobilePanel('tags')
+      }
+      return
+    }
+
+    if (panel === 'projects') {
+      showProjectsPanel()
+      if (isMobileViewport()) {
+        openMobilePanel('projects')
+      }
+      return
+    }
+
+    showTagInspectorPanel()
+
+    if (panel === 'browser' && isMobileViewport()) {
+      openMobilePanel('browser')
+    }
+  },
+  { immediate: true },
+)
+
+watch(
+  () => [queryValue('project'), projectStore.projects.length] as const,
+  ([projectFromQuery]) => {
+    if (!projectFromQuery || projectFromQuery === projectStore.selectedProjectId) {
+      return
+    }
+
+    const projectExists = projectStore.projects.some((project) => project.id === projectFromQuery)
+    if (!projectExists) {
+      return
+    }
+
+    projectStore.selectProject(projectFromQuery)
+  },
+  { immediate: true },
+)
+
+watch(
+  () => [queryValue('image'), projectStore.selectedProjectId] as const,
+  async ([imageFromQuery, selectedProjectId]) => {
+    if (!imageFromQuery || !selectedProjectId) {
+      return
+    }
+
+    if (imageStore.currentImage?.id === imageFromQuery) {
+      return
+    }
+
+    await selectImage(imageFromQuery)
+  },
+  { immediate: true },
+)
+
 </script>
 
 <template>
@@ -109,7 +188,7 @@ function handleShowTagInspectorPanel() {
         :project-name="selectedProject?.name"
         :show-project-picker="showProjectPicker"
         :show-actions-menu="showActionsMenu"
-        :show-tags-library="showTagsLibrary"
+        :active-right-panel="activeRightPanel"
         :projects="projectStore.projects"
         :selected-project-id="projectStore.selectedProjectId"
         :loading="projectStore.loading"
@@ -122,6 +201,7 @@ function handleShowTagInspectorPanel() {
         @close-actions-menu="closeActionsMenu"
         @show-tags-library-panel="handleShowTagsLibraryPanel"
         @show-tag-inspector-panel="handleShowTagInspectorPanel"
+        @show-projects-panel="handleShowProjectsPanel"
       />
     </template>
 
@@ -149,7 +229,7 @@ function handleShowTagInspectorPanel() {
 
       <template #right>
         <WorkspaceRightPanel
-          :show-tags-library="showTagsLibrary"
+          :active-panel="activeRightPanel"
           :project-id="projectStore.selectedProjectId"
           :selected-project="selectedProject"
           @close-tags-library="closeTagsLibrary"
