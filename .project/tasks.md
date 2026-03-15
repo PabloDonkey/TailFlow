@@ -2,14 +2,21 @@
 
 ## TODO
 
-- [ ] Define next post-Phase-3 implementation target and acceptance criteria.
+- [ ] Run manual responsive QA for desktop/mobile workspace layout and overlay behavior.
 
 ## IN PROGRESS
 
-- [ ] Implement workspace-first migration steps incrementally with focused validation.
+- [ ] Prepare Phase 4 PR summary and screenshots for review.
 
 ## DONE
 
+- [x] Add focused regression tests for overlay click-outside dismissal and workspace layout containment.
+- [x] Finalize Phase 4 validation with additional targeted regression tests.
+- [x] Define next post-Phase-3 implementation target and acceptance criteria.
+- [x] Phase 4 Slice A: implement workspace width/scroll containment/image sizing fixes with focused validation.
+- [x] Phase 4 Slice B: move tagging mode/count into inspector and remove viewer metadata noise.
+- [x] Phase 4 Slice C: fix project picker/actions overlay placement and desktop click-outside close.
+- [x] Phase 4 Slice D: verify project management route continuity (`/projects` remains active and mapped to `UploadPage`).
 - [x] Extract header slot composition into `frontend/src/components/layout/WorkspaceHeaderSection.vue`.
 - [x] Run broader Phase 3 frontend stabilization checks (`npm run lint`, `npm run test`, `npm run build`).
 - [x] Extract workspace header overlays into `frontend/src/components/layout/WorkspaceHeaderOverlays.vue`.

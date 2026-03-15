@@ -98,7 +98,7 @@ function closeTagsLibrary() {
       />
     </template>
 
-    <WorkspaceLayout>
+    <WorkspaceLayout class="h-full min-h-0">
       <template #left>
         <WorkspaceImageBrowserPanel
           :selected-project-id="projectStore.selectedProjectId"
@@ -108,7 +108,6 @@ function closeTagsLibrary() {
 
       <WorkspaceImageViewerPanel
         :project-id="projectStore.selectedProjectId"
-        :selected-project="selectedProject"
         :current-image="imageStore.currentImage"
         :ordered-images="orderedImages"
         :current-image-index="currentImageIndex"

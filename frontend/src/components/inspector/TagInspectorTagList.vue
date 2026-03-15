@@ -33,10 +33,10 @@ const emit = defineEmits<{
         :source-label="props.getTagSourceLabel(tag)"
       />
       <button
+        v-if="!tag.is_protected"
         class="tag-remove"
         aria-label="Remove tag"
-        :disabled="tag.is_protected"
-        :title="tag.is_protected ? 'Protected tags can only be edited from project metadata.' : 'Remove tag'"
+        title="Remove tag"
         @click="emit('remove', tag)"
       >×</button>
     </span>

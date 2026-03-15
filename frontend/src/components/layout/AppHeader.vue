@@ -27,12 +27,12 @@ defineEmits<{
     </AppButton>
 
     <div class="min-w-0">
-      <AppText class="text-[0.7rem] text-[var(--tf-color-header-subtle)]">
+      <AppText class="text-[0.7rem] text-white/75">
         Current project
       </AppText>
       <AppSectionTitle
         as="h1"
-        class="truncate text-[0.95rem] text-[var(--tf-color-header-text)] lg:text-base"
+        class="truncate text-[0.95rem] text-white lg:text-base"
       >
         {{ projectName || 'No project selected' }}
       </AppSectionTitle>

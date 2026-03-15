@@ -147,12 +147,12 @@ describe('ImageDetailPage', () => {
 
     expect(mocks.imageStore.fetchImage).toHaveBeenCalledWith('project-1', 'image-1')
     const removeButtons = wrapper.findAll('button[aria-label="Remove tag"]')
-    expect(removeButtons[0]?.attributes('disabled')).toBeDefined()
-    expect(removeButtons[1]?.attributes('disabled')).toBeUndefined()
+    expect(removeButtons).toHaveLength(1)
+    expect(removeButtons[0]?.attributes('disabled')).toBeUndefined()
     expect(wrapper.text()).toContain('Trigger')
     expect(wrapper.text()).toContain('booru')
-    expect(wrapper.text()).toContain('Tags (2)')
-    expect(wrapper.text()).toContain('2 tags')
+    expect(wrapper.text()).toContain('Tag Inspector')
+    expect(wrapper.text()).toContain('Image tags: 2 tags')
     expect(wrapper.text()).not.toContain('shared')
     expect(wrapper.text()).toContain('of 3')
     expect(

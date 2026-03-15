@@ -67,22 +67,32 @@ async function handleAddTag() {
     newTag.value = ''
   }
 }
+
+function formatTagCount(tagCount: number): string {
+  return `${tagCount} tag${tagCount === 1 ? '' : 's'}`
+}
 </script>
 
 <template>
   <section class="flex flex-col gap-3">
-    <AppSectionTitle v-if="currentImage">
-      Tags ({{ currentImage.tag_count }})
-    </AppSectionTitle>
-    <AppSectionTitle v-else>
-      Tag Inspector
-    </AppSectionTitle>
+    <AppSectionTitle>Tag Inspector</AppSectionTitle>
 
     <AppText v-if="!currentImage">
       Select an image to inspect tags.
     </AppText>
 
     <template v-else>
+      <AppText
+        v-if="selectedProject"
+        tone="muted"
+      >
+        Mode: <strong>{{ selectedProject.tagging_mode }}</strong>
+      </AppText>
+
+      <AppText tone="muted">
+        Image tags: {{ formatTagCount(currentImage.tag_count) }}
+      </AppText>
+
       <AppText tone="muted">
         Trigger and class tags are protected here. Unknown tags require confirmation before creation.
       </AppText>
