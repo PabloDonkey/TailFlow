@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import type { Project, ProjectImageRead, ProjectImageSummary } from '../../api'
+import type { ProjectImageRead, ProjectImageSummary } from '../../api'
 import { getProjectImageFileUrl } from '../../api'
+import { useDelayedLoading } from '../../composables/useDelayedLoading'
 import AppErrorText from '../ui/AppErrorText.vue'
-import AppSectionTitle from '../ui/AppSectionTitle.vue'
 import AppText from '../ui/AppText.vue'
 
 const props = defineProps<{
   projectId: string | null
-  selectedProject: Project | null
   currentImage: ProjectImageRead | null
   orderedImages: ProjectImageSummary[]
   currentImageIndex: number
@@ -23,6 +22,7 @@ const emit = defineEmits<{
 }>()
 
 const imageJumpInput = ref('1')
+const showLoading = useDelayedLoading(computed(() => props.loading), 200)
 
 const previousAvailable = computed(() => props.currentImageIndex > 0)
 const nextAvailable = computed(() => props.currentImageIndex >= 0 && props.currentImageIndex < props.orderedImages.length - 1)
@@ -35,10 +35,6 @@ watch(
     }
   },
 )
-
-function formatTagCount(tagCount: number): string {
-  return `${tagCount} tag${tagCount === 1 ? '' : 's'}`
-}
 
 function submitImageJump() {
   const requested = Number.parseInt(imageJumpInput.value, 10)
@@ -53,10 +49,8 @@ function submitImageJump() {
 </script>
 
 <template>
-  <section class="flex flex-col gap-3">
-    <AppSectionTitle>Tagging Workspace</AppSectionTitle>
-
-    <AppText v-if="loading">
+  <section class="flex h-full min-h-0 flex-col gap-3">
+    <AppText v-if="showLoading">
       Loading…
     </AppText>
     <AppErrorText v-else-if="error">
@@ -67,19 +61,15 @@ function submitImageJump() {
     </AppText>
 
     <template v-else>
-      <div class="flex justify-center">
+      <div class="min-h-0 flex-1 overflow-hidden rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-2">
         <img
           :src="getProjectImageFileUrl(projectId!, currentImage.id)"
           :alt="currentImage.filename"
-          class="max-h-[420px] w-full rounded-[var(--tf-radius-md)] object-contain"
+          class="h-full w-full object-contain"
         >
       </div>
 
-      <AppText class="font-semibold text-[var(--tf-color-text-title)]">
-        {{ currentImage.filename }}
-      </AppText>
-
-      <div class="flex flex-wrap items-center justify-center gap-3">
+      <div class="hidden flex-wrap items-center justify-center gap-3 lg:flex">
         <button
           data-testid="previous-image-button"
           class="btn btn-secondary rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-3 py-1.5"
@@ -113,19 +103,6 @@ function submitImageJump() {
           Next
         </button>
       </div>
-
-      <AppText tone="muted">
-        Discovered {{ new Date(currentImage.discovered_at).toLocaleString() }}
-      </AppText>
-      <AppText
-        v-if="selectedProject"
-        tone="muted"
-      >
-        Mode: <strong>{{ selectedProject.tagging_mode }}</strong>
-      </AppText>
-      <AppText tone="muted">
-        {{ formatTagCount(currentImage.tag_count) }}
-      </AppText>
     </template>
   </section>
 </template>

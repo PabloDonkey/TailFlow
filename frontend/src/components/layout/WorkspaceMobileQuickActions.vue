@@ -12,7 +12,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <section class="sticky bottom-0 z-[105] mt-3 grid grid-cols-5 gap-2 rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-2 lg:hidden">
+  <section class="mt-3 grid grid-cols-5 gap-2 rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-2 lg:hidden">
     <button
       type="button"
       class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-2 text-xs text-[var(--tf-color-text-default)]"

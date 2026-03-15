@@ -19,6 +19,12 @@ const projectStore = useProjectStore()
 const imageStore = useImageStore()
 const selectedProject = computed(() => projectStore.selectedProject)
 const showTagsLibrary = ref(false)
+const imageBrowserMemoKey = computed(() => {
+  const imageSnapshot = imageStore.images
+    .map((image) => `${image.id}:${image.tag_count}:${image.filename}`)
+    .join('|')
+  return `${projectStore.selectedProjectId ?? 'none'}|${imageStore.sortOption}|${imageSnapshot}`
+})
 
 const {
   orderedImages,
@@ -73,6 +79,27 @@ function closeTagsLibrary() {
   showTagsLibrary.value = false
 }
 
+function isMobileViewport(): boolean {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return false
+  }
+  return window.matchMedia('(max-width: 1023px)').matches
+}
+
+function handleShowTagsLibraryPanel() {
+  showTagsLibraryPanel()
+  if (isMobileViewport()) {
+    openMobilePanel('tags')
+  }
+}
+
+function handleShowTagInspectorPanel() {
+  showTagInspectorPanel()
+  if (isMobileViewport()) {
+    openMobilePanel('inspector')
+  }
+}
+
 </script>
 
 <template>
@@ -93,26 +120,27 @@ function closeTagsLibrary() {
         @refresh-projects="refreshProjects"
         @select-project="selectProjectFromPicker"
         @close-actions-menu="closeActionsMenu"
-        @show-tags-library-panel="showTagsLibraryPanel"
-        @show-tag-inspector-panel="showTagInspectorPanel"
+        @show-tags-library-panel="handleShowTagsLibraryPanel"
+        @show-tag-inspector-panel="handleShowTagInspectorPanel"
       />
     </template>
 
-    <WorkspaceLayout>
+    <WorkspaceLayout class="h-full min-h-0">
       <template #left>
-        <WorkspaceImageBrowserPanel
-          :selected-project-id="projectStore.selectedProjectId"
-          @select-image="handleSelectImage"
-        />
+        <div v-memo="[imageBrowserMemoKey]">
+          <WorkspaceImageBrowserPanel
+            :selected-project-id="projectStore.selectedProjectId"
+            @select-image="handleSelectImage"
+          />
+        </div>
       </template>
 
       <WorkspaceImageViewerPanel
         :project-id="projectStore.selectedProjectId"
-        :selected-project="selectedProject"
         :current-image="imageStore.currentImage"
         :ordered-images="orderedImages"
         :current-image-index="currentImageIndex"
-        :loading="projectStore.loading || imageStore.loading"
+        :loading="projectStore.loading || imageStore.imageLoading"
         :error="projectStore.error || imageStore.error"
         @previous="goToPreviousImage"
         @next="goToNextImage"

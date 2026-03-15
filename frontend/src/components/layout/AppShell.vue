@@ -7,11 +7,11 @@ withDefaults(defineProps<{
 </script>
 
 <template>
-  <div class="flex min-h-full flex-col">
+  <div class="flex h-full min-h-0 flex-col">
     <slot name="header" />
     <main
       :class="[
-        'mx-auto w-full flex-1 p-3 md:p-4',
+        'mx-auto flex w-full min-h-0 flex-1 flex-col p-3 md:p-4',
         fullWidth ? 'max-w-none' : 'max-w-[1400px]',
       ]"
     >

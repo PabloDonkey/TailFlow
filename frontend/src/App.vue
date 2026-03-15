@@ -5,10 +5,14 @@ import NavLink from './components/ui/NavLink.vue'
 
 const route = useRoute()
 const showNavigation = computed(() => route.path !== '/onboarding')
+const isWorkspaceRoute = computed(() => route.path === '/workspace')
 </script>
 
 <template>
-  <div class="flex min-h-dvh flex-col">
+  <div
+    class="flex min-h-dvh flex-col"
+    :class="isWorkspaceRoute ? 'h-dvh overflow-hidden' : ''"
+  >
     <nav
       v-if="showNavigation"
       class="sticky top-0 z-[100] flex justify-around bg-[var(--tf-color-header-bg)] px-4 py-3"
@@ -26,7 +30,10 @@ const showNavigation = computed(() => route.path !== '/onboarding')
         Tags
       </NavLink>
     </nav>
-    <main class="mx-auto w-full max-w-[768px] flex-1 p-4">
+    <main
+      class="mx-auto w-full flex-1"
+      :class="isWorkspaceRoute ? 'max-w-none overflow-hidden p-3 md:p-4' : 'max-w-[768px] p-4'"
+    >
       <RouterView />
     </main>
   </div>

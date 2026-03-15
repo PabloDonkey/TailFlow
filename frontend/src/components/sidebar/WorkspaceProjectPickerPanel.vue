@@ -19,15 +19,15 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="fixed inset-0 z-[130] lg:pointer-events-none lg:inset-auto lg:left-4 lg:top-[3.9rem]">
+  <div class="fixed inset-x-0 bottom-0 top-[3.7rem] z-[130] lg:top-[4rem]">
     <button
       type="button"
-      class="absolute inset-0 bg-black/25 lg:hidden"
+      class="absolute inset-0 bg-black/25 lg:bg-transparent"
       aria-label="Close project picker"
       @click="emit('close')"
     />
 
-    <section class="absolute left-3 top-[3.7rem] w-[min(20rem,calc(100vw-1.5rem))] rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-2 shadow-xl lg:pointer-events-auto lg:left-0 lg:top-0">
+    <section class="absolute left-3 top-2 w-[min(20rem,calc(100vw-1.5rem))] rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-2 shadow-xl lg:left-4 lg:top-2">
       <div class="flex items-center justify-between gap-2 px-1 pb-1">
         <AppSectionTitle>Project Picker</AppSectionTitle>
         <button

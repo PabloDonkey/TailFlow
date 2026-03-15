@@ -2,7 +2,7 @@
 
 ## Current Feature
 
-Frontend one-page responsive refactor (Phase 3 workspace-first migration)
+Frontend one-page responsive refactor (Phase 4 workspace UX convergence)
 
 ## Current Step
 
@@ -16,7 +16,7 @@ REFINE
 
 ## Objective
 
-Implement Phase 3 workspace-first migration slices while preserving compatibility for legacy routes.
+Implement Phase 4 workspace UX convergence slices (layout/scroll containment, tagging-focused workspace content, and overlay interaction fixes) while preserving route compatibility.
 
 ## Files involved
 
@@ -35,6 +35,7 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - frontend/src/components/layout/WorkspaceHeaderSection.vue
 - frontend/src/components/layout/WorkspaceLayout.vue
 - frontend/src/components/layout/WorkspaceImageViewerPanel.vue
+- frontend/src/components/inspector/TagInspectorTagList.vue
 - frontend/src/components/sidebar/WorkspaceImageBrowserPanel.vue
 - frontend/src/components/sidebar/WorkspaceProjectPickerPanel.vue
 - frontend/src/components/sidebar/WorkspaceTagsLibraryPanel.vue
@@ -43,22 +44,22 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - frontend/src/composables/useWorkspaceOverlayState.ts
 - frontend/src/composables/useWorkspaceImages.ts
 - frontend/src/composables/useWorkspaceHeaderActions.ts
+- frontend/src/__tests__/image-detail.test.ts
+- frontend/src/__tests__/workspace-overlays.test.ts
 - frontend/src/pages/GalleryPage.vue
 - frontend/src/pages/ImageDetailPage.vue
 - frontend/src/pages/TagsPage.vue
 - frontend/src/pages/OnboardingPage.vue
-- .project/tasks/frontend-one-page-responsive-refactor-planning/implementation-checklist-phase1.md
+- .project/tasks/frontend-one-page-responsive-refactor-planning/implementation-checklist-phase3.md
 
 ## Implementation Plan
 
-1. scaffold shell primitives (header + layout + app shell)
-2. add `WorkspacePage` and wire non-breaking `/workspace` route
-3. keep existing routes operational during migration
-4. extract image browser, image viewer, and tag inspector into workspace panel components
-5. wire panel orchestration in `WorkspacePage` (selection + prev/next/jump + tag edits)
-6. validate each iteration with error checks and focused tests
-7. switch default and onboarding redirects to `/workspace` while keeping legacy routes operational
-8. move secondary flows (starting with tags library) into workspace panels/drawers incrementally
+1. remove workspace shell width caps and enforce panel-scoped overflow in desktop layout
+2. refactor image viewer panel to maximize image viewport without page scroll while preserving aspect ratio
+3. move tagging metadata (mode/count) into inspector context and remove non-essential viewer metadata
+4. hide remove affordance for protected tags in inspector list
+5. fix overlay positioning/dismissal behavior for project picker and workspace actions on desktop/mobile
+6. run focused frontend checks after each slice; run broader lint/test/build after phase completion
 
 ## Progress
 
@@ -126,10 +127,35 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - Extracted header slot composition (`AppHeader` + `WorkspaceHeaderOverlays`) into dedicated component `WorkspaceHeaderSection`.
 - Refactored `WorkspacePage` to consume `WorkspaceHeaderSection` and remove inline header-slot composition markup.
 - Ran broader Phase 3 stabilization sweep: `npm run lint` (pass), `npm run test` (pass), `npm run build` (pass).
+- Defined the post-Phase-3 target as Phase 4 Workspace UX Convergence with acceptance criteria.
+- Created implementation branch `feature/workspace-ux-convergence-phase4` for Phase 4 delivery work.
+- Implemented Phase 4 Slice A: workspace route now runs full-width without the global 768px cap and uses height/overflow containment to prevent desktop page scrolling.
+- Updated workspace panel layout (`WorkspaceLayout` + `AppShell` + `WorkspacePage`) so desktop side panels scroll internally while the page remains viewport-bounded.
+- Updated `WorkspaceImageViewerPanel` to consume available center panel space with aspect-ratio-preserving image fit.
+- Implemented Phase 4 Slice B: moved tagging metadata (mode + count) into `WorkspaceTagInspectorPanel` and reduced viewer content to image + navigation controls.
+- Implemented protected-tag UX rule by hiding remove controls for protected tags in `TagInspectorTagList`.
+- Implemented Phase 4 Slice C: repositioned project picker/actions overlays below the header and enabled click-outside close on desktop and mobile.
+- Improved header project-title readability with explicit high-contrast text styling.
+- Updated affected test expectations in `frontend/src/__tests__/image-detail.test.ts`.
+- Added focused overlay regression coverage in `frontend/src/__tests__/workspace-overlays.test.ts` for below-header placement and backdrop-close behavior.
+- Added workspace layout containment regression coverage in `frontend/src/__tests__/workspace-layout.test.ts`.
+- Validated with focused frontend tests, then full frontend checks: `npm run lint`, `npm run test`, `npm run build` (pass).
+- Created Phase 4 PR summary artifact at `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md` with scope, acceptance-criteria mapping, and validation evidence.
+- Added a structured manual QA checklist and screenshot evidence template to `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md`.
+- Hid viewer previous/next/jump controls on mobile by restricting viewer nav controls to `lg` and up.
+- Changed `WorkspaceMobileQuickActions` from sticky overlay behavior to normal flow placement below workspace content.
+- Fixed mobile workspace actions behavior by routing header action selections to mobile panel openings (`tags` / `inspector`) when in mobile viewport.
+- Reduced unnecessary image-browser rerenders during image selection/navigation via memoized left-panel composition in `WorkspacePage`.
+- Added a deferred Playwright integration note to `ROADMAP.md` for future E2E automation (explicitly out of current phase scope).
+- Re-ran focused regression tests and full frontend validation (`npm run lint`, `npm run test`, `npm run build`) after these updates.
+- Addressed follow-up performance/UX issue where image-browser appeared to re-render on navigation: split image store loading into operation-specific flags and bound browser loading UI to `imagesLoading` only.
+- Updated viewer loading bindings to use `imageLoading` and tag mutation loading to use `tagMutationLoading`.
+- Added a shared delayed-loading composable (`200ms` threshold) and applied it to workspace image viewer/browser loading indicators to avoid fast loading flashes.
+- Re-validated with focused tests (`gallery-page`, `image-detail`, `workspace-overlays`, `workspace-layout`) and full frontend checks (pass).
 
 ## Next Action
 
-Define the next post-Phase-3 implementation target (for example router simplification or legacy route convergence) and capture acceptance criteria before starting the next migration phase.
+Execute manual desktop/mobile workspace QA with screenshot capture and complete the QA Result Log in the Phase 4 summary.
 
 ## Notes / Resources
 

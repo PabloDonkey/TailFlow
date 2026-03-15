@@ -100,11 +100,10 @@ function goToNextImage() {
 
     <WorkspaceImageViewerPanel
       :project-id="projectId"
-      :selected-project="selectedProject"
       :current-image="imageStore.currentImage"
       :ordered-images="orderedImages"
       :current-image-index="currentImageIndex"
-      :loading="imageStore.loading"
+      :loading="imageStore.imageLoading"
       :error="pageError || imageStore.error"
       @previous="goToPreviousImage"
       @next="goToNextImage"

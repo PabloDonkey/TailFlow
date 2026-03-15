@@ -19,7 +19,10 @@ function compareByName(a: ProjectImageSummary, b: ProjectImageSummary): number {
 export const useImageStore = defineStore('images', () => {
   const images = ref<ProjectImageSummary[]>([])
   const currentImage = ref<ProjectImageRead | null>(null)
-  const loading = ref(false)
+  const imagesLoading = ref(false)
+  const imageLoading = ref(false)
+  const tagMutationLoading = ref(false)
+  const loading = computed(() => imagesLoading.value || imageLoading.value || tagMutationLoading.value)
   const error = ref<string | null>(null)
   const sortOption = ref<ImageSortOption>('name-asc')
 
@@ -42,26 +45,26 @@ export const useImageStore = defineStore('images', () => {
   })
 
   async function fetchImages(projectId: string) {
-    loading.value = true
+    imagesLoading.value = true
     error.value = null
     try {
       images.value = await api.listProjectImages(projectId)
     } catch (e) {
       error.value = String(e)
     } finally {
-      loading.value = false
+      imagesLoading.value = false
     }
   }
 
   async function fetchImage(projectId: string, id: string) {
-    loading.value = true
+    imageLoading.value = true
     error.value = null
     try {
       currentImage.value = await api.getProjectImage(projectId, id)
     } catch (e) {
       error.value = String(e)
     } finally {
-      loading.value = false
+      imageLoading.value = false
     }
   }
 
@@ -72,7 +75,7 @@ export const useImageStore = defineStore('images', () => {
     remove: string[],
     createMissing = false,
   ) {
-    loading.value = true
+    tagMutationLoading.value = true
     error.value = null
     try {
       const updated = await api.updateProjectImageTags(
@@ -98,7 +101,7 @@ export const useImageStore = defineStore('images', () => {
       error.value = String(e)
       return null
     } finally {
-      loading.value = false
+      tagMutationLoading.value = false
     }
   }
 
@@ -106,6 +109,9 @@ export const useImageStore = defineStore('images', () => {
     images,
     sortedImages,
     currentImage,
+    imagesLoading,
+    imageLoading,
+    tagMutationLoading,
     loading,
     error,
     sortOption,

@@ -2,14 +2,32 @@
 
 ## TODO
 
-- [ ] Define next post-Phase-3 implementation target and acceptance criteria.
+- [ ] Execute manual responsive QA using the checklist in `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md`.
+- [ ] Capture and attach Phase 4 desktop/mobile screenshots for PR review.
 
 ## IN PROGRESS
 
-- [ ] Implement workspace-first migration steps incrementally with focused validation.
+- [ ] Execute manual QA pass and record findings in Phase 4 summary.
 
 ## DONE
 
+- [x] Add 200ms delayed loading indicator behavior in workspace image viewer and image browser to prevent fast-load flash.
+- [x] Split image store loading state (`imagesLoading`, `imageLoading`, `tagMutationLoading`) so image browser loading appears only on project image-list fetch.
+- [x] Hide viewer previous/next/jump controls in mobile mode (`WorkspaceImageViewerPanel`).
+- [x] Place mobile quick actions below workspace image area (`WorkspaceMobileQuickActions`).
+- [x] Fix mobile workspace actions flow to open corresponding mobile panels (`WorkspacePage` handlers).
+- [x] Reduce unnecessary image browser rerenders during image navigation using memoized left-panel composition (`WorkspacePage`).
+- [x] Add deferred Playwright integration note to `ROADMAP.md` (explicitly out of current Phase 4 scope).
+- [x] Add manual QA checklist and screenshot evidence template to `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md`.
+- [x] Add workspace layout containment regression tests (`frontend/src/__tests__/workspace-layout.test.ts`).
+- [x] Prepare Phase 4 PR summary artifact under `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md`.
+- [x] Add focused regression tests for overlay click-outside dismissal and workspace layout containment.
+- [x] Finalize Phase 4 validation with additional targeted regression tests.
+- [x] Define next post-Phase-3 implementation target and acceptance criteria.
+- [x] Phase 4 Slice A: implement workspace width/scroll containment/image sizing fixes with focused validation.
+- [x] Phase 4 Slice B: move tagging mode/count into inspector and remove viewer metadata noise.
+- [x] Phase 4 Slice C: fix project picker/actions overlay placement and desktop click-outside close.
+- [x] Phase 4 Slice D: verify project management route continuity (`/projects` remains active and mapped to `UploadPage`).
 - [x] Extract header slot composition into `frontend/src/components/layout/WorkspaceHeaderSection.vue`.
 - [x] Run broader Phase 3 frontend stabilization checks (`npm run lint`, `npm run test`, `npm run build`).
 - [x] Extract workspace header overlays into `frontend/src/components/layout/WorkspaceHeaderOverlays.vue`.
