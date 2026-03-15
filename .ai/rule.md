@@ -14,3 +14,5 @@
 - Keep directive or instructional guidance in this file.
 - Track active session context in `.project/dev-loop.md` and `.project/tasks.md`.
 - When a task is finished, update `.project/dev-loop.md` and `.project/tasks.md`.
+- Task directories under `.project/tasks/` must follow `N_task-slug[status]` naming.
+- Use numeric ordering for `N` (1, 2, 3, ...), use lowercase kebab-case for `task-slug`, and one status tag: `[in-progress]` or `[closed]`.

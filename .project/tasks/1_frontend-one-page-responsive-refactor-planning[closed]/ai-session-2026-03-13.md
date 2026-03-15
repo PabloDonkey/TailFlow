@@ -2,7 +2,7 @@
 
 ## Task
 
-- `frontend-one-page-responsive-refactor-planning`
+- `1_frontend-one-page-responsive-refactor-planning[closed]`
 
 ## Prompt Summary
 

@@ -8,7 +8,10 @@ import WorkspaceMobilePanelContent from '../components/layout/WorkspaceMobilePan
 import WorkspaceMobilePanelSheet from '../components/layout/WorkspaceMobilePanelSheet.vue'
 import WorkspaceRightPanel from '../components/layout/WorkspaceRightPanel.vue'
 import WorkspaceLayout from '../components/layout/WorkspaceLayout.vue'
+import ProjectBrowserPanel from '../components/projects/ProjectBrowserPanel.vue'
+import ProjectCreateModal from '../components/projects/ProjectCreateModal.vue'
 import WorkspaceImageBrowserPanel from '../components/sidebar/WorkspaceImageBrowserPanel.vue'
+import WorkspaceTagsLibraryPanel from '../components/sidebar/WorkspaceTagsLibraryPanel.vue'
 import WorkspaceImageViewerPanel from '../components/layout/WorkspaceImageViewerPanel.vue'
 import { useWorkspaceHeaderActions } from '../composables/useWorkspaceHeaderActions'
 import { useWorkspaceOverlayState } from '../composables/useWorkspaceOverlayState'
@@ -21,6 +24,19 @@ const imageStore = useImageStore()
 const route = useRoute()
 const selectedProject = computed(() => projectStore.selectedProject)
 const activeRightPanel = ref<'inspector' | 'tags' | 'projects'>('inspector')
+const showCreateProjectModal = ref(false)
+type WorkspaceMode = 'tagging' | 'projects' | 'tag-library'
+
+const workspaceMode = computed<WorkspaceMode>(() => {
+  if (activeRightPanel.value === 'projects') {
+    return 'projects'
+  }
+  if (activeRightPanel.value === 'tags') {
+    return 'tag-library'
+  }
+  return 'tagging'
+})
+
 const imageBrowserMemoKey = computed(() => {
   const imageSnapshot = imageStore.images
     .map((image) => `${image.id}:${image.tag_count}:${image.filename}`)
@@ -81,6 +97,28 @@ async function handleSelectImage(imageId: string) {
   closeMobilePanel()
 }
 
+function selectProject(projectId: string) {
+  projectStore.selectProject(projectId)
+}
+
+function openCreateProjectModal() {
+  showCreateProjectModal.value = true
+}
+
+function closeCreateProjectModal() {
+  showCreateProjectModal.value = false
+}
+
+async function handleProjectCreated(projectId: string) {
+  await projectStore.fetchProjects()
+  projectStore.selectProject(projectId)
+  closeCreateProjectModal()
+}
+
+async function discoverProjectsFromBrowser() {
+  await projectStore.discoverAndRefresh()
+}
+
 function closeTagsLibrary() {
   activeRightPanel.value = 'inspector'
 }
@@ -111,6 +149,18 @@ function handleShowProjectsPanel() {
   if (isMobileViewport()) {
     openMobilePanel('projects')
   }
+}
+
+function handleSelectProjectFromPicker(projectId: string) {
+  selectProjectFromPicker(projectId)
+  handleShowTagInspectorPanel()
+}
+
+function handleShowTaggingForProject(projectId: string) {
+  if (projectStore.selectedProjectId !== projectId) {
+    projectStore.selectProject(projectId)
+  }
+  handleShowTagInspectorPanel()
 }
 
 function queryValue(key: string): string | null {
@@ -197,7 +247,7 @@ watch(
         @open-overflow="openOverflow"
         @close-project-picker="closeProjectPicker"
         @refresh-projects="refreshProjects"
-        @select-project="selectProjectFromPicker"
+        @select-project="handleSelectProjectFromPicker"
         @close-actions-menu="closeActionsMenu"
         @show-tags-library-panel="handleShowTagsLibraryPanel"
         @show-tag-inspector-panel="handleShowTagInspectorPanel"
@@ -205,7 +255,10 @@ watch(
       />
     </template>
 
-    <WorkspaceLayout class="h-full min-h-0">
+    <WorkspaceLayout
+      v-if="workspaceMode === 'tagging'"
+      class="h-full min-h-0"
+    >
       <template #left>
         <div v-memo="[imageBrowserMemoKey]">
           <WorkspaceImageBrowserPanel
@@ -237,7 +290,46 @@ watch(
       </template>
     </WorkspaceLayout>
 
+    <section
+      v-else-if="workspaceMode === 'projects'"
+      class="grid min-h-0 grid-cols-1 gap-3 lg:h-full lg:grid-cols-[minmax(240px,320px)_minmax(0,1fr)] lg:items-stretch"
+    >
+      <ProjectBrowserPanel
+        :projects="projectStore.projects"
+        :selected-project-id="projectStore.selectedProjectId"
+        :loading="projectStore.loading"
+        :discovering="projectStore.loading"
+        @select-project="selectProject"
+        @open-create-project="openCreateProjectModal"
+        @discover-projects="discoverProjectsFromBrowser"
+        @show-tagging="handleShowTaggingForProject"
+      />
+
+      <section class="rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-3 lg:h-full lg:min-h-0 lg:overflow-y-auto">
+        <WorkspaceRightPanel
+          active-panel="projects"
+          :project-id="projectStore.selectedProjectId"
+          :selected-project="selectedProject"
+          @close-tags-library="closeTagsLibrary"
+        />
+      </section>
+
+      <ProjectCreateModal
+        v-if="showCreateProjectModal"
+        @close="closeCreateProjectModal"
+        @created="handleProjectCreated"
+      />
+    </section>
+
+    <section
+      v-else
+      class="rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-3 lg:h-full lg:min-h-0 lg:overflow-y-auto"
+    >
+      <WorkspaceTagsLibraryPanel :show-close="false" />
+    </section>
+
     <WorkspaceMobileQuickActions
+      v-if="workspaceMode === 'tagging'"
       :previous-available="previousAvailable"
       :next-available="nextAvailable"
       @previous="goToPreviousImage"
