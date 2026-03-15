@@ -2,11 +2,11 @@
 
 ## TODO
 
-- [ ] Phase 6 Slice C: convert legacy page components into thin compatibility shims or remove direct usage after redirect convergence.
+- [ ] Prepare Phase 6 router convergence commit and PR notes.
 
 ## IN PROGRESS
 
-- [ ] Phase 6 Slice C: implement remaining compatibility cleanup for legacy page components.
+- [ ] Prepare Phase 6 changeset summary for review.
 
 ## DONE
 
@@ -16,6 +16,8 @@
 - [x] Complete Phase 6 Slice B redirects in `frontend/src/router/index.ts` for `/gallery`, `/image/:id`, and `/tags`.
 - [x] Add workspace query hydration (`panel`, `project`, `image`) in `frontend/src/pages/WorkspacePage.vue`.
 - [x] Add route convergence regression tests in `frontend/src/__tests__/router-convergence.test.ts`.
+- [x] Complete Phase 6 Slice C by converting `GalleryPage.vue`, `ImageDetailPage.vue`, and `TagsPage.vue` to compatibility redirects.
+- [x] Add compatibility redirect tests for legacy pages (`gallery-page`, `image-detail`, `tags-page`).
 - [x] Validate Phase 6 kickoff slice with full frontend checks (`npm run lint`, `npm run test`, `npm run build`).
 - [x] Add 200ms delayed loading indicator behavior in workspace image viewer and image browser to prevent fast-load flash.
 - [x] Split image store loading state (`imagesLoading`, `imageLoading`, `tagMutationLoading`) so image browser loading appears only on project image-list fetch.

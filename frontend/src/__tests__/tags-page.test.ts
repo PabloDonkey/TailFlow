@@ -1,6 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import GalleryPage from '../pages/GalleryPage.vue'
+import TagsPage from '../pages/TagsPage.vue'
 
 const mocks = vi.hoisted(() => ({
   route: {
@@ -18,22 +18,22 @@ vi.mock('vue-router', () => ({
   useRouter: () => mocks.router,
 }))
 
-describe('GalleryPage compatibility shim', () => {
+describe('TagsPage compatibility shim', () => {
   beforeEach(() => {
     mocks.router.replace.mockClear()
   })
 
-  it('redirects to workspace browser panel and preserves project query', async () => {
-    const wrapper = mount(GalleryPage)
+  it('redirects to workspace tags panel and preserves project query', async () => {
+    const wrapper = mount(TagsPage)
     await flushPromises()
 
     expect(mocks.router.replace).toHaveBeenCalledWith({
       path: '/workspace',
       query: {
         project: 'project-1',
-        panel: 'browser',
+        panel: 'tags',
       },
     })
-    expect(wrapper.get('[data-testid="legacy-gallery-redirect"]').text()).toContain('Redirecting')
+    expect(wrapper.get('[data-testid="legacy-tags-redirect"]').text()).toContain('Redirecting')
   })
 })

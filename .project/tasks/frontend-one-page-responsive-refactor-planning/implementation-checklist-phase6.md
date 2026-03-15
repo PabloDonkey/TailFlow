@@ -41,15 +41,15 @@ Policy decisions:
 
 ### Slice C — Legacy Page Shims
 
-- [ ] Convert `GalleryPage.vue`, `ImageDetailPage.vue`, and `TagsPage.vue` into thin compatibility wrappers or remove direct usage where router redirects replace them.
-- [ ] Apply `/projects` policy decision to `UploadPage.vue` and route registration.
-- [ ] Remove redundant page-level behavior duplicated by `WorkspacePage.vue`.
+- [x] Convert `GalleryPage.vue`, `ImageDetailPage.vue`, and `TagsPage.vue` into thin compatibility wrappers or remove direct usage where router redirects replace them.
+- [x] Apply `/projects` policy decision to `UploadPage.vue` and route registration.
+- [x] Remove redundant page-level behavior duplicated by `WorkspacePage.vue`.
 
 ### Slice D — Tests + Tracking
 
 - [x] Add/adjust route regression tests for legacy-path behavior and redirects.
 - [x] Run focused tests for changed route/page files.
-- [ ] Update `.project/dev-loop.md` and `.project/tasks.md` after each completed slice.
+- [x] Update `.project/dev-loop.md` and `.project/tasks.md` after each completed slice.
 
 ## Validation Plan
 

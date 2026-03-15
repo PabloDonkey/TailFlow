@@ -58,8 +58,9 @@ Converge legacy frontend routes into workspace-first navigation while preserving
 1. lock route policy for legacy paths (`/projects`, `/gallery`, `/image/:id`, `/tags`)
 2. implement redirect mapping in `frontend/src/router/index.ts` toward workspace query targets
 3. hydrate workspace panel/project/image state from route query in `WorkspacePage`
-4. validate route behavior with focused tests and then full frontend lint/test/build
-5. close out tracker artifacts and document any remaining compatibility shims
+4. convert legacy pages to lightweight compatibility shims and remove duplicated page-level behavior
+5. validate route behavior with focused tests and then full frontend lint/test/build
+6. close out tracker artifacts and prepare commit/PR summary
 
 ## Progress
 
@@ -138,6 +139,9 @@ Converge legacy frontend routes into workspace-first navigation while preserving
 - Improved header project-title readability with explicit high-contrast text styling.
 - Updated affected test expectations in `frontend/src/__tests__/image-detail.test.ts`.
 - Added focused overlay regression coverage in `frontend/src/__tests__/workspace-overlays.test.ts` for below-header placement and backdrop-close behavior.
+- Completed Phase 6 Slice C by converting `frontend/src/pages/GalleryPage.vue`, `frontend/src/pages/ImageDetailPage.vue`, and `frontend/src/pages/TagsPage.vue` to compatibility redirect shims.
+- Replaced legacy page tests with shim-focused coverage for gallery and image detail flows, and added `frontend/src/__tests__/tags-page.test.ts`.
+- Re-ran focused route and shim tests plus full frontend validation (`npm run lint`, `npm run test`, `npm run build`).
 - Added workspace layout containment regression coverage in `frontend/src/__tests__/workspace-layout.test.ts`.
 - Validated with focused frontend tests, then full frontend checks: `npm run lint`, `npm run test`, `npm run build` (pass).
 - Created Phase 4 PR summary artifact at `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md` with scope, acceptance-criteria mapping, and validation evidence.
@@ -160,7 +164,7 @@ Converge legacy frontend routes into workspace-first navigation while preserving
 
 ## Next Action
 
-Run focused frontend tests for route convergence behavior and fix any regressions before broad frontend validation.
+Prepare a Phase 6 commit with router/shim/test/tracker updates and draft PR notes for review.
 
 ## Notes / Resources
 
