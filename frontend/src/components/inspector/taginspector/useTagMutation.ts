@@ -2,7 +2,7 @@ import type { Ref } from 'vue'
 import type { ProjectTag, Project, ProjectImageRead } from '../../../api'
 import type { useImageStore } from '../../../stores/images'
 
-import { getCatalogIdByTaggingMode } from '../../utils/tagCatalog'
+import { getCatalogIdByTaggingMode } from '../../../utils/tagCatalog'
 
 type UseTagMutationOptions = {
   imageStore: ReturnType<typeof useImageStore>;
