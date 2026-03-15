@@ -2,19 +2,24 @@
 
 ## TODO
 
-- [ ] Add focused route regression coverage for `/gallery`, `/image/:id`, and `/tags` legacy paths after redirect convergence.
-- [ ] Run full frontend validation for Phase 6 slice (`npm run lint`, `npm run test`, `npm run build`).
+- [ ] Execute manual responsive QA using the checklist in `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md`.
+- [ ] Capture and attach Phase 4 desktop/mobile screenshots for PR review.
+- [ ] Phase 6 Slice C: convert legacy page components into thin compatibility shims or remove direct usage after redirect convergence.
 
 ## IN PROGRESS
 
-- [ ] Phase 6 Slice B: converge legacy routes to workspace redirects in `frontend/src/router/index.ts`.
-- [ ] Phase 6 Slice C: validate workspace query hydration (`panel`, `project`, `image`) in `frontend/src/pages/WorkspacePage.vue`.
+- [ ] Execute manual QA pass and record findings in Phase 4 summary.
+- [ ] Phase 6 Slice C: implement remaining compatibility cleanup for legacy page components.
 
 ## DONE
 
 - [x] Create Phase 6 implementation branch `feature/workspace-router-convergence-phase6`.
 - [x] Add Phase 6 planning checklist at `.project/tasks/frontend-one-page-responsive-refactor-planning/implementation-checklist-phase6.md`.
 - [x] Complete Phase 6 Slice A route policy lock for `/projects`, `/gallery`, `/image/:id`, and `/tags`.
+- [x] Complete Phase 6 Slice B redirects in `frontend/src/router/index.ts` for `/gallery`, `/image/:id`, and `/tags`.
+- [x] Add workspace query hydration (`panel`, `project`, `image`) in `frontend/src/pages/WorkspacePage.vue`.
+- [x] Add route convergence regression tests in `frontend/src/__tests__/router-convergence.test.ts`.
+- [x] Validate Phase 6 kickoff slice with full frontend checks (`npm run lint`, `npm run test`, `npm run build`).
 - [x] Add 200ms delayed loading indicator behavior in workspace image viewer and image browser to prevent fast-load flash.
 - [x] Split image store loading state (`imagesLoading`, `imageLoading`, `tagMutationLoading`) so image browser loading appears only on project image-list fetch.
 - [x] Hide viewer previous/next/jump controls in mobile mode (`WorkspaceImageViewerPanel`).

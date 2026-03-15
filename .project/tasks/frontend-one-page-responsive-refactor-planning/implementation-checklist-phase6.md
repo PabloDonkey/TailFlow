@@ -4,13 +4,7 @@
 
 Converge legacy page routes into the workspace-first flow so `/workspace` remains the canonical tagging experience while preserving safe compatibility redirects.
 
-## Dependency Gate
 
-Before code changes in this phase:
-
-- [ ] Complete manual responsive QA in `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md`.
-- [ ] Capture and attach required Phase 4 screenshots in `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md`.
-- [ ] Record final QA status in the Phase 4 summary QA Result Log.
 
 ## Scope
 
@@ -41,9 +35,9 @@ Policy decisions:
 
 ### Slice B — Router Redirect/State Mapping
 
-- [ ] Update `frontend/src/router/index.ts` so legacy routes redirect to workspace-compatible targets.
-- [ ] Ensure onboarding guards still work after redirects.
-- [ ] Preserve query parameters/state needed to hydrate workspace panel state.
+- [x] Update `frontend/src/router/index.ts` so legacy routes redirect to workspace-compatible targets.
+- [x] Ensure onboarding guards still work after redirects.
+- [x] Preserve query parameters/state needed to hydrate workspace panel state.
 
 ### Slice C — Legacy Page Shims
 
@@ -53,8 +47,8 @@ Policy decisions:
 
 ### Slice D — Tests + Tracking
 
-- [ ] Add/adjust route regression tests for legacy-path behavior and redirects.
-- [ ] Run focused tests for changed route/page files.
+- [x] Add/adjust route regression tests for legacy-path behavior and redirects.
+- [x] Run focused tests for changed route/page files.
 - [ ] Update `.project/dev-loop.md` and `.project/tasks.md` after each completed slice.
 
 ## Validation Plan

@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const getOnboardingStatusMock = vi.fn(async () => ({ configured: true }))
+const { getOnboardingStatusMock } = vi.hoisted(() => ({
+  getOnboardingStatusMock: vi.fn(async () => ({ configured: true })),
+}))
 
 vi.mock('../api', () => ({
   getOnboardingStatus: getOnboardingStatusMock,
@@ -37,7 +39,7 @@ describe('router legacy-route convergence', () => {
   })
 
   it('keeps onboarding guard behavior after redirect mapping', async () => {
-    getOnboardingStatusMock.mockResolvedValueOnce({ configured: false })
+    getOnboardingStatusMock.mockResolvedValue({ configured: false })
 
     await router.push('/gallery')
 
