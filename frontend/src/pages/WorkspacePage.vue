@@ -16,6 +16,8 @@ const projectStore = useProjectStore()
 const imageStore = useImageStore()
 const selectedProject = computed(() => projectStore.selectedProject)
 const orderedImages = computed(() => imageStore.sortedImages)
+const showMobilePanel = ref(false)
+const mobilePanel = ref<'browser' | 'inspector' | 'tags'>('browser')
 const showProjectPicker = ref(false)
 const showActionsMenu = ref(false)
 const showTagsLibrary = ref(false)
@@ -64,6 +66,16 @@ async function selectImage(imageId: string) {
     return
   }
   await imageStore.fetchImage(projectStore.selectedProjectId, imageId)
+  showMobilePanel.value = false
+}
+
+function openMobilePanel(panel: 'browser' | 'inspector' | 'tags') {
+  mobilePanel.value = panel
+  showMobilePanel.value = true
+}
+
+function closeMobilePanel() {
+  showMobilePanel.value = false
 }
 
 function openProjectPicker() {
@@ -133,6 +145,11 @@ async function goToNextImage() {
   }
   await goToImageByIndex(currentImageIndex.value + 1)
 }
+
+const previousAvailable = computed(() => currentImageIndex.value > 0)
+const nextAvailable = computed(
+  () => currentImageIndex.value >= 0 && currentImageIndex.value < orderedImages.value.length - 1,
+)
 </script>
 
 <template>
@@ -198,5 +215,89 @@ async function goToNextImage() {
         />
       </template>
     </WorkspaceLayout>
+
+    <section class="sticky bottom-0 z-[105] mt-3 grid grid-cols-5 gap-2 rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-2 lg:hidden">
+      <button
+        type="button"
+        class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-2 text-xs text-[var(--tf-color-text-default)]"
+        :disabled="!previousAvailable"
+        @click="goToPreviousImage"
+      >
+        Prev
+      </button>
+      <button
+        type="button"
+        class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-2 text-xs text-[var(--tf-color-text-default)]"
+        :disabled="!nextAvailable"
+        @click="goToNextImage"
+      >
+        Next
+      </button>
+      <button
+        type="button"
+        class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-2 text-xs text-[var(--tf-color-text-default)]"
+        @click="openMobilePanel('browser')"
+      >
+        Browse
+      </button>
+      <button
+        type="button"
+        class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-2 text-xs text-[var(--tf-color-text-default)]"
+        @click="openMobilePanel('inspector')"
+      >
+        Inspect
+      </button>
+      <button
+        type="button"
+        class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-2 text-xs text-[var(--tf-color-text-default)]"
+        @click="openMobilePanel('tags')"
+      >
+        Tags
+      </button>
+    </section>
+
+    <div
+      v-if="showMobilePanel"
+      class="fixed inset-0 z-[125] lg:hidden"
+    >
+      <button
+        type="button"
+        class="absolute inset-0 bg-black/30"
+        aria-label="Close mobile workspace panel"
+        @click="closeMobilePanel"
+      />
+
+      <section class="absolute bottom-0 left-0 right-0 max-h-[80dvh] overflow-auto rounded-t-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-3">
+        <div class="mb-2 flex items-center justify-between gap-2">
+          <p class="m-0 text-sm font-semibold text-[var(--tf-color-text-title)]">
+            {{ mobilePanel === 'browser' ? 'Image Browser' : mobilePanel === 'inspector' ? 'Tag Inspector' : 'Tags Library' }}
+          </p>
+          <button
+            type="button"
+            class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-1 text-xs text-[var(--tf-color-text-default)]"
+            @click="closeMobilePanel"
+          >
+            Close
+          </button>
+        </div>
+
+        <WorkspaceImageBrowserPanel
+          v-if="mobilePanel === 'browser'"
+          :selected-project-id="projectStore.selectedProjectId"
+          @select-image="selectImage"
+        />
+
+        <WorkspaceTagInspectorPanel
+          v-else-if="mobilePanel === 'inspector'"
+          :project-id="projectStore.selectedProjectId"
+          :selected-project="selectedProject"
+        />
+
+        <WorkspaceTagsLibraryPanel
+          v-else
+          :show-close="false"
+        />
+      </section>
+    </div>
   </AppShell>
 </template>

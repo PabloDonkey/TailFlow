@@ -2,7 +2,7 @@
 
 ## TODO
 
-- [ ] Start next Phase 3 slice: add explicit mobile quick actions for image navigation and panel switching.
+- [ ] Start next Phase 3 slice: unify workspace overlay state management into a composable to simplify orchestration.
 
 ## IN PROGRESS
 
@@ -10,6 +10,8 @@
 
 ## DONE
 
+- [x] Add explicit mobile quick actions for image navigation and panel switching.
+- [x] Validate mobile quick actions slice with frontend checks (`npm run test`, `npm run lint`).
 - [x] Introduce a project picker panel/sheet from the workspace header action.
 - [x] Validate project picker panel/sheet slice with frontend checks (`npm run test`, `npm run lint`).
 - [x] Replace placeholder workspace overflow interaction with an explicit actions menu/sheet.

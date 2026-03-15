@@ -88,10 +88,14 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - Added project-picker accessibility state to `AppHeader` via `aria-haspopup` and `aria-expanded` binding.
 - Ensured workspace overlays are mutually exclusive by closing actions menu when opening project picker (and vice versa).
 - Validated project picker slice with `npm run test` (pass) and `npm run lint` (pass).
+- Added a mobile-only sticky quick actions bar in `WorkspacePage` for previous/next navigation and direct panel switching.
+- Added a mobile workspace panel sheet to expose image browser, tag inspector, and tags library flows that are otherwise desktop-side panels.
+- Updated image selection flow to close the mobile panel after choosing an image.
+- Validated mobile quick actions slice with `npm run test` (pass) and `npm run lint` (pass).
 
 ## Next Action
 
-Implement the next Phase 3 slice by adding explicit mobile quick actions for image navigation and panel switching while preserving existing desktop behavior and route compatibility.
+Implement the next Phase 3 slice by consolidating workspace overlay state (project picker, actions menu, mobile panel) into a composable/helper to reduce page-level orchestration complexity.
 
 ## Notes / Resources
 
