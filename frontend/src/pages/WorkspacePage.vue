@@ -2,14 +2,13 @@
 import { computed, ref } from 'vue'
 import AppShell from '../components/layout/AppShell.vue'
 import AppHeader from '../components/layout/AppHeader.vue'
+import WorkspaceHeaderOverlays from '../components/layout/WorkspaceHeaderOverlays.vue'
 import WorkspaceMobileQuickActions from '../components/layout/WorkspaceMobileQuickActions.vue'
 import WorkspaceMobilePanelContent from '../components/layout/WorkspaceMobilePanelContent.vue'
 import WorkspaceMobilePanelSheet from '../components/layout/WorkspaceMobilePanelSheet.vue'
-import WorkspaceActionsMenu from '../components/layout/WorkspaceActionsMenu.vue'
 import WorkspaceRightPanel from '../components/layout/WorkspaceRightPanel.vue'
 import WorkspaceLayout from '../components/layout/WorkspaceLayout.vue'
 import WorkspaceImageBrowserPanel from '../components/sidebar/WorkspaceImageBrowserPanel.vue'
-import WorkspaceProjectPickerPanel from '../components/sidebar/WorkspaceProjectPickerPanel.vue'
 import WorkspaceImageViewerPanel from '../components/layout/WorkspaceImageViewerPanel.vue'
 import { useWorkspaceHeaderActions } from '../composables/useWorkspaceHeaderActions'
 import { useWorkspaceOverlayState } from '../composables/useWorkspaceOverlayState'
@@ -87,22 +86,21 @@ function closeTagsLibrary() {
         @open-project-picker="openProjectPicker"
         @open-overflow="openOverflow"
       />
-      <WorkspaceProjectPickerPanel
-        v-if="showProjectPicker"
+
+      <WorkspaceHeaderOverlays
+        :show-project-picker="showProjectPicker"
+        :show-actions-menu="showActionsMenu"
+        :show-tags-library="showTagsLibrary"
         :projects="projectStore.projects"
         :selected-project-id="projectStore.selectedProjectId"
         :loading="projectStore.loading"
         :error="projectStore.error"
-        @close="closeProjectPicker"
-        @refresh="refreshProjects"
+        @close-project-picker="closeProjectPicker"
+        @refresh-projects="refreshProjects"
         @select-project="selectProjectFromPicker"
-      />
-      <WorkspaceActionsMenu
-        v-if="showActionsMenu"
-        :show-tags-library="showTagsLibrary"
-        @close="closeActionsMenu"
-        @show-tags-library="showTagsLibraryPanel"
-        @show-inspector="showTagInspectorPanel"
+        @close-actions-menu="closeActionsMenu"
+        @show-tags-library-panel="showTagsLibraryPanel"
+        @show-tag-inspector-panel="showTagInspectorPanel"
       />
     </template>
 

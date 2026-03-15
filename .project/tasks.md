@@ -2,7 +2,7 @@
 
 ## TODO
 
-- [ ] Start next Phase 3 slice: extract workspace header overlays (project picker + actions menu) into a dedicated header overlay composition component.
+- [ ] Start next Phase 3 slice: extract header slot composition (`AppHeader` + overlay composition) into a dedicated workspace header component.
 
 ## IN PROGRESS
 
@@ -10,6 +10,8 @@
 
 ## DONE
 
+- [x] Extract workspace header overlays into `frontend/src/components/layout/WorkspaceHeaderOverlays.vue`.
+- [x] Validate header overlay composition extraction with frontend checks (`npm run lint`, `npm run test`).
 - [x] Extract workspace mobile panel content switcher into `frontend/src/components/layout/WorkspaceMobilePanelContent.vue`.
 - [x] Validate mobile panel content switcher extraction with frontend checks (`npm run lint`, `npm run test`).
 - [x] Extract workspace desktop right-panel switcher into `frontend/src/components/layout/WorkspaceRightPanel.vue`.

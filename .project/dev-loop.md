@@ -31,6 +31,7 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - frontend/src/components/layout/WorkspaceMobilePanelSheet.vue
 - frontend/src/components/layout/WorkspaceMobilePanelContent.vue
 - frontend/src/components/layout/WorkspaceRightPanel.vue
+- frontend/src/components/layout/WorkspaceHeaderOverlays.vue
 - frontend/src/components/layout/WorkspaceLayout.vue
 - frontend/src/components/layout/WorkspaceImageViewerPanel.vue
 - frontend/src/components/sidebar/WorkspaceImageBrowserPanel.vue
@@ -118,10 +119,13 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - Extracted mobile panel content switching (`browser` / `inspector` / `tags`) into dedicated composition component `WorkspaceMobilePanelContent`.
 - Refactored `WorkspacePage` mobile sheet content area to consume `WorkspaceMobilePanelContent` and remove inline branch markup.
 - Validated mobile panel content switcher extraction with `npm run lint` (pass) and `npm run test` (pass).
+- Extracted header overlays (`WorkspaceProjectPickerPanel` + `WorkspaceActionsMenu`) into dedicated composition component `WorkspaceHeaderOverlays`.
+- Refactored `WorkspacePage` header slot to consume `WorkspaceHeaderOverlays` and remove inline overlay branch markup.
+- Validated header overlay composition extraction with `npm run lint` (pass) and `npm run test` (pass).
 
 ## Next Action
 
-Implement the next Phase 3 slice by extracting workspace header overlays (`WorkspaceProjectPickerPanel` + `WorkspaceActionsMenu`) into a dedicated header overlay composition component to continue reducing `WorkspacePage` template complexity.
+Implement the next Phase 3 slice by extracting header slot composition (`AppHeader` + `WorkspaceHeaderOverlays`) into a dedicated workspace header component to further simplify `WorkspacePage` structure.
 
 ## Notes / Resources
 
