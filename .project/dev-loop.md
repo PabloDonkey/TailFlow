@@ -2,7 +2,7 @@
 
 ## Current Feature
 
-Frontend one-page responsive refactor (Phase 6 router convergence)
+Project manager mode refactor (Phase 1)
 
 ## Current Step
 
@@ -16,7 +16,7 @@ REFINE
 
 ## Objective
 
-Converge legacy frontend routes into workspace-first navigation while preserving compatibility through safe redirects and workspace query hydration.
+Implement project manager mode with a two-panel layout (left project browser, right project details), create-project modal flow, and full-width tag library mode.
 
 ## Files involved
 
@@ -40,27 +40,29 @@ Converge legacy frontend routes into workspace-first navigation while preserving
 - frontend/src/components/sidebar/WorkspaceProjectPickerPanel.vue
 - frontend/src/components/sidebar/WorkspaceTagsLibraryPanel.vue
 - frontend/src/components/inspector/WorkspaceTagInspectorPanel.vue
+- frontend/src/components/projects/ProjectBrowserPanel.vue
+- frontend/src/components/projects/ProjectDetailsPanel.vue
+- frontend/src/components/projects/ProjectCreateModal.vue
 - frontend/src/composables/useTagMutations.ts
 - frontend/src/composables/useWorkspaceOverlayState.ts
 - frontend/src/composables/useWorkspaceImages.ts
 - frontend/src/composables/useWorkspaceHeaderActions.ts
-- frontend/src/__tests__/image-detail.test.ts
+- frontend/src/composables/useProjectManagerForm.ts
 - frontend/src/__tests__/workspace-overlays.test.ts
-- frontend/src/pages/GalleryPage.vue
-- frontend/src/pages/ImageDetailPage.vue
-- frontend/src/pages/TagsPage.vue
+- frontend/src/__tests__/project-browser-panel.test.ts
+- frontend/src/__tests__/project-create-modal.test.ts
 - frontend/src/pages/OnboardingPage.vue
-- .project/tasks/frontend-one-page-responsive-refactor-planning/implementation-checklist-phase3.md
-- .project/tasks/frontend-one-page-responsive-refactor-planning/implementation-checklist-phase6.md
+- .project/tasks/2_project-manager-mode-refactor[in-progress]/implementation-checklist-phase1.md
 
 ## Implementation Plan
 
-1. lock route policy for legacy paths (`/projects`, `/gallery`, `/image/:id`, `/tags`)
-2. implement redirect mapping in `frontend/src/router/index.ts` toward workspace query targets
-3. hydrate workspace panel/project/image state from route query in `WorkspacePage`
-4. convert legacy pages to lightweight compatibility shims and remove duplicated page-level behavior
-5. validate route behavior with focused tests and then full frontend lint/test/build
-6. close out tracker artifacts and prepare commit/PR summary
+1. add explicit workspace mode state (`tagging`, `projects`, `tag-library`) and route actions/query through it
+2. in projects mode, hide image browser + image viewer and render two-panel manager layout
+3. implement left `ProjectBrowserPanel` with top create button and project cards (thumbnail + name + class + status)
+4. implement right `ProjectDetailsPanel` with metadata/sync/upload and empty-state when no selection
+5. move create form into `ProjectCreateModal` opened from browser top button
+6. make tag library a full-width single-layout mode
+7. validate with focused tests and full frontend lint/test/build, then update trackers
 
 ## Progress
 
@@ -68,7 +70,7 @@ Converge legacy frontend routes into workspace-first navigation while preserving
 - Brainstormed two navigation models for the refactor: Option A (floating action menu) and Option B (collapsible side panel).
 - Produced ASCII wireframes for both options on desktop and mobile.
 - Defined exact shell regions for desktop and mobile, an initial component tree, and a phased migration order.
-- Saved planning artifacts under `.project/tasks/frontend-one-page-responsive-refactor-planning/`.
+- Saved planning artifacts under `.project/tasks/1_frontend-one-page-responsive-refactor-planning[closed]/`.
 - Created `implementation-checklist-phase1.md` from saved planning notes.
 - Added initial shell scaffolding: `AppShell`, `AppHeader`, `WorkspaceLayout`, and `WorkspacePage`.
 - Added a non-breaking `/workspace` route and navigation entry for preview.
@@ -148,8 +150,8 @@ Converge legacy frontend routes into workspace-first navigation while preserving
 - Re-ran focused route and shim tests plus full frontend validation (`npm run lint`, `npm run test`, `npm run build`).
 - Added workspace layout containment regression coverage in `frontend/src/__tests__/workspace-layout.test.ts`.
 - Validated with focused frontend tests, then full frontend checks: `npm run lint`, `npm run test`, `npm run build` (pass).
-- Created Phase 4 PR summary artifact at `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md` with scope, acceptance-criteria mapping, and validation evidence.
-- Added a structured manual QA checklist and screenshot evidence template to `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md`.
+- Created Phase 4 PR summary artifact at `.project/tasks/1_frontend-one-page-responsive-refactor-planning[closed]/phase4-pr-summary.md` with scope, acceptance-criteria mapping, and validation evidence.
+- Added a structured manual QA checklist and screenshot evidence template to `.project/tasks/1_frontend-one-page-responsive-refactor-planning[closed]/phase4-pr-summary.md`.
 - Hid viewer previous/next/jump controls on mobile by restricting viewer nav controls to `lg` and up.
 - Changed `WorkspaceMobileQuickActions` from sticky overlay behavior to normal flow placement below workspace content.
 - Fixed mobile workspace actions behavior by routing header action selections to mobile panel openings (`tags` / `inspector`) when in mobile viewport.
@@ -161,18 +163,18 @@ Converge legacy frontend routes into workspace-first navigation while preserving
 - Added a shared delayed-loading composable (`200ms` threshold) and applied it to workspace image viewer/browser loading indicators to avoid fast loading flashes.
 - Re-validated with focused tests (`gallery-page`, `image-detail`, `workspace-overlays`, `workspace-layout`) and full frontend checks (pass).
 - Created Phase 6 implementation branch: `feature/workspace-router-convergence-phase6`.
-- Added Phase 6 checklist artifact at `.project/tasks/frontend-one-page-responsive-refactor-planning/implementation-checklist-phase6.md`.
+- Added Phase 6 checklist artifact at `.project/tasks/1_frontend-one-page-responsive-refactor-planning[closed]/implementation-checklist-phase6.md`.
 - Completed Phase 6 Slice A route policy lock with explicit keep/redirect decisions.
 - Implemented initial Phase 6 Slice B redirects in `frontend/src/router/index.ts` for `/gallery`, `/image/:id`, and `/tags`.
 - Added workspace query hydration in `frontend/src/pages/WorkspacePage.vue` for `panel`, `project`, and `image` query values.
 
 ## Next Action
 
-Prepare a Phase 6 commit with legacy-route removal + workspace project-manager integration updates and draft PR notes for review.
+Execute Phase 1 Slice A implementation for workspace mode orchestration and conditional layout visibility.
 
 ## Notes / Resources
 
-See .project/tasks/frontend-one-page-responsive-refactor-planning/
+See .project/tasks/2_project-manager-mode-refactor[in-progress]/
 
 ## Notes
 

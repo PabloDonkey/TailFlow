@@ -51,6 +51,7 @@ Before starting development work:
 
 1. Read `.project/dev-loop.md`
 2. Check `.project/tasks.md`
+3. Keep task folder names in `.project/tasks/` in `N_task-slug[status]` format.
 3. Create or update a short implementation plan with small, verifiable steps before writing code.
 4. For each step, run the smallest relevant validation first (error check, focused test, or targeted command) before moving to the next step.
 5. Follow UI rules in `.github/ui-contract.md` if present.
