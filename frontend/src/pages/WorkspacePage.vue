@@ -5,12 +5,12 @@ import AppHeader from '../components/layout/AppHeader.vue'
 import WorkspaceMobileQuickActions from '../components/layout/WorkspaceMobileQuickActions.vue'
 import WorkspaceMobilePanelSheet from '../components/layout/WorkspaceMobilePanelSheet.vue'
 import WorkspaceActionsMenu from '../components/layout/WorkspaceActionsMenu.vue'
+import WorkspaceRightPanel from '../components/layout/WorkspaceRightPanel.vue'
 import WorkspaceLayout from '../components/layout/WorkspaceLayout.vue'
 import WorkspaceImageBrowserPanel from '../components/sidebar/WorkspaceImageBrowserPanel.vue'
 import WorkspaceProjectPickerPanel from '../components/sidebar/WorkspaceProjectPickerPanel.vue'
 import WorkspaceTagsLibraryPanel from '../components/sidebar/WorkspaceTagsLibraryPanel.vue'
 import WorkspaceImageViewerPanel from '../components/layout/WorkspaceImageViewerPanel.vue'
-import WorkspaceTagInspectorPanel from '../components/inspector/WorkspaceTagInspectorPanel.vue'
 import { useWorkspaceHeaderActions } from '../composables/useWorkspaceHeaderActions'
 import { useWorkspaceOverlayState } from '../composables/useWorkspaceOverlayState'
 import { useWorkspaceImages } from '../composables/useWorkspaceImages'
@@ -128,15 +128,11 @@ function closeTagsLibrary() {
       />
 
       <template #right>
-        <WorkspaceTagsLibraryPanel
-          v-if="showTagsLibrary"
-          :show-close="true"
-          @close="closeTagsLibrary"
-        />
-        <WorkspaceTagInspectorPanel
-          v-else
+        <WorkspaceRightPanel
+          :show-tags-library="showTagsLibrary"
           :project-id="projectStore.selectedProjectId"
           :selected-project="selectedProject"
+          @close-tags-library="closeTagsLibrary"
         />
       </template>
     </WorkspaceLayout>

@@ -29,6 +29,7 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - frontend/src/components/layout/WorkspaceActionsMenu.vue
 - frontend/src/components/layout/WorkspaceMobileQuickActions.vue
 - frontend/src/components/layout/WorkspaceMobilePanelSheet.vue
+- frontend/src/components/layout/WorkspaceRightPanel.vue
 - frontend/src/components/layout/WorkspaceLayout.vue
 - frontend/src/components/layout/WorkspaceImageViewerPanel.vue
 - frontend/src/components/sidebar/WorkspaceImageBrowserPanel.vue
@@ -110,10 +111,13 @@ Implement Phase 3 workspace-first migration slices while preserving compatibilit
 - Extracted mobile panel sheet overlay/sheet markup into dedicated component `WorkspaceMobilePanelSheet`.
 - Refactored `WorkspacePage` to compose new mobile components while preserving mobile browser/inspector/tags flows.
 - Validated mobile component extraction slice with `npm run lint` (pass) and `npm run test` (pass).
+- Extracted desktop right-panel switcher (`WorkspaceTagInspectorPanel` vs `WorkspaceTagsLibraryPanel`) into dedicated composition component `WorkspaceRightPanel`.
+- Refactored `WorkspacePage` to consume `WorkspaceRightPanel` and remove inline right-slot switching markup.
+- Validated desktop right-panel switcher extraction with `npm run lint` (pass) and `npm run test` (pass).
 
 ## Next Action
 
-Implement the next Phase 3 slice by extracting the workspace desktop right-panel switcher (`WorkspaceTagInspectorPanel` vs `WorkspaceTagsLibraryPanel`) into a dedicated composition component to further reduce `WorkspacePage` template complexity.
+Implement the next Phase 3 slice by extracting workspace mobile panel content switching (`browser` / `inspector` / `tags`) into a dedicated composition component to continue reducing `WorkspacePage` template complexity.
 
 ## Notes / Resources
 
