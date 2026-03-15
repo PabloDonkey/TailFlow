@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useImageStore, type ImageSortOption } from '../../stores/images'
 import { getProjectImageFileUrl } from '../../api'
+import { useDelayedLoading } from '../../composables/useDelayedLoading'
 import AppErrorText from '../ui/AppErrorText.vue'
 import AppSectionTitle from '../ui/AppSectionTitle.vue'
 import AppText from '../ui/AppText.vue'
@@ -14,6 +16,7 @@ const emit = defineEmits<{
 }>()
 
 const imageStore = useImageStore()
+const showLoading = useDelayedLoading(computed(() => imageStore.imagesLoading), 200)
 
 const sortOptions: Array<{ value: ImageSortOption; label: string }> = [
   { value: 'name-asc', label: 'Name ↑' },
@@ -55,7 +58,7 @@ function formatTagCount(tagCount: number): string {
     <AppText v-if="!selectedProjectId">
       Select a project in Projects first.
     </AppText>
-    <AppText v-else-if="imageStore.loading">
+    <AppText v-else-if="showLoading">
       Loading…
     </AppText>
     <AppErrorText v-else-if="imageStore.error">

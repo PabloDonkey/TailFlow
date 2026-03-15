@@ -16,7 +16,7 @@ export function useTagMutations(options: UseTagMutationsOptions) {
   const { imageStore, projectId, currentImage } = options
 
   const mutationError = ref<string | null>(null)
-  const mutationLoading = computed(() => imageStore.loading)
+  const mutationLoading = computed(() => imageStore.tagMutationLoading)
 
   function clearMutationError() {
     mutationError.value = null

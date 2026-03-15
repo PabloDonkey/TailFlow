@@ -138,12 +138,24 @@ Implement Phase 4 workspace UX convergence slices (layout/scroll containment, ta
 - Improved header project-title readability with explicit high-contrast text styling.
 - Updated affected test expectations in `frontend/src/__tests__/image-detail.test.ts`.
 - Added focused overlay regression coverage in `frontend/src/__tests__/workspace-overlays.test.ts` for below-header placement and backdrop-close behavior.
+- Added workspace layout containment regression coverage in `frontend/src/__tests__/workspace-layout.test.ts`.
 - Validated with focused frontend tests, then full frontend checks: `npm run lint`, `npm run test`, `npm run build` (pass).
 - Created Phase 4 PR summary artifact at `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md` with scope, acceptance-criteria mapping, and validation evidence.
+- Added a structured manual QA checklist and screenshot evidence template to `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md`.
+- Hid viewer previous/next/jump controls on mobile by restricting viewer nav controls to `lg` and up.
+- Changed `WorkspaceMobileQuickActions` from sticky overlay behavior to normal flow placement below workspace content.
+- Fixed mobile workspace actions behavior by routing header action selections to mobile panel openings (`tags` / `inspector`) when in mobile viewport.
+- Reduced unnecessary image-browser rerenders during image selection/navigation via memoized left-panel composition in `WorkspacePage`.
+- Added a deferred Playwright integration note to `ROADMAP.md` for future E2E automation (explicitly out of current phase scope).
+- Re-ran focused regression tests and full frontend validation (`npm run lint`, `npm run test`, `npm run build`) after these updates.
+- Addressed follow-up performance/UX issue where image-browser appeared to re-render on navigation: split image store loading into operation-specific flags and bound browser loading UI to `imagesLoading` only.
+- Updated viewer loading bindings to use `imageLoading` and tag mutation loading to use `tagMutationLoading`.
+- Added a shared delayed-loading composable (`200ms` threshold) and applied it to workspace image viewer/browser loading indicators to avoid fast loading flashes.
+- Re-validated with focused tests (`gallery-page`, `image-detail`, `workspace-overlays`, `workspace-layout`) and full frontend checks (pass).
 
 ## Next Action
 
-Run manual desktop/mobile workspace QA, capture screenshots, and append findings to the Phase 4 PR summary artifact.
+Execute manual desktop/mobile workspace QA with screenshot capture and complete the QA Result Log in the Phase 4 summary.
 
 ## Notes / Resources
 

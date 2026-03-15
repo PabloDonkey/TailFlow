@@ -2,7 +2,7 @@
 
 ## TODO
 
-- [ ] Run manual responsive QA for desktop/mobile workspace layout and overlay behavior.
+- [ ] Execute manual responsive QA using the checklist in `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md`.
 - [ ] Capture and attach Phase 4 desktop/mobile screenshots for PR review.
 
 ## IN PROGRESS
@@ -11,6 +11,15 @@
 
 ## DONE
 
+- [x] Add 200ms delayed loading indicator behavior in workspace image viewer and image browser to prevent fast-load flash.
+- [x] Split image store loading state (`imagesLoading`, `imageLoading`, `tagMutationLoading`) so image browser loading appears only on project image-list fetch.
+- [x] Hide viewer previous/next/jump controls in mobile mode (`WorkspaceImageViewerPanel`).
+- [x] Place mobile quick actions below workspace image area (`WorkspaceMobileQuickActions`).
+- [x] Fix mobile workspace actions flow to open corresponding mobile panels (`WorkspacePage` handlers).
+- [x] Reduce unnecessary image browser rerenders during image navigation using memoized left-panel composition (`WorkspacePage`).
+- [x] Add deferred Playwright integration note to `ROADMAP.md` (explicitly out of current Phase 4 scope).
+- [x] Add manual QA checklist and screenshot evidence template to `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md`.
+- [x] Add workspace layout containment regression tests (`frontend/src/__tests__/workspace-layout.test.ts`).
 - [x] Prepare Phase 4 PR summary artifact under `.project/tasks/frontend-one-page-responsive-refactor-planning/phase4-pr-summary.md`.
 - [x] Add focused regression tests for overlay click-outside dismissal and workspace layout containment.
 - [x] Finalize Phase 4 validation with additional targeted regression tests.

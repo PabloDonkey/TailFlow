@@ -2,6 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import type { ProjectImageRead, ProjectImageSummary } from '../../api'
 import { getProjectImageFileUrl } from '../../api'
+import { useDelayedLoading } from '../../composables/useDelayedLoading'
 import AppErrorText from '../ui/AppErrorText.vue'
 import AppText from '../ui/AppText.vue'
 
@@ -21,6 +22,7 @@ const emit = defineEmits<{
 }>()
 
 const imageJumpInput = ref('1')
+const showLoading = useDelayedLoading(computed(() => props.loading), 200)
 
 const previousAvailable = computed(() => props.currentImageIndex > 0)
 const nextAvailable = computed(() => props.currentImageIndex >= 0 && props.currentImageIndex < props.orderedImages.length - 1)
@@ -48,7 +50,7 @@ function submitImageJump() {
 
 <template>
   <section class="flex h-full min-h-0 flex-col gap-3">
-    <AppText v-if="loading">
+    <AppText v-if="showLoading">
       Loading…
     </AppText>
     <AppErrorText v-else-if="error">
@@ -67,7 +69,7 @@ function submitImageJump() {
         >
       </div>
 
-      <div class="flex flex-wrap items-center justify-center gap-3">
+      <div class="hidden flex-wrap items-center justify-center gap-3 lg:flex">
         <button
           data-testid="previous-image-button"
           class="btn btn-secondary rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-3 py-1.5"
