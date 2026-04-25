@@ -223,3 +223,6 @@ backend/*.db
 
 # Local story workspace
 stories/
+
+# Local development loop artifacts
+.project/
