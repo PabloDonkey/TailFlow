@@ -63,6 +63,20 @@ During implementation:
 2. Prefer targeted tests during each iteration, then run broader suites at the end.
 3. After each iteration, update `.project/dev-loop.md` and `.project/tasks.md` when scope/status changes.
 
+### Test authority and E2E standards
+
+Tests are the source of truth for application behavior.
+
+1. Agents must fix implementation to satisfy tests before considering test changes.
+2. Agents cannot modify any existing test file in `backend/tests/`, `frontend/src/__tests__/`, or `frontend/e2e/` without explicit user authorization in the current session.
+3. Playwright E2E tests must use Page Object Model:
+  - Spec files: high-level user flows and assertions.
+  - Page objects: selectors and low-level interactions (`click`, `fill`, waits, navigation helpers).
+4. Selector policy for Playwright page objects:
+  - Prefer accessibility-first locators (`getByRole`, `getByLabel`, and accessible names).
+  - Use `data-testid` only when no stable accessible locator exists, and document the exception in review notes.
+  - Avoid CSS selectors for normal E2E interactions.
+
 When finishing a work session:
 
 * update `.project/dev-loop.md`
@@ -98,6 +112,7 @@ The goal is to maintain enough context so development can resume quickly after i
 
 - Backend: `pytest`, `pytest-asyncio`, `httpx`, `aiosqlite`, `ruff`, `mypy`
 - Frontend: `vitest`, `@vue/test-utils`, `happy-dom`, `eslint`, `vue-tsc`
+- Frontend E2E: `@playwright/test`
 - CI: GitHub Actions in `.github/workflows/ci.yml`
 
 ## Project infrastructure

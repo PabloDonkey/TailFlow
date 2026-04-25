@@ -53,6 +53,21 @@ Implement project manager mode with a two-panel layout (left project browser, ri
 - frontend/src/__tests__/project-create-modal.test.ts
 - frontend/src/pages/OnboardingPage.vue
 - .project/tasks/2_project-manager-mode-refactor[in-progress]/implementation-checklist-phase1.md
+- .ai/rule.md
+- AGENTS.MD
+- DECISIONS.md
+- TESTING.md
+- frontend/playwright.config.ts
+- frontend/e2e/fixtures/mockApi.ts
+- frontend/e2e/pages/OnboardingPageObject.ts
+- frontend/e2e/pages/WorkspacePageObject.ts
+- frontend/e2e/specs/onboarding.spec.ts
+- frontend/e2e/specs/workspace-modes.spec.ts
+- frontend/vitest.config.ts
+- frontend/.gitignore
+- frontend/package.json
+- .github/workflows/ci.yml
+- Makefile
 
 ## Implementation Plan
 
@@ -185,10 +200,18 @@ Implement project manager mode with a two-panel layout (left project browser, ri
 - Confirmed Slice E full-width tag-library mode behavior in workspace and added mode-specific regression coverage in `frontend/src/__tests__/workspace-page-modes.test.ts`.
 - Completed Slice F testing scope with `frontend/src/__tests__/project-browser-panel.test.ts` covering card ordering/selection and create-button interactions.
 - Ran full frontend validation at phase completion: `npm run lint`, `npm run test`, `npm run build` (pass).
+- Added explicit AI testing authority rules in `AGENTS.MD` and `.ai/rule.md`: tests are source of truth, no existing test edits without explicit user authorization.
+- Added ADR-009 in `DECISIONS.md` to formalize accessibility-first E2E policy and agent constraints.
+- Created root `TESTING.md` as canonical testing guide for backend/frontend/e2e layers, selector hierarchy, responsive strategy, and references.
+- Added Playwright foundation in frontend (`playwright.config.ts`, `e2e/specs`, `e2e/pages`, `e2e/fixtures`) using Page Object Model and API mocking for deterministic onboarding/workspace coverage.
+- Added frontend scripts `test:e2e`, `test:e2e:ui`, and `test:e2e:headed`; added root `make test-e2e`.
+- Integrated E2E gate into frontend CI with Chromium install and Playwright report artifact upload on failure.
+- Updated `frontend/vitest.config.ts` to exclude `e2e/**` from Vitest collection.
+- Ran validation after fixes: `npm run lint` (pass), `npm run test` (pass), `npm run test:e2e` (pass).
 
 ## Next Action
 
-Plan post-Phase-1 follow-up scope (next feature slice) and prepare the next implementation checklist.
+Expand Playwright E2E coverage to project creation/upload and tagging mutation flows while preserving accessibility-first locator and Page Object rules.
 
 ## Notes / Resources
 

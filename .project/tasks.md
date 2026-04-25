@@ -3,6 +3,7 @@
 ## TODO
 
 1. [pending] Define next implementation phase after completing Phase 1 project-manager mode refactor.
+1. [pending] Expand Playwright E2E coverage to project create/upload and tagging mutation workflows.
 
 ## IN PROGRESS
 
@@ -10,6 +11,9 @@
 
 ## DONE
 
+1. [finished] Add testing authority policy + Playwright standards to `AGENTS.MD`, `.ai/rule.md`, and `DECISIONS.md` (ADR-009).
+1. [finished] Create root `TESTING.md` with backend/frontend/e2e guidance, Page Object rules, ARIA-first selector policy, and responsive strategy.
+1. [finished] Implement Playwright baseline (`playwright.config.ts`, page objects, fixtures, onboarding/workspace specs), wire scripts/Makefile/CI, and validate with frontend lint/unit/E2E checks.
 1. [finished] Complete Slice F by adding workspace mode/project browser/create modal focused tests and running full frontend validation.
 1. [finished] Complete Slice E by validating tag-library full-width mode parity in `WorkspacePage` and adding dedicated mode test coverage.
 1. [finished] Complete Slice D by implementing `ProjectCreateModal` open/close/create flow and wiring it through `WorkspacePage`.
