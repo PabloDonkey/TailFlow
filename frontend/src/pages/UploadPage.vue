@@ -387,6 +387,7 @@ async function saveProjectMetadata() {
             <h3>Upload Images to Project</h3>
             <input
               type="file"
+              aria-label="Upload images to project"
               accept="image/*"
               multiple
               :disabled="selectedProject.missing_at !== null"

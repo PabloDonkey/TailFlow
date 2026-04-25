@@ -77,6 +77,18 @@ Test taxonomy:
 - Keep API/network setup deterministic in fixtures.
 - Keep each test independent and isolated.
 
+## Failure Triage Before Test Changes
+
+When an E2E assertion fails, do not propose removing or modifying the test until selector-collision risk is checked.
+
+Required triage order:
+
+1. Verify the failing locator targets the intended element only (no ambiguous text collisions).
+2. Prefer strengthening selectors with accessibility-first locators and unique accessible names.
+3. If needed, improve UI accessibility semantics (label/name/role) so selectors become stable.
+4. Re-run the failing test after selector/semantic fixes.
+5. Only after this triage, and only with explicit user authorization, consider test modification.
+
 ## Commands
 
 ### Root shortcuts

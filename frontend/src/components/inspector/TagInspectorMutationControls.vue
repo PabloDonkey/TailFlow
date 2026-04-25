@@ -14,6 +14,7 @@ const model = defineModel<string>({ required: true })
     <div class="add-tag flex gap-2">
       <input
         v-model="model"
+        aria-label="Add tag"
         data-testid="add-tag-input"
         placeholder="Add a tag…"
         class="tag-input min-w-0 flex-1 rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] px-3 py-2"

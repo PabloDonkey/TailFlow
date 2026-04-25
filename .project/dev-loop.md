@@ -208,10 +208,14 @@ Implement project manager mode with a two-panel layout (left project browser, ri
 - Integrated E2E gate into frontend CI with Chromium install and Playwright report artifact upload on failure.
 - Updated `frontend/vitest.config.ts` to exclude `e2e/**` from Vitest collection.
 - Ran validation after fixes: `npm run lint` (pass), `npm run test` (pass), `npm run test:e2e` (pass).
+- Expanded Playwright mock fixture state management (`frontend/e2e/fixtures/mockApi.ts`) to support project creation, uploads, and image tag mutations in deterministic E2E flows.
+- Added accessibility labels to upload and tag mutation inputs for ARIA-first page object selectors.
+- Expanded `WorkspacePageObject` with high-level project-create/upload/tag-mutation methods and added `frontend/e2e/specs/project-workflows.spec.ts` for desktop regression coverage.
+- Revalidated expanded E2E scope and frontend suite: `npm run lint` (pass), `npm run test` (pass), `npm run test:e2e` (pass).
 
 ## Next Action
 
-Expand Playwright E2E coverage to project creation/upload and tagging mutation flows while preserving accessibility-first locator and Page Object rules.
+Add mobile-specific E2E coverage for project-management and tagging interactions where behavior intentionally differs from desktop.
 
 ## Notes / Resources
 

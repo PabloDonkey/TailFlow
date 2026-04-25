@@ -3,7 +3,6 @@
 ## TODO
 
 1. [pending] Define next implementation phase after completing Phase 1 project-manager mode refactor.
-1. [pending] Expand Playwright E2E coverage to project create/upload and tagging mutation workflows.
 
 ## IN PROGRESS
 
@@ -11,6 +10,7 @@
 
 ## DONE
 
+1. [finished] Expand Playwright E2E coverage to project create/upload and tagging mutation workflows with Page Object methods and stateful API fixtures.
 1. [finished] Add testing authority policy + Playwright standards to `AGENTS.MD`, `.ai/rule.md`, and `DECISIONS.md` (ADR-009).
 1. [finished] Create root `TESTING.md` with backend/frontend/e2e guidance, Page Object rules, ARIA-first selector policy, and responsive strategy.
 1. [finished] Implement Playwright baseline (`playwright.config.ts`, page objects, fixtures, onboarding/workspace specs), wire scripts/Makefile/CI, and validate with frontend lint/unit/E2E checks.

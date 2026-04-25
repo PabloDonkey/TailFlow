@@ -35,7 +35,7 @@ const emit = defineEmits<{
       <button
         v-if="!tag.is_protected"
         class="tag-remove"
-        aria-label="Remove tag"
+        :aria-label="`Remove tag ${tag.name}`"
         title="Remove tag"
         @click="emit('remove', tag)"
       >×</button>

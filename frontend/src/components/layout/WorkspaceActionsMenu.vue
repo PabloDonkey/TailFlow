@@ -1,5 +1,5 @@
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   activeRightPanel: 'inspector' | 'tags' | 'projects'
 }>()
 
@@ -9,6 +9,21 @@ const emit = defineEmits<{
   showInspector: []
   showProjects: []
 }>()
+
+const actionButtonBaseClass =
+  'w-full rounded-[var(--tf-radius-md)] border-0 px-2 py-2 text-left text-sm transition-colors'
+
+const actionButtonActiveClass =
+  'bg-[var(--tf-color-surface-border)] text-[var(--tf-color-text-default)] font-semibold'
+
+const actionButtonInactiveClass =
+  'bg-transparent text-[var(--tf-color-text-default)] hover:bg-[var(--tf-color-surface-border)]'
+
+const isPanelSelected = (panel: 'inspector' | 'tags' | 'projects'): 'true' | 'false' =>
+  props.activeRightPanel === panel ? 'true' : 'false'
+
+const actionButtonClass = (panel: 'inspector' | 'tags' | 'projects'): string =>
+  `${actionButtonBaseClass} ${props.activeRightPanel === panel ? actionButtonActiveClass : actionButtonInactiveClass}`
 </script>
 
 <template>
@@ -27,26 +42,29 @@ const emit = defineEmits<{
 
       <button
         type="button"
-        class="w-full rounded-[var(--tf-radius-md)] border-0 bg-transparent px-2 py-2 text-left text-sm text-[var(--tf-color-text-default)] hover:bg-[var(--tf-color-surface-border)]"
+        :aria-selected="isPanelSelected('tags')"
+        :class="actionButtonClass('tags')"
         @click="emit('showTagsLibrary')"
       >
-        {{ activeRightPanel === 'tags' ? 'Tags library visible' : 'Open tags library' }}
+        Tags library
       </button>
 
       <button
         type="button"
-        class="w-full rounded-[var(--tf-radius-md)] border-0 bg-transparent px-2 py-2 text-left text-sm text-[var(--tf-color-text-default)] hover:bg-[var(--tf-color-surface-border)]"
+        :aria-selected="isPanelSelected('inspector')"
+        :class="actionButtonClass('inspector')"
         @click="emit('showInspector')"
       >
-        {{ activeRightPanel === 'inspector' ? 'Tag inspector visible' : 'Show tag inspector' }}
+        Tag inspector
       </button>
 
       <button
         type="button"
-        class="w-full rounded-[var(--tf-radius-md)] border-0 bg-transparent px-2 py-2 text-left text-sm text-[var(--tf-color-text-default)] hover:bg-[var(--tf-color-surface-border)]"
+        :aria-selected="isPanelSelected('projects')"
+        :class="actionButtonClass('projects')"
         @click="emit('showProjects')"
       >
-        {{ activeRightPanel === 'projects' ? 'Project manager visible' : 'Open project manager' }}
+        Project manager
       </button>
     </section>
   </div>
