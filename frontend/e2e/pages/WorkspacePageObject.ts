@@ -1,5 +1,15 @@
 import { expect, type Locator, type Page } from '@playwright/test'
 
+const tinyPngBase64 =
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Xw8AAoMBgQf6fYQAAAAASUVORK5CYII='
+
+function getNodeBufferFromBase64(base64: string): unknown {
+  const nodeBuffer = (globalThis as unknown as {
+    Buffer: { from: (data: string, encoding: 'base64') => unknown }
+  }).Buffer
+  return nodeBuffer.from(base64, 'base64')
+}
+
 export class WorkspacePageObject {
   private readonly page: Page
   private readonly openActionsButton: Locator
@@ -104,10 +114,7 @@ export class WorkspacePageObject {
     await fileInput.setInputFiles({
       name: fileName,
       mimeType: 'image/png',
-      buffer: Buffer.from(
-        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Xw8AAoMBgQf6fYQAAAAASUVORK5CYII=',
-        'base64',
-      ),
+      buffer: getNodeBufferFromBase64(tinyPngBase64) as never,
     })
 
     await this.page.getByRole('button', { name: 'Upload to Dataset' }).click()
@@ -118,7 +125,7 @@ export class WorkspacePageObject {
   }
 
   async addTag(tagName: string): Promise<void> {
-    await this.page.getByRole('textbox', { name: 'Add tag' }).fill(tagName)
+    await this.page.getByLabel('Add tag').fill(tagName)
     await this.page.getByRole('button', { name: 'Add' }).click()
   }
 

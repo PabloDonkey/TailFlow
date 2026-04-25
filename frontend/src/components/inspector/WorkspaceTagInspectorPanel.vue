@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted } from 'vue'
 import type { Project, ProjectTag } from '../../api'
 import { useTagMutations } from '../../composables/useTagMutations'
 import { useImageStore } from '../../stores/images'
+import { useTagStore } from '../../stores/tags'
 import { getCatalogIdByTaggingMode } from '../../utils/tagCatalog'
 import AppSectionTitle from '../ui/AppSectionTitle.vue'
 import AppText from '../ui/AppText.vue'
@@ -15,9 +16,16 @@ const props = defineProps<{
 }>()
 
 const imageStore = useImageStore()
-const newTag = ref('')
+const tagStore = useTagStore()
 const currentImage = computed(() => imageStore.currentImage)
 const projectIdRef = computed(() => props.projectId)
+const selectedTagNames = computed(() => currentImage.value?.tags.map((tag) => tag.name) ?? [])
+
+onMounted(async () => {
+  if (!tagStore.tags.length) {
+    await tagStore.fetchTags()
+  }
+})
 
 function getTagRoleLabel(tag: ProjectTag): string | null {
   if (!tag.is_protected) {
@@ -58,14 +66,28 @@ const {
   currentImage
 })
 
-async function handleAddTag() {
+async function fetchTagSuggestions(query: string): Promise<string[]> {
+  const trimmed = query.trim().toLowerCase()
+  if (!trimmed) {
+    return []
+  }
+
+  if (!tagStore.tags.length && !tagStore.loading) {
+    await tagStore.fetchTags()
+  }
+
+  const storeNames = tagStore.tags.map((tag) => tag.name)
+  const currentImageNames = currentImage.value?.tags.map((tag) => tag.name) ?? []
+  const mergedCandidates = [...storeNames, ...currentImageNames]
+
+  return mergedCandidates.filter((name) => name.toLowerCase().includes(trimmed))
+}
+
+async function handleAddTag(tagName: string) {
   if (mutationLoading.value) {
     return
   }
-  const added = await addTag(newTag.value)
-  if (added) {
-    newTag.value = ''
-  }
+  await addTag(tagName)
 }
 
 function formatTagCount(tagCount: number): string {
@@ -105,8 +127,10 @@ function formatTagCount(tagCount: number): string {
       />
 
       <TagInspectorMutationControls
-        v-model="newTag"
         :error-msg="mutationError"
+        :selected-tags="selectedTagNames"
+        :fetch-suggestions="fetchTagSuggestions"
+        :disabled="mutationLoading"
         @add="handleAddTag"
       />
     </template>
