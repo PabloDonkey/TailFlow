@@ -60,6 +60,7 @@ class TagImportSummary:
     created: int
     merged: int
     skipped: int
+    invalid: int = 0
 
 
 def get_catalog_asset_path(source: TaggingMode) -> Path:
@@ -87,7 +88,7 @@ def _normalize_required_field(raw_value: str | None, field_name: str) -> str:
     return normalized
 
 
-def load_tag_import_rows(csv_path: Path) -> list[TagImportRow]:
+def load_tag_import_rows(csv_path: Path) -> tuple[list[TagImportRow], int]:
     if not csv_path.exists():
         raise FileNotFoundError(f"Tag catalog does not exist: {csv_path}")
 
@@ -102,15 +103,20 @@ def load_tag_import_rows(csv_path: Path) -> list[TagImportRow]:
             )
 
         rows: list[TagImportRow] = []
+        invalid_rows = 0
         for row in reader:
-            rows.append(
-                TagImportRow(
-                    external_id=_normalize_required_field(row.get("id"), "id"),
-                    name=_normalize_required_field(row.get("name"), "name"),
-                    category=normalize_import_category(row.get("category")),
+            try:
+                rows.append(
+                    TagImportRow(
+                        external_id=_normalize_required_field(row.get("id"), "id"),
+                        name=_normalize_required_field(row.get("name"), "name"),
+                        category=normalize_import_category(row.get("category")),
+                    )
                 )
-            )
-    return rows
+            except ValueError:
+                invalid_rows += 1
+                continue
+    return rows, invalid_rows
 
 
 def merge_import_category(
@@ -136,7 +142,7 @@ async def import_tag_catalog(
     csv_path: Path | None = None,
 ) -> TagImportSummary:
     target_path = csv_path or get_catalog_asset_path(source)
-    rows = load_tag_import_rows(target_path)
+    rows, invalid_rows = load_tag_import_rows(target_path)
 
     tags_by_name: dict[str, Tag]
     unique_names = {row.name for row in rows}
@@ -192,4 +198,5 @@ async def import_tag_catalog(
         created=created,
         merged=merged,
         skipped=skipped,
+        invalid=invalid_rows,
     )

@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: install run stop test test-backend test-frontend test-e2e
+.PHONY: install run stop test test-backend test-frontend test-e2e test-assets
 
 install:
 	@set -euo pipefail; \
@@ -109,3 +109,7 @@ test-e2e:
 		exit 1; \
 	fi; \
 	cd frontend && npm run test:e2e
+
+test-assets:
+	@set -euo pipefail; \
+	python3 scripts/validate_assets_checksums.py
