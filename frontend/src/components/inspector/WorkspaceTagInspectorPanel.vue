@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import type { Project, ProjectTag } from '../../api'
+import { computed, onMounted, ref, watch } from 'vue'
+import type { Project, ProjectTag, TaggingMode } from '../../api'
 import { useTagMutations } from '../../composables/useTagMutations'
 import { useImageStore } from '../../stores/images'
 import { useTagStore } from '../../stores/tags'
 import { getCatalogIdByTaggingMode } from '../../utils/tagCatalog'
-import AppSectionTitle from '../ui/AppSectionTitle.vue'
 import AppText from '../ui/AppText.vue'
+import TagInspectorAiProposedTagsPanel from './TagInspectorAiProposedTagsPanel.vue'
 import TagInspectorMutationControls from './TagInspectorMutationControls.vue'
 import TagInspectorTagList from './TagInspectorTagList.vue'
+
+let inspectorRegionCounter = 0
 
 const props = defineProps<{
   projectId: string | null
@@ -20,6 +22,19 @@ const tagStore = useTagStore()
 const currentImage = computed(() => imageStore.currentImage)
 const projectIdRef = computed(() => props.projectId)
 const selectedTagNames = computed(() => currentImage.value?.tags.map((tag) => tag.name) ?? [])
+const inspectorMode = ref<TaggingMode>('booru')
+const inspectorRegionId = `tag-inspector-region-${++inspectorRegionCounter}`
+const currentTagsHeadingId = `current-tags-heading-${inspectorRegionId}`
+
+watch(
+  () => props.selectedProject?.tagging_mode,
+  (taggingMode) => {
+    if (taggingMode) {
+      inspectorMode.value = taggingMode
+    }
+  },
+  { immediate: true },
+)
 
 onMounted(async () => {
   if (!tagStore.tags.length) {
@@ -96,41 +111,62 @@ function formatTagCount(tagCount: number): string {
 </script>
 
 <template>
-  <section class="flex flex-col gap-3">
-    <AppSectionTitle>Tag Inspector</AppSectionTitle>
+  <section
+    class="flex h-full min-h-0 flex-col gap-3"
+    role="region"
+    aria-label="Tag inspector panels"
+  >
 
     <AppText v-if="!currentImage">
       Select an image to inspect tags.
     </AppText>
 
     <template v-else>
-      <AppText
-        v-if="selectedProject"
-        tone="muted"
+      <section
+        class="flex min-h-0 h-[calc(50vh-1rem)] flex-col rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-3"
+        role="region"
+        :aria-labelledby="currentTagsHeadingId"
       >
-        Mode: <strong>{{ selectedProject.tagging_mode }}</strong>
-      </AppText>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <h3
+            :id="currentTagsHeadingId"
+            class="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--tf-color-text-default)]"
+          >
+            Current Tags
+          </h3>
+          <AppText tone="muted">
+            {{ formatTagCount(currentImage.tag_count) }}
+          </AppText>
+        </div>
 
-      <AppText tone="muted">
-        Image tags: {{ formatTagCount(currentImage.tag_count) }}
-      </AppText>
+        <div class="mt-3">
+          <TagInspectorMutationControls
+            :error-msg="mutationError"
+            :selected-tags="selectedTagNames"
+            :fetch-suggestions="fetchTagSuggestions"
+            :tag-source="inspectorMode"
+            :disabled="mutationLoading"
+            @add="handleAddTag"
+            @update:tag-source="(value) => inspectorMode = value"
+          />
+        </div>
 
-      <AppText tone="muted">
-        Trigger and class tags are protected here. Unknown tags require confirmation before creation.
-      </AppText>
+        <TagInspectorTagList
+          class="mt-3"
+          :tags="currentImage.tags"
+          :get-tag-role-label="getTagRoleLabel"
+          :get-tag-source-label="getTagSourceLabel"
+          @remove="removeTag"
+        />
+      </section>
 
-      <TagInspectorTagList
-        :tags="currentImage.tags"
-        :get-tag-role-label="getTagRoleLabel"
-        :get-tag-source-label="getTagSourceLabel"
-        @remove="removeTag"
-      />
-
-      <TagInspectorMutationControls
-        :error-msg="mutationError"
-        :selected-tags="selectedTagNames"
-        :fetch-suggestions="fetchTagSuggestions"
+      <TagInspectorAiProposedTagsPanel
+        class="h-[calc(50vh-1rem)]"
+        :image-id="currentImage.id"
+        :mode="inspectorMode"
+        :current-tags="currentImage.tags"
         :disabled="mutationLoading"
+        :get-tag-role-label="getTagRoleLabel"
         @add="handleAddTag"
       />
     </template>
