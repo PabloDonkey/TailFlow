@@ -72,6 +72,21 @@ class ProjectImageTagUpdate(BaseModel):
     create_missing: bool = False
 
 
+class ProjectImageClassifyRequest(BaseModel):
+    model_id: str = "jtp-3-hydra"
+    threshold: float = Field(default=0.35, ge=0.0, le=1.0)
+    max_tags: int = Field(default=32, ge=1, le=128)
+
+
+class ProjectImageClassifySuggestion(BaseModel):
+    name: str
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
+class ProjectImageClassifyResponse(BaseModel):
+    suggestions: list[ProjectImageClassifySuggestion] = Field(default_factory=list)
+
+
 class ProjectDiscoverResponse(BaseModel):
     discovered_projects: int
     imported_projects: int

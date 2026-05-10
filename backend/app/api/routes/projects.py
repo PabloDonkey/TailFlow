@@ -21,6 +21,9 @@ from app.models.project import Project
 from app.schemas.project import (
     ProjectCreate,
     ProjectCreateResponse,
+    ProjectImageClassifyRequest,
+    ProjectImageClassifyResponse,
+    ProjectImageClassifySuggestion,
     ProjectDiscoverResponse,
     ProjectImageRead,
     ProjectImageSummary,
@@ -34,6 +37,7 @@ from app.schemas.project import (
     ProjectTagRead,
     ProjectUpdate,
 )
+from app.services.classifier import classify_project_image
 from app.services.projects import (
     create_project,
     discover_projects,
@@ -320,6 +324,56 @@ async def get_project_image_file_route(
             detail="Project image file not found on disk.",
         )
     return FileResponse(path)
+
+
+@router.post(
+    "/{project_id}/images/{image_id}/classify",
+    response_model=ProjectImageClassifyResponse,
+)
+async def classify_project_image_route(
+    project_id: uuid.UUID,
+    image_id: uuid.UUID,
+    body: ProjectImageClassifyRequest,
+    session: AsyncSession = Depends(db_session),
+) -> ProjectImageClassifyResponse:
+    project = await session.get(Project, project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
+
+    image = await session.get(DatasetImage, image_id)
+    if image is None or image.project_id != project.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project image not found.",
+        )
+
+    path = Path(project.dataset_path) / image.relative_path
+    if not path.exists():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project image file not found on disk.",
+        )
+
+    suggestions = await classify_project_image(
+        image_path=path,
+        tagging_mode=project.tagging_mode,
+        model_id=body.model_id,
+        threshold=body.threshold,
+        max_tags=body.max_tags,
+    )
+
+    return ProjectImageClassifyResponse(
+        suggestions=[
+            ProjectImageClassifySuggestion(
+                name=item.name,
+                confidence=item.confidence,
+            )
+            for item in suggestions
+        ]
+    )
 
 
 @router.post("/{project_id}/images/{image_id}/tags", response_model=ProjectImageRead)

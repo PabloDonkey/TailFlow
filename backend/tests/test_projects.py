@@ -821,3 +821,72 @@ async def test_sync_project_sidecar_import_preserves_existing_manual_tags(
         "manual-style",
         "sidecar-style",
     ]
+
+
+@pytest.mark.asyncio
+async def test_classify_project_image_returns_empty_when_classifier_disabled(
+    client: AsyncClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+    monkeypatch.setattr("app.core.config.settings.classifier_enabled", False)
+
+    created = await client.post(
+        "/api/projects",
+        json={"folder_name": "classify-disabled", "class_tag": "subject"},
+    )
+    assert created.status_code == 201
+    project_id = created.json()["project"]["id"]
+
+    image_bytes = make_png_bytes(10, 10)
+    uploaded = await client.post(
+        f"/api/projects/{project_id}/images",
+        files=[("files", ("fox.png", io.BytesIO(image_bytes), "image/png"))],
+    )
+    assert uploaded.status_code == 200
+
+    image_id = (await client.get(f"/api/projects/{project_id}/images")).json()[0]["id"]
+    response = await client.post(
+        f"/api/projects/{project_id}/images/{image_id}/classify",
+        json={"model_id": "jtp-3-hydra", "threshold": 0.35, "max_tags": 16},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"suggestions": []}
+
+
+@pytest.mark.asyncio
+async def test_classify_project_image_returns_scored_suggestions(
+    client: AsyncClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+    monkeypatch.setattr("app.core.config.settings.classifier_enabled", True)
+
+    created = await client.post(
+        "/api/projects",
+        json={"folder_name": "classify-enabled", "class_tag": "subject"},
+    )
+    assert created.status_code == 201
+    project_id = created.json()["project"]["id"]
+
+    image_bytes = make_png_bytes(10, 10)
+    uploaded = await client.post(
+        f"/api/projects/{project_id}/images",
+        files=[("files", ("fox.png", io.BytesIO(image_bytes), "image/png"))],
+    )
+    assert uploaded.status_code == 200
+
+    image_id = (await client.get(f"/api/projects/{project_id}/images")).json()[0]["id"]
+    response = await client.post(
+        f"/api/projects/{project_id}/images/{image_id}/classify",
+        json={"model_id": "jtp-3-hydra", "threshold": 0.3, "max_tags": 5},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload["suggestions"]) <= 5
+    assert payload["suggestions"]
+    assert all(item["confidence"] >= 0.3 for item in payload["suggestions"])

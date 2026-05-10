@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { classifyProjectImage } from '../../api'
 import type { ProjectTag, TaggingMode } from '../../api'
 import AppNumberField from '../../design-system/AppNumberField.vue'
 import AppSelectField from '../../design-system/AppSelectField.vue'
@@ -15,6 +16,7 @@ interface ProposedTag {
 }
 
 const props = withDefaults(defineProps<{
+  projectId: string | null
   imageId: string | null
   mode: TaggingMode
   currentTags: ProjectTag[]
@@ -31,51 +33,21 @@ const emit = defineEmits<{
 }>()
 
 const modelOptions = [
+  { label: 'JTP-3 Hydra', value: 'jtp-3-hydra' },
   { label: 'WD SwinV2', value: 'wd-swinv2' },
   { label: 'ConvNext v3', value: 'convnext-v3' },
   { label: 'SigLIP Hybrid', value: 'siglip-hybrid' },
 ] satisfies { label: string; value: string }[]
 
-const mockPools: Record<TaggingMode, string[]> = {
-  e621: [
-    'masterpiece',
-    'highres',
-    'detailed background',
-    'solo',
-    'looking at viewer',
-    'dynamic pose',
-    'tail',
-    'fur',
-    'smile',
-    'outdoors',
-    'daylight',
-    'sharp focus',
-  ],
-  booru: [
-    'masterpiece',
-    'best quality',
-    '1girl',
-    'long hair',
-    'brown hair',
-    'school uniform',
-    'standing',
-    'cityscape',
-    'sunset',
-    'dramatic lighting',
-    'depth of field',
-    'cinematic composition',
-  ],
-}
-
-const selectedModel = ref(modelOptions[0]?.value ?? 'wd-swinv2')
+const selectedModel = ref('jtp-3-hydra')
 const autoScan = ref(true)
 const controlsCollapsed = ref(false)
 const confidenceThreshold = ref(0.35)
 const isScanning = ref(false)
 const scanError = ref<string | null>(null)
 const proposedTags = ref<ProposedTag[]>([])
-const scanNonce = ref(0)
-const aiRegionId = `ai-proposed-tags-region-${++aiInspectorRegionCounter}`
+aiInspectorRegionCounter += 1
+const aiRegionId = `ai-proposed-tags-region-${aiInspectorRegionCounter}`
 const aiHeadingId = `ai-proposed-tags-heading-${aiRegionId}`
 const aiControlsId = `ai-proposed-tags-controls-${aiRegionId}`
 const aiListId = `ai-proposed-tags-list-${aiRegionId}`
@@ -102,55 +74,22 @@ const visibleProposedTags = computed(() => {
     .slice(0, props.maxDisplayedTags)
 })
 
-function hashSeed(value: string): number {
-  let hash = 0
-  for (let i = 0; i < value.length; i += 1) {
-    hash = (hash * 31 + value.charCodeAt(i)) >>> 0
-  }
-  return hash
-}
-
-function pseudoRandom(seed: number): number {
-  const next = (seed * 1664525 + 1013904223) >>> 0
-  return next / 4294967296
-}
-
-function buildMockProposals(): ProposedTag[] {
-  const pool = mockPools[props.mode]
-  const seed = hashSeed(`${props.imageId ?? 'none'}:${props.mode}:${selectedModel.value}:${scanNonce.value}`)
-  const generated = pool.map((name, index) => {
-    const confidence = 0.2 + pseudoRandom(seed + index * 977) * 0.78
-    return {
-      name,
-      confidence: Number(confidence.toFixed(2)),
-    }
-  })
-
-  const deduped = new Map<string, ProposedTag>()
-  for (const proposal of generated) {
-    const normalized = proposal.name.toLowerCase()
-    const existing = deduped.get(normalized)
-    if (!existing || proposal.confidence > existing.confidence) {
-      deduped.set(normalized, proposal)
-    }
-  }
-
-  return [...deduped.values()]
-}
-
 async function runScan(): Promise<void> {
-  if (!props.imageId || props.disabled) {
+  if (!props.projectId || !props.imageId || props.disabled) {
     proposedTags.value = []
     return
   }
 
   isScanning.value = true
   scanError.value = null
-  scanNonce.value += 1
 
   try {
-    await new Promise((resolve) => setTimeout(resolve, 260))
-    proposedTags.value = buildMockProposals()
+    const response = await classifyProjectImage(props.projectId, props.imageId, {
+      model_id: selectedModel.value,
+      threshold: confidenceThreshold.value,
+      max_tags: Math.min(Math.max(props.maxDisplayedTags * 3, 16), 128),
+    })
+    proposedTags.value = response.suggestions
   } catch {
     scanError.value = 'Unable to scan tags right now.'
   } finally {
@@ -194,7 +133,7 @@ function toggleControls(): void {
 }
 
 watch(
-  [() => props.imageId, () => props.mode, selectedModel],
+  [() => props.projectId, () => props.imageId, () => props.mode, selectedModel],
   () => {
     scheduleAutoScan()
   },
@@ -331,7 +270,7 @@ onBeforeUnmount(() => {
         v-else-if="isScanning"
         tone="muted"
       >
-        Running mock scan…
+        Running AI scan…
       </AppText>
 
       <AppText

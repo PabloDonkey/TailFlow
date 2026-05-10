@@ -22,8 +22,9 @@ const tagStore = useTagStore()
 const currentImage = computed(() => imageStore.currentImage)
 const projectIdRef = computed(() => props.projectId)
 const selectedTagNames = computed(() => currentImage.value?.tags.map((tag) => tag.name) ?? [])
-const inspectorMode = ref<TaggingMode>('booru')
-const inspectorRegionId = `tag-inspector-region-${++inspectorRegionCounter}`
+const inspectorMode = ref<TaggingMode>(props.selectedProject?.tagging_mode ?? 'booru')
+inspectorRegionCounter += 1
+const inspectorRegionId = `tag-inspector-region-${inspectorRegionCounter}`
 const currentTagsHeadingId = `current-tags-heading-${inspectorRegionId}`
 
 watch(
@@ -162,6 +163,7 @@ function formatTagCount(tagCount: number): string {
 
       <TagInspectorAiProposedTagsPanel
         class="h-[calc(50vh-1rem)]"
+        :project-id="projectId"
         :image-id="currentImage.id"
         :mode="inspectorMode"
         :current-tags="currentImage.tags"
