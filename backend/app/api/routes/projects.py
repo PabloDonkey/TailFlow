@@ -21,10 +21,10 @@ from app.models.project import Project
 from app.schemas.project import (
     ProjectCreate,
     ProjectCreateResponse,
+    ProjectDiscoverResponse,
     ProjectImageClassifyRequest,
     ProjectImageClassifyResponse,
     ProjectImageClassifySuggestion,
-    ProjectDiscoverResponse,
     ProjectImageRead,
     ProjectImageSummary,
     ProjectImageTagUpdate,

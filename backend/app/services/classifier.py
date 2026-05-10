@@ -4,8 +4,8 @@ Provides a stub for running the Tail-Tagger classifier model.
 When classifier_enabled is False (default), returns an empty list.
 """
 
-from dataclasses import dataclass
 import logging
+from dataclasses import dataclass
 from pathlib import Path
 
 from app.core.config import settings
