@@ -85,6 +85,11 @@ class ProjectImageClassifySuggestion(BaseModel):
 
 class ProjectImageClassifyResponse(BaseModel):
     suggestions: list[ProjectImageClassifySuggestion] = Field(default_factory=list)
+    model_id: str
+    model_available: bool
+    download_progress_percent: int = Field(ge=0, le=100)
+    download_proposal_url: str | None = None
+    download_message: str | None = None
 
 
 class ProjectDiscoverResponse(BaseModel):
@@ -112,12 +117,16 @@ class ProjectSyncResponse(BaseModel):
 class ProjectOnboardingStatus(BaseModel):
     configured: bool
     projects_root_path: str | None = None
+    model_storage_path: str | None = None
     default_projects_root_path: str
+    default_model_storage_path: str
 
 
 class ProjectOnboardingConfigure(BaseModel):
     projects_root_path: str
+    model_storage_path: str | None = None
 
 
 class ProjectOnboardingConfigureResponse(BaseModel):
     projects_root_path: str
+    model_storage_path: str

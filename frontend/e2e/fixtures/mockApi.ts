@@ -3,7 +3,9 @@ import { type Page } from '@playwright/test'
 type OnboardingStatus = {
   configured: boolean
   projects_root_path: string | null
+  model_storage_path: string | null
   default_projects_root_path: string
+  default_model_storage_path: string
 }
 
 type MockOptions = {
@@ -60,7 +62,9 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
   const onboardingStatus: OnboardingStatus = options.onboardingStatus ?? {
     configured: true,
     projects_root_path: '/tmp/tailflow-projects',
+    model_storage_path: '/tmp/models',
     default_projects_root_path: '/tmp/tailflow-projects',
+    default_model_storage_path: '/tmp/models',
   }
   let isOnboardingConfigured = onboardingStatus.configured
   let nextProjectCounter = 1
@@ -165,7 +169,9 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
       body: JSON.stringify({
         configured: isOnboardingConfigured,
         projects_root_path: onboardingStatus.projects_root_path,
+        model_storage_path: onboardingStatus.model_storage_path,
         default_projects_root_path: onboardingStatus.default_projects_root_path,
+        default_model_storage_path: onboardingStatus.default_model_storage_path,
       }),
     })
   })
@@ -177,6 +183,7 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
       headers: jsonHeaders(),
       body: JSON.stringify({
         projects_root_path: onboardingStatus.default_projects_root_path,
+        model_storage_path: onboardingStatus.default_model_storage_path,
       }),
     })
   })

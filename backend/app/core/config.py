@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     database_user: str = "tailflow"
     database_password: str = "password"
     projects_root_path: Path | None = None
+    model_storage_path: Path | None = None
     max_upload_size_mb: int = 50
     classifier_enabled: bool = False
     log_level: str = "INFO"
@@ -47,6 +48,16 @@ class Settings(BaseSettings):
     @field_validator("projects_root_path", mode="before")
     @classmethod
     def normalize_projects_root_path(cls, value: object) -> object:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            stripped = value.strip()
+            return None if not stripped else Path(stripped).expanduser()
+        return value
+
+    @field_validator("model_storage_path", mode="before")
+    @classmethod
+    def normalize_model_storage_path(cls, value: object) -> object:
         if value is None:
             return None
         if isinstance(value, str):
@@ -78,6 +89,21 @@ class Settings(BaseSettings):
             raise ValueError(f"PROJECTS_ROOT_PATH is not a directory: {resolved}")
         return resolved
 
+    @property
+    def model_storage_path_resolved(self) -> Path:
+        if self.model_storage_path is None:
+            raise ValueError(
+                "MODEL_STORAGE_PATH is not configured. "
+                "Set it in backend/.env before using classifier model features."
+            )
+
+        resolved = self.model_storage_path.resolve()
+        if not resolved.exists():
+            raise ValueError(f"MODEL_STORAGE_PATH does not exist: {resolved}")
+        if not resolved.is_dir():
+            raise ValueError(f"MODEL_STORAGE_PATH is not a directory: {resolved}")
+        return resolved
+
 
 settings = Settings()
 
@@ -91,11 +117,19 @@ def get_backend_env_example_file_path() -> Path:
 
 
 def default_projects_root_path() -> Path:
-    return Path.home() / "tailflow"
+    return Path.home() / "tailflow/projects"
+
+
+def default_model_storage_path() -> Path:
+    return Path.home() / "tailflow/models"
 
 
 def is_projects_root_configured() -> bool:
     return settings.projects_root_path is not None
+
+
+def is_model_storage_configured() -> bool:
+    return settings.model_storage_path is not None
 
 
 def _quote_env_value(value: str) -> str:
@@ -130,4 +164,15 @@ def configure_projects_root_path(path_value: str) -> Path:
     candidate.mkdir(parents=True, exist_ok=True)
     upsert_env_key(get_backend_env_file_path(), "PROJECTS_ROOT_PATH", str(candidate))
     settings.projects_root_path = candidate
+    return candidate
+
+
+def configure_model_storage_path(path_value: str) -> Path:
+    candidate = Path(path_value).expanduser().resolve()
+    if candidate.exists() and not candidate.is_dir():
+        raise ValueError(f"MODEL_STORAGE_PATH is not a directory: {candidate}")
+
+    candidate.mkdir(parents=True, exist_ok=True)
+    upsert_env_key(get_backend_env_file_path(), "MODEL_STORAGE_PATH", str(candidate))
+    settings.model_storage_path = candidate
     return candidate

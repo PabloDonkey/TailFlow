@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from app.core.config import Settings
+from app.core.config import Settings, default_model_storage_path
 
 
 def test_settings_normalize_log_level() -> None:
@@ -59,3 +59,18 @@ def test_projects_root_path_resolved_requires_configuration() -> None:
 
     with pytest.raises(ValueError):
         _ = settings.projects_root_path_resolved
+
+
+def test_settings_blank_model_storage_path_is_none() -> None:
+    settings = Settings(model_storage_path="")
+    assert settings.model_storage_path is None
+
+
+def test_model_storage_path_resolved_returns_existing_directory(tmp_path: Path) -> None:
+    settings = Settings(model_storage_path=tmp_path)
+    assert settings.model_storage_path_resolved == tmp_path.resolve()
+
+
+def test_default_model_storage_path_uses_home_default(tmp_path: Path) -> None:
+    projects_root = tmp_path / "projects"
+    assert default_model_storage_path(projects_root) == (Path.home() / "tailflow-models")

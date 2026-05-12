@@ -8,7 +8,9 @@ test.describe('Onboarding flow', () => {
       onboardingStatus: {
         configured: false,
         projects_root_path: null,
+        model_storage_path: null,
         default_projects_root_path: '/tmp/tailflow-projects',
+        default_model_storage_path: '/tmp/models',
       },
     })
 

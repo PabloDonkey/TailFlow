@@ -25,7 +25,7 @@ const props = withDefaults(defineProps<{
   getTagRoleLabel: (tag: ProjectTag) => string | null
 }>(), {
   disabled: false,
-  maxDisplayedTags: 16,
+  maxDisplayedTags: 64,
 })
 
 const emit = defineEmits<{
@@ -33,10 +33,9 @@ const emit = defineEmits<{
 }>()
 
 const modelOptions = [
+  { label: 'JTP_PILOT', value: 'jtp_pilot' },
+  { label: 'JTP_PILOT2', value: 'jtp_pilot2' },
   { label: 'JTP-3 Hydra', value: 'jtp-3-hydra' },
-  { label: 'WD SwinV2', value: 'wd-swinv2' },
-  { label: 'ConvNext v3', value: 'convnext-v3' },
-  { label: 'SigLIP Hybrid', value: 'siglip-hybrid' },
 ] satisfies { label: string; value: string }[]
 
 const selectedModel = ref('jtp-3-hydra')
@@ -46,6 +45,10 @@ const confidenceThreshold = ref(0.35)
 const isScanning = ref(false)
 const scanError = ref<string | null>(null)
 const proposedTags = ref<ProposedTag[]>([])
+const modelAvailable = ref(true)
+const downloadProgressPercent = ref(100)
+const downloadProposalUrl = ref<string | null>(null)
+const downloadMessage = ref<string | null>(null)
 aiInspectorRegionCounter += 1
 const aiRegionId = `ai-proposed-tags-region-${aiInspectorRegionCounter}`
 const aiHeadingId = `ai-proposed-tags-heading-${aiRegionId}`
@@ -71,12 +74,15 @@ const visibleProposedTags = computed(() => {
   return proposedTags.value
     .filter((tag) => tag.confidence >= minConfidence)
     .sort((a, b) => b.confidence - a.confidence)
-    .slice(0, props.maxDisplayedTags)
 })
 
 async function runScan(): Promise<void> {
   if (!props.projectId || !props.imageId || props.disabled) {
     proposedTags.value = []
+    modelAvailable.value = true
+    downloadProgressPercent.value = 100
+    downloadProposalUrl.value = null
+    downloadMessage.value = null
     return
   }
 
@@ -87,10 +93,26 @@ async function runScan(): Promise<void> {
     const response = await classifyProjectImage(props.projectId, props.imageId, {
       model_id: selectedModel.value,
       threshold: confidenceThreshold.value,
-      max_tags: Math.min(Math.max(props.maxDisplayedTags * 3, 16), 128),
+      max_tags: 128,
     })
+
+    modelAvailable.value = response.model_available
+    downloadProgressPercent.value = response.download_progress_percent
+    downloadProposalUrl.value = response.download_proposal_url
+    downloadMessage.value = response.download_message
+
+    if (!response.model_available) {
+      proposedTags.value = []
+      scanError.value = response.download_message ?? 'Model files are missing.'
+      return
+    }
+
     proposedTags.value = response.suggestions
   } catch {
+    modelAvailable.value = true
+    downloadProgressPercent.value = 100
+    downloadProposalUrl.value = null
+    downloadMessage.value = null
     scanError.value = 'Unable to scan tags right now.'
   } finally {
     isScanning.value = false
@@ -242,6 +264,21 @@ onBeforeUnmount(() => {
       <span>Threshold: {{ Math.round(confidenceThreshold * 100) }}%</span>
       <span>•</span>
       <span>Visible: {{ visibleProposedTags.length }}</span>
+      <template v-if="!modelAvailable">
+        <span>•</span>
+        <span>Download progress: {{ downloadProgressPercent }}%</span>
+      </template>
+    </div>
+
+    <div
+      v-if="!modelAvailable"
+      class="mt-2 rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface-alt)] px-3 py-2 text-xs text-[var(--tf-color-text-default)]"
+    >
+      <p class="font-medium">Selected model is not installed.</p>
+      <p v-if="downloadMessage" class="mt-1">{{ downloadMessage }}</p>
+      <p v-if="downloadProposalUrl" class="mt-1 break-all">
+        Download source: <a :href="downloadProposalUrl" target="_blank" rel="noreferrer">{{ downloadProposalUrl }}</a>
+      </p>
     </div>
 
     <div

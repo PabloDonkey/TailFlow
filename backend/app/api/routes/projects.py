@@ -1,3 +1,4 @@
+import logging
 import uuid
 from pathlib import Path
 
@@ -9,10 +10,13 @@ from sqlalchemy.orm import selectinload
 
 from app.api.deps import db_session
 from app.core.config import (
+    configure_model_storage_path,
     configure_projects_root_path,
+    default_model_storage_path,
     default_projects_root_path,
     get_backend_env_example_file_path,
     get_backend_env_file_path,
+    is_model_storage_configured,
     is_projects_root_configured,
     settings,
 )
@@ -48,6 +52,7 @@ from app.services.projects import (
 )
 
 router = APIRouter(prefix="/projects", tags=["projects"])
+logger = logging.getLogger(__name__)
 
 
 async def _read_project_image_tags(
@@ -97,16 +102,25 @@ async def _read_project_image_tag_counts(
 
 @router.get("/onboarding/status", response_model=ProjectOnboardingStatus)
 async def onboarding_status_route() -> ProjectOnboardingStatus:
-    configured = is_projects_root_configured()
+    configured = is_projects_root_configured() and is_model_storage_configured()
     current_path = (
         str(settings.projects_root_path)
         if settings.projects_root_path
         else None
     )
+    current_model_storage_path = (
+        str(settings.model_storage_path)
+        if settings.model_storage_path
+        else None
+    )
+    default_projects = default_projects_root_path()
+    default_models = default_model_storage_path()
     return ProjectOnboardingStatus(
         configured=configured,
         projects_root_path=current_path,
-        default_projects_root_path=str(default_projects_root_path()),
+        model_storage_path=current_model_storage_path,
+        default_projects_root_path=str(default_projects),
+        default_model_storage_path=str(default_models),
     )
 
 
@@ -136,13 +150,26 @@ async def onboarding_configure_route(
 
     try:
         configured_path = configure_projects_root_path(body.projects_root_path)
+        model_storage_input = (
+            body.model_storage_path.strip()
+            if body.model_storage_path is not None
+            else ""
+        )
+        configured_model_storage_path = configure_model_storage_path(
+            model_storage_input
+            if model_storage_input
+            else str(default_model_storage_path())
+        )
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail=str(exc),
         ) from exc
 
-    return ProjectOnboardingConfigureResponse(projects_root_path=str(configured_path))
+    return ProjectOnboardingConfigureResponse(
+        projects_root_path=str(configured_path),
+        model_storage_path=str(configured_model_storage_path),
+    )
 
 
 @router.post(
@@ -357,13 +384,25 @@ async def classify_project_image_route(
             detail="Project image file not found on disk.",
         )
 
-    suggestions = await classify_project_image(
-        image_path=path,
-        tagging_mode=project.tagging_mode,
-        model_id=body.model_id,
-        threshold=body.threshold,
-        max_tags=body.max_tags,
-    )
+    try:
+        classify_result = await classify_project_image(
+            image_path=path,
+            tagging_mode=project.tagging_mode,
+            model_id=body.model_id,
+            threshold=body.threshold,
+            max_tags=body.max_tags,
+        )
+    except Exception as exc:
+        logger.exception(
+            "Classifier inference failed for project_id=%s image_id=%s model_id=%s",
+            project_id,
+            image_id,
+            body.model_id,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Classifier inference failed: {exc}",
+        ) from exc
 
     return ProjectImageClassifyResponse(
         suggestions=[
@@ -371,8 +410,13 @@ async def classify_project_image_route(
                 name=item.name,
                 confidence=item.confidence,
             )
-            for item in suggestions
-        ]
+            for item in classify_result.suggestions
+        ],
+        model_id=classify_result.model_status.model_id,
+        model_available=classify_result.model_status.model_available,
+        download_progress_percent=classify_result.model_status.download_progress_percent,
+        download_proposal_url=classify_result.model_status.download_proposal_url,
+        download_message=classify_result.model_status.download_message,
     )
 
 

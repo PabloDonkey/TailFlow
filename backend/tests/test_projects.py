@@ -100,6 +100,7 @@ async def test_onboarding_status_reports_unconfigured_when_projects_root_missing
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr("app.core.config.settings.projects_root_path", None)
+    monkeypatch.setattr("app.core.config.settings.model_storage_path", None)
 
     response = await client.get("/api/projects/onboarding/status")
 
@@ -107,7 +108,9 @@ async def test_onboarding_status_reports_unconfigured_when_projects_root_missing
     payload = response.json()
     assert payload["configured"] is False
     assert payload["projects_root_path"] is None
+    assert payload["model_storage_path"] is None
     assert payload["default_projects_root_path"]
+    assert payload["default_model_storage_path"]
 
 
 @pytest.mark.asyncio
@@ -130,6 +133,63 @@ async def test_onboarding_configure_sets_projects_root_and_updates_env(
         lambda: example_env_file,
     )
     monkeypatch.setattr("app.core.config.settings.projects_root_path", None)
+    monkeypatch.setattr("app.core.config.settings.model_storage_path", None)
+
+    target_root = tmp_path / "tailflow-projects"
+    configure_response = await client.post(
+        "/api/projects/onboarding/configure",
+        json={
+            "projects_root_path": str(target_root),
+            "model_storage_path": str(tmp_path / "tailflow-models"),
+        },
+    )
+
+    assert configure_response.status_code == 200
+    payload = configure_response.json()
+    assert payload["projects_root_path"] == str(target_root.resolve())
+    assert payload["model_storage_path"] == str(
+        (tmp_path / "tailflow-models").resolve()
+    )
+    assert target_root.is_dir()
+    assert (tmp_path / "tailflow-models").is_dir()
+    env_content = env_file.read_text(encoding="utf-8")
+    assert f'PROJECTS_ROOT_PATH="{target_root.resolve()}"' in env_content
+    assert (
+        f'MODEL_STORAGE_PATH="{(tmp_path / "tailflow-models").resolve()}"'
+        in env_content
+    )
+
+    status_response = await client.get("/api/projects/onboarding/status")
+    assert status_response.status_code == 200
+    status_payload = status_response.json()
+    assert status_payload["configured"] is True
+    assert status_payload["projects_root_path"] == str(target_root.resolve())
+    assert status_payload["model_storage_path"] == str(
+        (tmp_path / "tailflow-models").resolve()
+    )
+
+
+@pytest.mark.asyncio
+async def test_onboarding_configure_defaults_model_storage_to_projects_sibling(
+    client: AsyncClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    env_file = tmp_path / ".env"
+    example_env_file = tmp_path / ".env.example"
+    example_env_file.write_text("DATABASE_PASSWORD=\n", encoding="utf-8")
+
+    monkeypatch.setattr("app.core.config.get_backend_env_file_path", lambda: env_file)
+    monkeypatch.setattr(
+        "app.api.routes.projects.get_backend_env_file_path",
+        lambda: env_file,
+    )
+    monkeypatch.setattr(
+        "app.api.routes.projects.get_backend_env_example_file_path",
+        lambda: example_env_file,
+    )
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", None)
+    monkeypatch.setattr("app.core.config.settings.model_storage_path", None)
 
     target_root = tmp_path / "tailflow-projects"
     configure_response = await client.post(
@@ -140,15 +200,9 @@ async def test_onboarding_configure_sets_projects_root_and_updates_env(
     assert configure_response.status_code == 200
     payload = configure_response.json()
     assert payload["projects_root_path"] == str(target_root.resolve())
-    assert target_root.is_dir()
-    env_content = env_file.read_text(encoding="utf-8")
-    assert f'PROJECTS_ROOT_PATH="{target_root.resolve()}"' in env_content
-
-    status_response = await client.get("/api/projects/onboarding/status")
-    assert status_response.status_code == 200
-    status_payload = status_response.json()
-    assert status_payload["configured"] is True
-    assert status_payload["projects_root_path"] == str(target_root.resolve())
+    default_models_path = (Path.home() / "tailflow/models").resolve()
+    assert payload["model_storage_path"] == str(default_models_path)
+    assert default_models_path.is_dir()
 
 
 @pytest.mark.asyncio
@@ -853,17 +907,29 @@ async def test_classify_project_image_returns_empty_when_classifier_disabled(
     )
 
     assert response.status_code == 200
-    assert response.json() == {"suggestions": []}
+    payload = response.json()
+    assert payload["suggestions"] == []
+    assert payload["model_id"] == "jtp-3-hydra"
+    assert payload["model_available"] is False
+    assert payload["download_progress_percent"] == 0
+    assert payload["download_proposal_url"] == "https://huggingface.co/RedRocket/JTP-3/tree/main/models"
+    assert payload["download_message"]
 
 
 @pytest.mark.asyncio
-async def test_classify_project_image_returns_scored_suggestions(
+async def test_classify_project_image_returns_503_when_inference_fails(
     client: AsyncClient,
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
     monkeypatch.setattr("app.core.config.settings.classifier_enabled", True)
+
+    classifiers_root = tmp_path / "classifiers"
+    model_dir = classifiers_root / "JTP-3"
+    model_dir.mkdir(parents=True)
+    (model_dir / "jtp-3-hydra.safetensors").write_bytes(b"mock-model")
+    monkeypatch.setattr("app.services.classifier.CLASSIFIERS_ROOT", classifiers_root)
 
     created = await client.post(
         "/api/projects",
@@ -885,8 +951,7 @@ async def test_classify_project_image_returns_scored_suggestions(
         json={"model_id": "jtp-3-hydra", "threshold": 0.3, "max_tags": 5},
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 503
     payload = response.json()
-    assert len(payload["suggestions"]) <= 5
-    assert payload["suggestions"]
-    assert all(item["confidence"] >= 0.3 for item in payload["suggestions"])
+    assert "detail" in payload
+    assert "Classifier inference failed:" in payload["detail"]
