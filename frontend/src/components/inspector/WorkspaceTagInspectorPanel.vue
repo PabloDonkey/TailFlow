@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
+import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import type { Project, ProjectTag, TaggingMode } from '../../api'
 import { useTagMutations } from '../../composables/useTagMutations'
 import { useImageStore } from '../../stores/images'
@@ -123,54 +124,76 @@ function formatTagCount(tagCount: number): string {
     </AppText>
 
     <template v-else>
-      <section
-        class="flex min-h-0 h-[calc(50vh-1rem)] flex-col rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-3"
-        role="region"
-        :aria-labelledby="currentTagsHeadingId"
+      <SplitterGroup
+        auto-save-id="workspace-tag-inspector-vertical"
+        class="flex h-full min-h-0 w-full"
+        direction="vertical"
       >
-        <div class="flex flex-wrap items-center justify-between gap-2">
-          <h3
-            :id="currentTagsHeadingId"
-            class="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--tf-color-text-default)]"
+        <SplitterPanel
+          :default-size="50"
+          :min-size="28"
+          class="min-h-0"
+        >
+          <section
+            class="flex h-full min-h-0 flex-col rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-3"
+            role="region"
+            :aria-labelledby="currentTagsHeadingId"
           >
-            Current Tags
-          </h3>
-          <AppText tone="muted">
-            {{ formatTagCount(currentImage.tag_count) }}
-          </AppText>
-        </div>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3
+                :id="currentTagsHeadingId"
+                class="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--tf-color-text-default)]"
+              >
+                Current Tags
+              </h3>
+              <AppText tone="muted">
+                {{ formatTagCount(currentImage.tag_count) }}
+              </AppText>
+            </div>
 
-        <div class="mt-3">
-          <TagInspectorMutationControls
-            :error-msg="mutationError"
-            :selected-tags="selectedTagNames"
-            :fetch-suggestions="fetchTagSuggestions"
-            :tag-source="inspectorMode"
-            :disabled="mutationLoading"
-            @add="handleAddTag"
-            @update:tag-source="(value) => inspectorMode = value"
-          />
-        </div>
+            <div class="mt-3">
+              <TagInspectorMutationControls
+                :error-msg="mutationError"
+                :selected-tags="selectedTagNames"
+                :fetch-suggestions="fetchTagSuggestions"
+                :tag-source="inspectorMode"
+                :disabled="mutationLoading"
+                @add="handleAddTag"
+                @update:tag-source="(value) => inspectorMode = value"
+              />
+            </div>
 
-        <TagInspectorTagList
-          class="mt-3"
-          :tags="currentImage.tags"
-          :get-tag-role-label="getTagRoleLabel"
-          :get-tag-source-label="getTagSourceLabel"
-          @remove="removeTag"
+            <TagInspectorTagList
+              class="mt-3"
+              :tags="currentImage.tags"
+              :get-tag-role-label="getTagRoleLabel"
+              :get-tag-source-label="getTagSourceLabel"
+              @remove="removeTag"
+            />
+          </section>
+        </SplitterPanel>
+
+        <SplitterResizeHandle
+          class="my-1 h-1.5 rounded bg-[var(--tf-color-surface-border)] transition data-[state=drag]:bg-[var(--tf-color-accent)]"
         />
-      </section>
 
-      <TagInspectorAiProposedTagsPanel
-        class="h-[calc(50vh-1rem)]"
-        :project-id="projectId"
-        :image-id="currentImage.id"
-        :mode="inspectorMode"
-        :current-tags="currentImage.tags"
-        :disabled="mutationLoading"
-        :get-tag-role-label="getTagRoleLabel"
-        @add="handleAddTag"
-      />
+        <SplitterPanel
+          :default-size="50"
+          :min-size="28"
+          class="min-h-0"
+        >
+          <TagInspectorAiProposedTagsPanel
+            class="h-full min-h-0"
+            :project-id="projectId"
+            :image-id="currentImage.id"
+            :mode="inspectorMode"
+            :current-tags="currentImage.tags"
+            :disabled="mutationLoading"
+            :get-tag-role-label="getTagRoleLabel"
+            @add="handleAddTag"
+          />
+        </SplitterPanel>
+      </SplitterGroup>
     </template>
   </section>
 </template>

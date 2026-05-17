@@ -13,10 +13,36 @@ function getNodeBufferFromBase64(base64: string): unknown {
 export class WorkspacePageObject {
   private readonly page: Page
   private readonly openActionsButton: Locator
+  private readonly viewsMenuTrigger: Locator
 
   constructor(page: Page) {
     this.page = page
     this.openActionsButton = page.getByRole('button', { name: 'Open workspace actions' })
+    this.viewsMenuTrigger = page.getByRole('menuitem', { name: 'Views' })
+  }
+
+  private async isDesktopViewport(): Promise<boolean> {
+    return this.viewsMenuTrigger.isVisible()
+  }
+
+  private async ensureDesktopViewsMenuOpen(): Promise<void> {
+    const projectsOption = this.page.getByRole('menuitem', { name: 'Project manager' })
+    if (await projectsOption.isVisible()) {
+      return
+    }
+    await this.viewsMenuTrigger.click()
+    await expect(projectsOption).toBeVisible()
+  }
+
+  private async desktopViewsOption(option: 'projects' | 'tags' | 'inspector'): Promise<Locator> {
+    const optionLabelByMode: Record<typeof option, string> = {
+      projects: 'Project manager',
+      tags: 'Tags library',
+      inspector: 'Tag inspector',
+    }
+
+    await this.ensureDesktopViewsMenuOpen()
+    return this.page.getByRole('menuitem', { name: optionLabelByMode[option] })
   }
 
   async goto(): Promise<void> {
@@ -26,6 +52,11 @@ export class WorkspacePageObject {
   }
 
   async openActionsMenu(): Promise<void> {
+    if (await this.isDesktopViewport()) {
+      await this.ensureDesktopViewsMenuOpen()
+      return
+    }
+
     await this.openActionsButton.click()
     await expect(this.page.getByRole('button', { name: 'Close workspace actions' })).toBeVisible()
     await expect(this.page.getByRole('button', { name: 'Project manager' })).toBeVisible()
@@ -38,25 +69,53 @@ export class WorkspacePageObject {
       inspector: 'Tag inspector',
     }
 
+    if (await this.isDesktopViewport()) {
+      const optionLocator = await this.desktopViewsOption(option)
+      await expect(optionLocator).toHaveClass(/font-semibold/)
+      return
+    }
+
     await expect(this.page.getByRole('button', { name: optionLabelByMode[option] })).toHaveAttribute('aria-selected', 'true')
   }
 
   async showProjectsMode(): Promise<void> {
-    await this.page.getByRole('button', { name: 'Project manager' }).click()
+    if (await this.isDesktopViewport()) {
+      const optionLocator = await this.desktopViewsOption('projects')
+      await optionLocator.click()
+    } else {
+      await this.page.getByRole('button', { name: 'Project manager' }).click()
+    }
     await expect(this.page.getByRole('heading', { name: 'Project Browser' })).toBeVisible()
   }
 
   async showTagsLibraryMode(): Promise<void> {
-    await this.page.getByRole('button', { name: 'Tags library' }).click()
+    if (await this.isDesktopViewport()) {
+      const optionLocator = await this.desktopViewsOption('tags')
+      await optionLocator.click()
+    } else {
+      await this.page.getByRole('button', { name: 'Tags library' }).click()
+    }
     await expect(this.page.getByRole('heading', { name: 'Tags Library' })).toBeVisible()
   }
 
   async showTagInspectorMode(): Promise<void> {
+    if (await this.isDesktopViewport()) {
+      const optionLocator = await this.desktopViewsOption('inspector')
+      await optionLocator.click()
+      return
+    }
+
     await this.page.getByRole('button', { name: 'Tag inspector' }).click()
   }
 
   async openMobilePanel(panelName: 'Browse' | 'Inspect' | 'Tags'): Promise<void> {
-    await this.page.getByRole('button', { name: panelName }).click()
+    const ariaLabelByPanel: Record<typeof panelName, string> = {
+      Browse: 'Open mobile browser panel',
+      Inspect: 'Open mobile inspector panel',
+      Tags: 'Open mobile tags panel',
+    }
+
+    await this.page.getByRole('button', { name: ariaLabelByPanel[panelName] }).click()
   }
 
   async expectMobilePanelTitle(title: string): Promise<void> {

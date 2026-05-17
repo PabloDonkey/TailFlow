@@ -4,7 +4,7 @@ import AppMenubar, { type AppMenubarMenu } from '../../design-system/AppMenubar.
 import AppButton from '../ui/AppButton.vue'
 import AppSectionTitle from '../ui/AppSectionTitle.vue'
 import AppText from '../ui/AppText.vue'
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const props = defineProps<{
   projectName?: string
@@ -67,6 +67,26 @@ const viewsMenu = computed<AppMenubarMenu>(() => ({
 }))
 
 const desktopMenus = computed<readonly AppMenubarMenu[]>(() => [projectMenu.value, viewsMenu.value])
+const isDesktopViewport = ref(false)
+
+function updateViewportState() {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    isDesktopViewport.value = false
+    return
+  }
+  isDesktopViewport.value = window.matchMedia('(min-width: 1024px)').matches
+}
+
+onMounted(() => {
+  updateViewportState()
+  window.addEventListener('resize', updateViewportState)
+})
+
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', updateViewportState)
+  }
+})
 
 function handleDesktopMenuSelect(payload: { menuValue: string; itemValue: string }): void {
   if (payload.menuValue === 'project') {
@@ -104,7 +124,10 @@ function handleDesktopMenuSelect(payload: { menuValue: string; itemValue: string
 
 <template>
   <header class="sticky top-0 z-[110] bg-[var(--tf-color-header-bg)] px-[0.8rem] py-[0.65rem] text-[var(--tf-color-header-text)] lg:px-4 lg:py-[0.8rem]">
-    <div class="grid grid-cols-[auto_1fr_auto] items-center gap-3 lg:hidden">
+    <div
+      v-if="!isDesktopViewport"
+      class="grid grid-cols-[auto_1fr_auto] items-center gap-3"
+    >
       <AppButton
         aria-label="Open project picker"
         aria-haspopup="menu"
@@ -136,7 +159,10 @@ function handleDesktopMenuSelect(payload: { menuValue: string; itemValue: string
       </AppButton>
     </div>
 
-    <div class="hidden items-stretch justify-between gap-3 lg:flex">
+    <div
+      v-else
+      class="items-stretch justify-between gap-3 lg:flex"
+    >
       <AppMenubar
         class="inline-flex self-stretch"
         :menus="desktopMenus"

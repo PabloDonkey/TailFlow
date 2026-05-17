@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import AppShell from '../components/layout/AppShell.vue'
 import WorkspaceHeaderSection from '../components/layout/WorkspaceHeaderSection.vue'
 import WorkspaceMobileQuickActions from '../components/layout/WorkspaceMobileQuickActions.vue'
@@ -310,27 +311,76 @@ watch(
 
     <section
       v-else-if="workspaceMode === 'projects'"
-      class="grid min-h-0 grid-cols-1 gap-3 lg:h-full lg:grid-cols-[minmax(240px,320px)_minmax(0,1fr)] lg:items-stretch"
+      class="min-h-0"
     >
-      <ProjectBrowserPanel
-        :projects="projectStore.projects"
-        :selected-project-id="projectStore.selectedProjectId"
-        :loading="projectStore.loading"
-        :discovering="projectStore.loading"
-        @select-project="selectProject"
-        @open-create-project="openCreateProjectModal"
-        @discover-projects="discoverProjectsFromBrowser"
-        @show-tagging="handleShowTaggingForProject"
-      />
-
-      <section class="rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-3 lg:h-full lg:min-h-0 lg:overflow-y-auto">
-        <WorkspaceRightPanel
-          active-panel="projects"
-          :project-id="projectStore.selectedProjectId"
-          :selected-project="selectedProject"
-          @close-tags-library="closeTagsLibrary"
+      <section
+        v-if="isMobileViewportRef"
+        class="grid min-h-0 grid-cols-1 gap-3"
+      >
+        <ProjectBrowserPanel
+          :projects="projectStore.projects"
+          :selected-project-id="projectStore.selectedProjectId"
+          :loading="projectStore.loading"
+          :discovering="projectStore.loading"
+          @select-project="selectProject"
+          @open-create-project="openCreateProjectModal"
+          @discover-projects="discoverProjectsFromBrowser"
+          @show-tagging="handleShowTaggingForProject"
         />
+
+        <section class="rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-3">
+          <WorkspaceRightPanel
+            active-panel="projects"
+            :project-id="projectStore.selectedProjectId"
+            :selected-project="selectedProject"
+            @close-tags-library="closeTagsLibrary"
+          />
+        </section>
       </section>
+
+      <SplitterGroup
+        v-else
+        auto-save-id="workspace-projects-layout"
+        class="h-full min-h-0 w-full"
+        direction="horizontal"
+      >
+        <SplitterPanel
+          :default-size="35"
+          :max-size="45"
+          :min-size="25"
+          class="min-h-0"
+        >
+          <ProjectBrowserPanel
+            :projects="projectStore.projects"
+            :selected-project-id="projectStore.selectedProjectId"
+            :loading="projectStore.loading"
+            :discovering="projectStore.loading"
+            @select-project="selectProject"
+            @open-create-project="openCreateProjectModal"
+            @discover-projects="discoverProjectsFromBrowser"
+            @show-tagging="handleShowTaggingForProject"
+          />
+        </SplitterPanel>
+
+        <SplitterResizeHandle
+          class="mx-1 my-1 w-1.5 rounded bg-[var(--tf-color-surface-border)] transition data-[state=drag]:bg-[var(--tf-color-accent)]"
+        />
+
+        <SplitterPanel
+          :default-size="65"
+          :min-size="40"
+          class="min-h-0"
+        >
+          <section class="h-full min-h-0 rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-3 overflow-y-auto">
+            <WorkspaceRightPanel
+              active-panel="projects"
+              :project-id="projectStore.selectedProjectId"
+              :selected-project="selectedProject"
+              @close-tags-library="closeTagsLibrary"
+            />
+          </section>
+        </SplitterPanel>
+      </SplitterGroup>
 
       <ProjectCreateModal
         v-if="showCreateProjectModal"
