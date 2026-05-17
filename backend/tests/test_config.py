@@ -71,6 +71,5 @@ def test_model_storage_path_resolved_returns_existing_directory(tmp_path: Path) 
     assert settings.model_storage_path_resolved == tmp_path.resolve()
 
 
-def test_default_model_storage_path_uses_home_default(tmp_path: Path) -> None:
-    projects_root = tmp_path / "projects"
-    assert default_model_storage_path(projects_root) == (Path.home() / "tailflow-models")
+def test_default_model_storage_path_uses_home_default() -> None:
+    assert default_model_storage_path() == (Path.home() / "tailflow/models")

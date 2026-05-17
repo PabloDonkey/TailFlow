@@ -147,27 +147,6 @@ MODEL_REQUIREMENTS: dict[str, tuple[str, ...]] = {
     ),
 }
 
-MODEL_REQUIREMENT_ALTERNATIVES: dict[str, tuple[tuple[str, ...], ...]] = {
-    "jtp-3-hydra": (
-        ("JTP-3/jtp-3-hydra.safetensors",),
-        ("jtp-3-hydra.safetensors",),
-    ),
-    "jtp_pilot": (
-        (
-            "JTP_PILOT/JTP_PILOT-e4-vit_so400m_patch14_siglip_384.safetensors",
-            "JTP_PILOT/tags.json",
-        ),
-        ("JTP_PILOT-e4-vit_so400m_patch14_siglip_384.safetensors", "tags.json"),
-    ),
-    "jtp_pilot2": (
-        (
-            "JTP_PILOT2/JTP_PILOT2-e3-vit_so400m_patch14_siglip_384.safetensors",
-            "JTP_PILOT2/tags.json",
-        ),
-        ("JTP_PILOT2-e3-vit_so400m_patch14_siglip_384.safetensors", "tags.json"),
-    ),
-}
-
 MODEL_DOWNLOAD_PROPOSALS: dict[str, str] = {
     "jtp-3-hydra": "https://huggingface.co/RedRocket/JTP-3/tree/main/models",
     "jtp_pilot": "https://huggingface.co/RedRocket/JointTaggerProject/tree/main/JTP_PILOT",
@@ -183,6 +162,10 @@ def _runtime_device() -> Any:
     if torch.cuda.is_available():
         return torch.device("cuda")
     return torch.device("cpu")
+
+
+def _model_device(model: Any) -> Any:
+    return next(model.parameters()).device
 
 
 def _jtp3_runtime_dtype(device: Any) -> Any:
@@ -262,34 +245,6 @@ async def classify_project_image(
 
 def _read_model_status(model_id: str) -> ClassifierModelStatus:
     classifiers_root = _classifier_root()
-    alternatives = MODEL_REQUIREMENT_ALTERNATIVES.get(model_id)
-    if alternatives is not None:
-        for alternative in alternatives:
-            if all(
-                (classifiers_root / relative_path).is_file()
-                for relative_path in alternative
-            ):
-                return ClassifierModelStatus(
-                    model_id=model_id,
-                    model_available=True,
-                    download_progress_percent=100,
-                    download_proposal_url=None,
-                    download_message=None,
-                )
-
-        expected = [" + ".join(paths) for paths in alternatives]
-        preview = " or ".join(expected)
-        return ClassifierModelStatus(
-            model_id=model_id,
-            model_available=False,
-            download_progress_percent=0,
-            download_proposal_url=MODEL_DOWNLOAD_PROPOSALS.get(model_id),
-            download_message=(
-                f"Model files are missing: {preview}. "
-                "Download the model files and place them under MODEL_STORAGE_PATH."
-            ),
-        )
-
     required_files = MODEL_REQUIREMENTS[model_id]
     missing_files = [
         relative_path
@@ -441,13 +396,12 @@ def _is_tag_name_allowed_for_mode(name: str, tagging_mode: TaggingMode) -> bool:
 
 def _resolve_model_file_set(model_id: str) -> tuple[Path, ...] | None:
     root = _classifier_root()
-    alternatives = MODEL_REQUIREMENT_ALTERNATIVES.get(model_id)
-    if alternatives is None:
+    required = MODEL_REQUIREMENTS.get(model_id)
+    if required is None:
         return None
-    for candidate in alternatives:
-        resolved = tuple(root / relative_path for relative_path in candidate)
-        if all(path.is_file() for path in resolved):
-            return resolved
+    resolved = tuple(root / relative_path for relative_path in required)
+    if all(path.is_file() for path in resolved):
+        return resolved
     return None
 
 
@@ -780,7 +734,7 @@ def _load_jtp2_runtime(model_id: str) -> tuple[Any, list[str]]:
 
     state_dict = safetensors.torch.load_file(str(model_path), device="cpu")
     model.load_state_dict(state_dict, strict=True)
-    model.eval()
+    model.eval().to(device=_runtime_device())
     _JTP2_RUNTIME_CACHE[model_id] = (model, allowed_tags)
     return model, allowed_tags
 
@@ -870,6 +824,9 @@ def _preprocess_jtp2(image_path: Path) -> Any:
 
 
 def _run_jtp2_inference(model: Any, tensor: Any, model_id: str) -> Any:
+    device = _model_device(model)
+    tensor = tensor.to(device=device, non_blocking=True)
+
     with torch.no_grad():
         logits = model(tensor)
     if model_id == "jtp_pilot2":
@@ -1089,7 +1046,7 @@ def _preprocess_jtp3(
 
 
 def _run_jtp3_inference(model: Any, patches: Any, coords: Any, valid: Any) -> Any:
-    device = next(model.parameters()).device
+    device = _model_device(model)
     runtime_dtype = _jtp3_runtime_dtype(device)
 
     patches = patches.unsqueeze(0).to(device=device, non_blocking=True)
