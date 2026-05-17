@@ -361,13 +361,13 @@ async function handleAiProposedTagAdd(tagName: string) {
     return
   }
 
-  let updated = await imageStore.updateTags(projectId, imageId, [tag], [])
-  if (!updated && shouldConfirmSharedTagCreation(imageStore.error)) {
+  const added = await imageStore.updateTags(projectId, imageId, [tag], [])
+  if (!added && shouldConfirmSharedTagCreation(imageStore.error)) {
     const confirmed = window.confirm(
       `Create "${tag}" as a shared user-defined tag for this project?`,
     )
     if (confirmed) {
-      updated = await imageStore.updateTags(projectId, imageId, [tag], [], true)
+      await imageStore.updateTags(projectId, imageId, [tag], [], true)
     }
   }
 }
