@@ -6,4 +6,4 @@
 
 ## Deferred frontend work
 
-- Add Playwright integration for end-to-end coverage of workspace layout, mobile overlay behavior, and cross-viewport regression checks. This is intentionally deferred and out of scope for the current Phase 4 task.
+- Expand Playwright coverage beyond onboarding and workspace mode-switching to include project creation/upload and tagging mutation workflows once the initial E2E gate is stable.

@@ -12,8 +12,10 @@ const loading = ref(false)
 const saving = ref(false)
 const error = ref<string | null>(null)
 const projectsRootPath = ref('')
+const modelStoragePath = ref('')
 const status = ref<ProjectOnboardingStatus | null>(null)
 const projectsRootPathInput = ref<HTMLInputElement | null>(null)
+const modelStoragePathInput = ref<HTMLInputElement | null>(null)
 
 onMounted(async () => {
   loading.value = true
@@ -30,6 +32,9 @@ onMounted(async () => {
     setProjectsRootPath(
       onboardingStatus.projects_root_path ?? onboardingStatus.default_projects_root_path,
     )
+    setModelStoragePath(
+      onboardingStatus.model_storage_path ?? onboardingStatus.default_model_storage_path,
+    )
   } catch (e) {
     error.value = String(e)
   } finally {
@@ -44,18 +49,31 @@ function setProjectsRootPath(value: string) {
   }
 }
 
+function setModelStoragePath(value: string) {
+  modelStoragePath.value = value
+  if (modelStoragePathInput.value) {
+    modelStoragePathInput.value.value = value
+  }
+}
+
 async function saveProjectsRootPath() {
   error.value = null
-  const value = projectsRootPath.value.trim()
+  const projectsValue = projectsRootPath.value.trim()
+  const modelValue = modelStoragePath.value.trim()
 
-  if (!value) {
+  if (!projectsValue) {
     error.value = 'Project path is required.'
+    return
+  }
+
+  if (!modelValue) {
+    error.value = 'Model storage path is required.'
     return
   }
 
   saving.value = true
   try {
-    await configureOnboardingProjectsRootPath(value)
+    await configureOnboardingProjectsRootPath(projectsValue, modelValue)
     await router.replace('/workspace')
   } catch (e) {
     error.value = String(e)
@@ -70,7 +88,7 @@ async function saveProjectsRootPath() {
     <h1>TailFlow Onboarding</h1>
 
     <p class="description">
-      Configure the server project root path used for discovery and dataset folders.
+      Configure paths for projects and classifier model storage.
     </p>
 
     <p
@@ -94,6 +112,16 @@ async function saveProjectsRootPath() {
         >
       </label>
 
+      <label>
+        Model Storage Path
+        <input
+          ref="modelStoragePathInput"
+          v-model="modelStoragePath"
+          type="text"
+          placeholder="/home/user/models"
+        >
+      </label>
+
       <div class="actions">
         <button
           class="btn btn-primary"
@@ -108,7 +136,7 @@ async function saveProjectsRootPath() {
         v-if="status"
         class="hint"
       >
-        Suggested default: {{ status.default_projects_root_path }}
+        Suggested defaults: Projects {{ status.default_projects_root_path }} and Models {{ status.default_model_storage_path }}
       </p>
 
       <p

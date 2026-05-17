@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: install run stop test test-backend test-frontend
+.PHONY: install run stop test test-backend test-frontend test-e2e test-assets
 
 install:
 	@set -euo pipefail; \
@@ -100,3 +100,16 @@ test-frontend:
 		exit 1; \
 	fi; \
 	cd frontend && npm run test
+
+test-e2e:
+	@set -euo pipefail; \
+	if [ ! -d frontend/node_modules ]; then \
+		echo "Missing frontend dependencies."; \
+		echo "Run: make install"; \
+		exit 1; \
+	fi; \
+	cd frontend && npm run test:e2e
+
+test-assets:
+	@set -euo pipefail; \
+	python3 scripts/validate_assets_checksums.py

@@ -11,6 +11,36 @@ This folder contains tag list datasets used by TailFlow.
 - `e621-tags-list.csv`
 - `booru-tags-list.csv`
 
+## Integrity policy
+
+Only these two catalog files are protected by checksum drift validation:
+
+- `e621-tags-list.csv`
+- `booru-tags-list.csv`
+
+The checksum manifest is stored in `assets/checksums.json`.
+CI fails if either protected file changes without updating the manifest.
+
+## Checksum commands
+
+From repository root:
+
+```bash
+python3 scripts/validate_assets_checksums.py
+```
+
+Update manifest intentionally after approved catalog changes:
+
+```bash
+python3 scripts/validate_assets_checksums.py --write
+```
+
+You can also run the make target:
+
+```bash
+make test-assets
+```
+
 ## e621 tag categories and colors
 
 The e621 category IDs map to the following color codes:

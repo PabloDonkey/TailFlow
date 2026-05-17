@@ -74,6 +74,26 @@ export const ProjectImageTagUpdateSchema = z.object({
   create_missing: z.boolean().optional(),
 })
 
+export const ProjectImageClassifyRequestSchema = z.object({
+  model_id: z.string(),
+  threshold: z.number().min(0).max(1),
+  max_tags: z.number().int().min(1).max(128),
+})
+
+export const ProjectImageClassifySuggestionSchema = z.object({
+  name: z.string(),
+  confidence: z.number().min(0).max(1),
+})
+
+export const ProjectImageClassifyResponseSchema = z.object({
+  suggestions: z.array(ProjectImageClassifySuggestionSchema),
+  model_id: z.string(),
+  model_available: z.boolean(),
+  download_progress_percent: z.number().int().min(0).max(100),
+  download_proposal_url: z.string().url().nullable(),
+  download_message: z.string().nullable(),
+})
+
 export const ProjectUpdatePayloadSchema = z.object({
   trigger_tag: z.string().optional(),
   class_tag: z.string().optional(),
@@ -102,11 +122,14 @@ export const ProjectImageUploadResponseSchema = z.object({
 export const ProjectOnboardingStatusSchema = z.object({
   configured: z.boolean(),
   projects_root_path: z.string().nullable(),
+  model_storage_path: z.string().nullable(),
   default_projects_root_path: z.string(),
+  default_model_storage_path: z.string(),
 })
 
 export const ProjectOnboardingConfigureResponseSchema = z.object({
   projects_root_path: z.string(),
+  model_storage_path: z.string(),
 })
 
 // ─── Inferred types ──────────────────────────────────────────────────────────
@@ -124,6 +147,9 @@ export type ProjectTag = z.infer<typeof ProjectTagSchema>
 export type ProjectImageSummary = z.infer<typeof ProjectImageSummarySchema>
 export type ProjectImageRead = z.infer<typeof ProjectImageReadSchema>
 export type ProjectUpdatePayload = z.infer<typeof ProjectUpdatePayloadSchema>
+export type ProjectImageClassifyRequest = z.infer<typeof ProjectImageClassifyRequestSchema>
+export type ProjectImageClassifySuggestion = z.infer<typeof ProjectImageClassifySuggestionSchema>
+export type ProjectImageClassifyResponse = z.infer<typeof ProjectImageClassifyResponseSchema>
 export type ProjectOnboardingStatus = z.infer<typeof ProjectOnboardingStatusSchema>
 export type ProjectOnboardingConfigureResponse = z.infer<
   typeof ProjectOnboardingConfigureResponseSchema
@@ -253,16 +279,36 @@ export async function updateProjectImageTags(
   })
 }
 
+export async function classifyProjectImage(
+  projectId: string,
+  imageId: string,
+  payload: ProjectImageClassifyRequest,
+): Promise<ProjectImageClassifyResponse> {
+  return fetchJSON(
+    ProjectImageClassifyResponseSchema,
+    `${BASE}/projects/${projectId}/images/${imageId}/classify`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ProjectImageClassifyRequestSchema.parse(payload)),
+    },
+  )
+}
+
 export async function getOnboardingStatus(): Promise<ProjectOnboardingStatus> {
   return fetchJSON(ProjectOnboardingStatusSchema, `${BASE}/projects/onboarding/status`)
 }
 
 export async function configureOnboardingProjectsRootPath(
   projectsRootPath: string,
+  modelStoragePath?: string,
 ): Promise<ProjectOnboardingConfigureResponse> {
   return fetchJSON(ProjectOnboardingConfigureResponseSchema, `${BASE}/projects/onboarding/configure`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ projects_root_path: projectsRootPath }),
+    body: JSON.stringify({
+      projects_root_path: projectsRootPath,
+      model_storage_path: modelStoragePath,
+    }),
   })
 }

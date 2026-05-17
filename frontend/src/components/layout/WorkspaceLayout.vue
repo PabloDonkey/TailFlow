@@ -6,7 +6,7 @@ const centerPanelClass =
 </script>
 
 <template>
-  <section class="grid min-h-0 grid-cols-1 gap-3 lg:h-full lg:grid-cols-[minmax(240px,320px)_minmax(0,1fr)_minmax(260px,340px)] lg:items-stretch">
+  <section class="grid min-h-0 grid-cols-1 gap-3 lg:h-full lg:grid-cols-[minmax(240px,320px)_minmax(0,1fr)_minmax(390px,510px)] lg:items-stretch">
     <aside :class="sidePanelClass">
       <slot name="left" />
     </aside>

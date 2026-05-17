@@ -59,6 +59,7 @@ async def run() -> int:
                     f"created={summary.created} "
                     f"merged={summary.merged} "
                     f"skipped={summary.skipped} "
+                    f"invalid={summary.invalid} "
                     f"path={get_catalog_asset_path(source)}"
                 )
     finally:

@@ -72,6 +72,26 @@ class ProjectImageTagUpdate(BaseModel):
     create_missing: bool = False
 
 
+class ProjectImageClassifyRequest(BaseModel):
+    model_id: str = "jtp-3-hydra"
+    threshold: float = Field(default=0.35, ge=0.0, le=1.0)
+    max_tags: int = Field(default=32, ge=1, le=128)
+
+
+class ProjectImageClassifySuggestion(BaseModel):
+    name: str
+    confidence: float = Field(ge=0.0, le=1.0)
+
+
+class ProjectImageClassifyResponse(BaseModel):
+    suggestions: list[ProjectImageClassifySuggestion] = Field(default_factory=list)
+    model_id: str
+    model_available: bool
+    download_progress_percent: int = Field(ge=0, le=100)
+    download_proposal_url: str | None = None
+    download_message: str | None = None
+
+
 class ProjectDiscoverResponse(BaseModel):
     discovered_projects: int
     imported_projects: int
@@ -97,12 +117,16 @@ class ProjectSyncResponse(BaseModel):
 class ProjectOnboardingStatus(BaseModel):
     configured: bool
     projects_root_path: str | None = None
+    model_storage_path: str | None = None
     default_projects_root_path: str
+    default_model_storage_path: str
 
 
 class ProjectOnboardingConfigure(BaseModel):
     projects_root_path: str
+    model_storage_path: str | None = None
 
 
 class ProjectOnboardingConfigureResponse(BaseModel):
     projects_root_path: str
+    model_storage_path: str

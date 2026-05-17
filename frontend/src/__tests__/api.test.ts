@@ -207,16 +207,21 @@ describe('API schemas', () => {
     const status = ProjectOnboardingStatusSchema.parse({
       configured: false,
       projects_root_path: null,
+      model_storage_path: null,
       default_projects_root_path: '/home/user/tailflow',
+      default_model_storage_path: '/home/user/models',
     })
     expect(status.configured).toBe(false)
     expect(status.projects_root_path).toBeNull()
+    expect(status.model_storage_path).toBeNull()
   })
 
   it('parses onboarding configure response', () => {
     const payload = ProjectOnboardingConfigureResponseSchema.parse({
       projects_root_path: '/home/user/tailflow',
+      model_storage_path: '/home/user/models',
     })
     expect(payload.projects_root_path).toBe('/home/user/tailflow')
+    expect(payload.model_storage_path).toBe('/home/user/models')
   })
 })

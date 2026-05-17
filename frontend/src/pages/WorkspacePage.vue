@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AppShell from '../components/layout/AppShell.vue'
 import WorkspaceHeaderSection from '../components/layout/WorkspaceHeaderSection.vue'
@@ -26,6 +26,7 @@ const selectedProject = computed(() => projectStore.selectedProject)
 const activeRightPanel = ref<'inspector' | 'tags' | 'projects'>('inspector')
 const showCreateProjectModal = ref(false)
 type WorkspaceMode = 'tagging' | 'projects' | 'tag-library'
+const isMobileViewportRef = ref(false)
 
 const workspaceMode = computed<WorkspaceMode>(() => {
   if (activeRightPanel.value === 'projects') {
@@ -124,30 +125,47 @@ function closeTagsLibrary() {
 }
 
 function isMobileViewport(): boolean {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-    return false
-  }
-  return window.matchMedia('(max-width: 1023px)').matches
+  return isMobileViewportRef.value
 }
+
+function updateMobileViewportState() {
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    isMobileViewportRef.value = false
+    return
+  }
+
+  isMobileViewportRef.value = window.matchMedia('(max-width: 1023px)').matches
+}
+
+onMounted(() => {
+  updateMobileViewportState()
+  window.addEventListener('resize', updateMobileViewportState)
+})
+
+onUnmounted(() => {
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', updateMobileViewportState)
+  }
+})
 
 function handleShowTagsLibraryPanel() {
   showTagsLibraryPanel()
   if (isMobileViewport()) {
-    openMobilePanel('tags')
+    closeMobilePanel()
   }
 }
 
 function handleShowTagInspectorPanel() {
   showTagInspectorPanel()
   if (isMobileViewport()) {
-    openMobilePanel('inspector')
+    closeMobilePanel()
   }
 }
 
 function handleShowProjectsPanel() {
   showProjectsPanel()
   if (isMobileViewport()) {
-    openMobilePanel('projects')
+    closeMobilePanel()
   }
 }
 
@@ -174,7 +192,7 @@ watch(
     if (panel === 'tags') {
       showTagsLibraryPanel()
       if (isMobileViewport()) {
-        openMobilePanel('tags')
+        closeMobilePanel()
       }
       return
     }
@@ -182,7 +200,7 @@ watch(
     if (panel === 'projects') {
       showProjectsPanel()
       if (isMobileViewport()) {
-        openMobilePanel('projects')
+        closeMobilePanel()
       }
       return
     }
@@ -329,7 +347,7 @@ watch(
     </section>
 
     <WorkspaceMobileQuickActions
-      v-if="workspaceMode === 'tagging'"
+      v-if="workspaceMode === 'tagging' && isMobileViewportRef"
       :previous-available="previousAvailable"
       :next-available="nextAvailable"
       @previous="goToPreviousImage"

@@ -8,6 +8,9 @@
 - Before code edits, explicitly propose the change, explain why it is needed, and name the file or files that will be modified.
 - After editing any file, run an error check on the modified file(s) before moving on.
 - Before any commit, run the full backend and frontend test suites and proceed only if they pass.
+- Tests are source of truth for behavior. Do not modify any existing test file (`backend/tests/`, `frontend/src/__tests__/`, `frontend/e2e/`) unless the user gives explicit authorization in the current session.
+- For Playwright E2E tests, use Page Object Model: spec files keep high-level user flows/assertions only, while page objects own selectors and low-level interactions.
+- For Playwright selectors, use accessibility-first locators (`getByRole`, `getByLabel`, accessible names). Use `data-testid` only as a justified exception when no stable accessible locator exists. Avoid CSS selectors for normal E2E interactions.
 - Only store built-in AI memory when the user explicitly asks for it.
 - When saving task artifacts, do not save full conversation history or long prompt/response summaries by default; store only concise task-focused artifact logs unless explicitly requested.
 - When asked to review frontend UI quality or contract compliance, start with `.copilot/skills/ui-contract-review.md` in plan mode before proposing implementation changes.

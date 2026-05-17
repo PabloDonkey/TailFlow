@@ -15,6 +15,7 @@ const emit = defineEmits<{
   <section class="mt-3 grid grid-cols-5 gap-2 rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-2 lg:hidden">
     <button
       type="button"
+      aria-label="Previous image"
       class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-2 text-xs text-[var(--tf-color-text-default)]"
       :disabled="!previousAvailable"
       @click="emit('previous')"
@@ -23,6 +24,7 @@ const emit = defineEmits<{
     </button>
     <button
       type="button"
+      aria-label="Next image"
       class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-2 text-xs text-[var(--tf-color-text-default)]"
       :disabled="!nextAvailable"
       @click="emit('next')"
@@ -31,6 +33,7 @@ const emit = defineEmits<{
     </button>
     <button
       type="button"
+      aria-label="Open mobile browser panel"
       class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-2 text-xs text-[var(--tf-color-text-default)]"
       @click="emit('openPanel', 'browser')"
     >
@@ -38,6 +41,7 @@ const emit = defineEmits<{
     </button>
     <button
       type="button"
+      aria-label="Open mobile inspector panel"
       class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-2 text-xs text-[var(--tf-color-text-default)]"
       @click="emit('openPanel', 'inspector')"
     >
@@ -45,6 +49,7 @@ const emit = defineEmits<{
     </button>
     <button
       type="button"
+      aria-label="Open mobile tags panel"
       class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-2 text-xs text-[var(--tf-color-text-default)]"
       @click="emit('openPanel', 'tags')"
     >

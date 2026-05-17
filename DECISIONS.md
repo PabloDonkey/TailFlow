@@ -44,6 +44,7 @@ ADR creation checklist:
 | ADR-006 | Standardized Development Loop and Commands | Accepted | 2026-03-13 |
 | ADR-007 | Concise AI Task Artifact Logging | Accepted | 2026-03-13 |
 | ADR-008 | UI Contract Review Planning Workflow | Accepted | 2026-03-13 |
+| ADR-009 | Test Authority and Accessibility-First E2E Policy | Accepted | 2026-04-25 |
 
 ---
 
@@ -260,3 +261,38 @@ Use a dedicated `ui-contract-review` skill for frontend UI audits. The workflow 
 - Positive: makes UI audits consistent and aligned with the written contract.
 - Positive: reduces accidental UI edits before the developer confirms scope.
 - Tradeoff: adds an extra planning step before implementation work.
+
+---
+
+## ADR-009: Test Authority and Accessibility-First E2E Policy
+
+**Status:** Accepted  
+**Date:** 2026-04-25
+
+### Context
+
+As UI surface area grows across desktop and mobile views, regressions become harder to detect using only unit/component tests. The project needs a stronger, behavior-focused feedback signal for AI-assisted implementation while preserving developer ownership of test intent.
+
+### Options considered
+
+- Keep current test model (backend pytest + frontend vitest only)
+- Add Playwright E2E but allow agent-driven test edits during implementation
+- Add Playwright E2E and treat tests as authoritative artifacts that agents cannot edit without explicit authorization
+
+### Decision
+
+Adopt Playwright E2E as a required UI regression signal and enforce test authority rules:
+
+1. Tests are source of truth for behavior.
+2. Agents must fix implementation to satisfy tests before changing tests.
+3. Agents cannot modify existing test files without explicit user authorization in the active session.
+4. Playwright tests must use Page Object Model (specs stay high-level; page objects own selectors/interactions).
+5. Locator strategy is accessibility-first (`getByRole`, `getByLabel`, accessible names), with minimal justified `data-testid` usage and no routine CSS selector targeting.
+
+### Consequences
+
+- Positive: stronger regression protection for desktop and mobile workflows.
+- Positive: preserves developer control over expected behavior encoded by tests.
+- Positive: encourages accessible UI semantics through ARIA-first locator practices.
+- Tradeoff: implementation may take longer when UI semantics must be improved to support robust accessible locators.
+- Tradeoff: stricter guardrails require explicit authorization when tests genuinely need updates.
