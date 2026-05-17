@@ -20,6 +20,11 @@ export type SideCardConfig = {
   component: Component
   props: Record<string, unknown>
   listeners: Record<string, (...args: unknown[]) => void>
+  headerActions?: {
+    component: Component
+    props: Record<string, unknown>
+    listeners: Record<string, (...args: unknown[]) => void>
+  }
 }
 
 export type WorkspaceCardConfig = SideCardConfig
@@ -69,4 +74,8 @@ export type CardMeta = {
   requiresProjectSelected: boolean
   defaultColumn: WorkspaceCardColumn
   defaultOrder: number
+  isVisible: (context: {
+    isOpen: boolean
+    selectedProjectId: string | null
+  }) => boolean
 }

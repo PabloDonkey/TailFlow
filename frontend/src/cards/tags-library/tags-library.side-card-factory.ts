@@ -7,6 +7,7 @@ export const tagsLibraryCardMeta: CardMeta = {
   requiresProjectSelected: false,
   defaultColumn: 'right',
   defaultOrder: 40,
+  isVisible: ({ isOpen }) => isOpen,
 }
 
 export const tagsLibrarySideCardFactory: SideCardFactory = {

@@ -6,4 +6,5 @@ export const imageCanvasCardMeta: CardMeta = {
   requiresProjectSelected: true,
   defaultColumn: 'center',
   defaultOrder: 10,
+  isVisible: ({ isOpen, selectedProjectId }) => isOpen && Boolean(selectedProjectId),
 }

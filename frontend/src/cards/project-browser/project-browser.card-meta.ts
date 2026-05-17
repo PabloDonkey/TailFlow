@@ -6,4 +6,5 @@ export const projectBrowserCardMeta: CardMeta = {
   requiresProjectSelected: false,
   defaultColumn: 'center',
   defaultOrder: 20,
+  isVisible: () => true,
 }

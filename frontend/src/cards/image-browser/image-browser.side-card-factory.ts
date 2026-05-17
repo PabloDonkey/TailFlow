@@ -7,6 +7,7 @@ export const imageBrowserCardMeta: CardMeta = {
   requiresProjectSelected: true,
   defaultColumn: 'left',
   defaultOrder: 10,
+  isVisible: ({ isOpen, selectedProjectId }) => isOpen && Boolean(selectedProjectId),
 }
 
 export const imageBrowserSideCardFactory: SideCardFactory = {

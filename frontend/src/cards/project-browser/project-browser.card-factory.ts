@@ -1,4 +1,5 @@
 import ProjectBrowserCard from './ProjectBrowserCard.vue'
+import ProjectBrowserHeaderActions from './ProjectBrowserHeaderActions.vue'
 import type { WorkspaceCardFactory } from '../../pages/workspace/side-card-types'
 import { projectBrowserCardMeta } from './project-browser.card-meta'
 
@@ -35,6 +36,21 @@ export const projectBrowserCardFactory: WorkspaceCardFactory = {
           if (typeof projectId === 'string') {
             actions.showTaggingFromProjectBrowser(projectId)
           }
+        },
+      },
+      headerActions: {
+        component: ProjectBrowserHeaderActions,
+        props: {
+          loading: state.loading,
+          discovering: state.loading,
+        },
+        listeners: {
+          openCreateProject: () => {
+            actions.openCreateProject()
+          },
+          discoverProjects: () => {
+            actions.discoverProjects()
+          },
         },
       },
     }

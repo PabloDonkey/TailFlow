@@ -7,6 +7,7 @@ export const aiProposedTagsCardMeta: CardMeta = {
   requiresProjectSelected: true,
   defaultColumn: 'right',
   defaultOrder: 30,
+  isVisible: ({ isOpen, selectedProjectId }) => isOpen && Boolean(selectedProjectId),
 }
 
 export const aiProposedTagsSideCardFactory: SideCardFactory = {

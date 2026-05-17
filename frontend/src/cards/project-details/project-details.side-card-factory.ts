@@ -7,6 +7,7 @@ export const projectDetailsCardMeta: CardMeta = {
   requiresProjectSelected: true,
   defaultColumn: 'right',
   defaultOrder: 50,
+  isVisible: ({ isOpen, selectedProjectId }) => isOpen && Boolean(selectedProjectId),
 }
 
 export const projectDetailsSideCardFactory: SideCardFactory = {

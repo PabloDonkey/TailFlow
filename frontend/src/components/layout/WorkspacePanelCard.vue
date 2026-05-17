@@ -26,8 +26,16 @@ const emit = defineEmits<{
     @dragover="(event) => emit('dragover', event)"
     @drop="(event) => emit('drop', event)"
   >
-    <header class="flex items-center justify-between gap-2 border-b border-[var(--tf-color-surface-border)] px-3 py-2">
-      <h2 class="m-0 truncate text-sm font-semibold text-[var(--tf-color-text-default)]">
+    <header
+      class="flex items-center justify-between gap-2 border-b border-[var(--tf-color-surface-border)] px-3 py-2"
+      @dragover="(event) => emit('dragover', event)"
+      @drop="(event) => emit('drop', event)"
+    >
+      <h2
+        class="m-0 truncate text-sm font-semibold text-[var(--tf-color-text-default)]"
+        @dragover="(event) => emit('dragover', event)"
+        @drop="(event) => emit('drop', event)"
+      >
         {{ title }}
       </h2>
 
