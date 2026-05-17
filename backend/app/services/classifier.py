@@ -40,7 +40,6 @@ try:
     from PIL.ImageOps import exif_transpose
     from safetensors import safe_open
     from torch.nn import (
-        Buffer,
         Dropout,
         Flatten,
         Identity,

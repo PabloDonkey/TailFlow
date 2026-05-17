@@ -4,6 +4,7 @@ from collections.abc import Iterator
 
 import torch
 from _pytest.monkeypatch import MonkeyPatch
+
 from app.services import classifier
 
 
