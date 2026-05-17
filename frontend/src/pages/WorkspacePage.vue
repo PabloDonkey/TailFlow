@@ -329,7 +329,7 @@ const imageBrowserMemoKey = computed(() => {
           :panel-default-size="sidePanelDefaultSize"
           @close="closeCenterPanel"
         >
-          <template #actions="_slotProps">
+          <template #actions>
             <component
               v-if="centerPanelConfig.headerActions"
               :is="centerPanelConfig.headerActions.component"
@@ -338,7 +338,7 @@ const imageBrowserMemoKey = computed(() => {
             />
           </template>
 
-          <template #default="_slotProps">
+          <template #default>
             <component
               :is="centerPanelConfig.component"
               v-bind="centerPanelConfig.props"
