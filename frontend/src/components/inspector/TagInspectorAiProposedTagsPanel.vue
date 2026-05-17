@@ -21,11 +21,9 @@ const props = withDefaults(defineProps<{
   mode: TaggingMode
   currentTags: ProjectTag[]
   disabled?: boolean
-  maxDisplayedTags?: number
   getTagRoleLabel: (tag: ProjectTag) => string | null
 }>(), {
   disabled: false,
-  maxDisplayedTags: 64,
 })
 
 const emit = defineEmits<{
@@ -74,6 +72,13 @@ const visibleProposedTags = computed(() => {
   return proposedTags.value
     .filter((tag) => tag.confidence >= minConfidence)
     .sort((a, b) => b.confidence - a.confidence)
+})
+
+const autoScanHelpText = computed(() => {
+  if (autoScan.value) {
+    return 'Keeps proposals in sync while browsing images.'
+  }
+  return 'Auto-scan is disabled. Use Scan now to refresh proposals.'
 })
 
 async function runScan(): Promise<void> {
@@ -248,7 +253,7 @@ onBeforeUnmount(() => {
       <div class="md:col-span-2 flex items-center justify-between rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface-alt)] px-3 py-2">
         <div>
           <p class="text-sm font-medium text-[var(--tf-color-text-default)]">Auto-scan on image change</p>
-          <p class="text-xs text-[var(--tf-color-text-muted)]">Keeps proposals in sync while browsing images.</p>
+          <p class="text-xs text-[var(--tf-color-text-muted)]">{{ autoScanHelpText }}</p>
         </div>
 
         <AppSwitchField
