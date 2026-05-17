@@ -4,7 +4,6 @@ import { useImageStore, type ImageSortOption } from '../../stores/images'
 import { getProjectImageFileUrl } from '../../api'
 import { useDelayedLoading } from '../../composables/useDelayedLoading'
 import AppErrorText from '../../components/ui/AppErrorText.vue'
-import AppSectionTitle from '../../components/ui/AppSectionTitle.vue'
 import AppText from '../../components/ui/AppText.vue'
 
 defineProps<{
@@ -32,8 +31,7 @@ function formatTagCount(tagCount: number): string {
 
 <template>
   <section class="flex flex-col gap-3">
-    <div class="flex flex-wrap items-center justify-between gap-2">
-      <AppSectionTitle>Image Browser</AppSectionTitle>
+    <div class="flex flex-wrap items-center justify-end gap-2">
       <label
         v-if="selectedProjectId && imageStore.sortedImages.length"
         class="inline-flex items-center gap-2 text-[0.8rem] text-[var(--tf-color-text-muted)]"

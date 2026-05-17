@@ -6,7 +6,9 @@ import AppNumberField from '../../design-system/AppNumberField.vue'
 import AppSelectField from '../../design-system/AppSelectField.vue'
 import AppSwitchField from '../../design-system/AppSwitchField.vue'
 import AppText from '../../components/ui/AppText.vue'
+import { useTagListFilter } from '../../composables/useTagListFilter'
 import TagActionRow from '../shared/TagActionRow.vue'
+import TagListFilterInput from '../shared/TagListFilterInput.vue'
 
 let aiInspectorRegionCounter = 0
 
@@ -75,6 +77,11 @@ const visibleProposedTags = computed(() => {
     .filter((tag) => tag.confidence >= minConfidence)
     .sort((a, b) => b.confidence - a.confidence)
 })
+
+const {
+  filterQuery: proposedFilterQuery,
+  filteredItems: filteredProposedTags,
+} = useTagListFilter(visibleProposedTags, (tag) => tag.name)
 
 const autoScanHelpText = computed(() => {
   if (autoScan.value) {
@@ -271,7 +278,7 @@ onBeforeUnmount(() => {
     <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--tf-color-text-muted)]">
       <span>Threshold: {{ Math.round(confidenceThreshold * 100) }}%</span>
       <span>•</span>
-      <span>Visible: {{ visibleProposedTags.length }}</span>
+      <span>Visible: {{ filteredProposedTags.length }}</span>
       <template v-if="!modelAvailable">
         <span>•</span>
         <span>Download progress: {{ downloadProgressPercent }}%</span>
@@ -296,6 +303,14 @@ onBeforeUnmount(() => {
       aria-label="AI proposed tags list"
       :aria-describedby="aiControlsId"
     >
+      <div class="mb-2 grid grid-cols-1">
+        <TagListFilterInput
+          v-model="proposedFilterQuery"
+          placeholder="Filter proposed tags"
+          aria-label="Filter proposed tags"
+        />
+      </div>
+
       <AppText
         v-if="scanError"
         tone="muted"
@@ -319,10 +334,10 @@ onBeforeUnmount(() => {
       </AppText>
 
       <AppText
-        v-else-if="!visibleProposedTags.length"
+        v-else-if="!filteredProposedTags.length"
         tone="muted"
       >
-        No proposals above the selected threshold.
+        {{ visibleProposedTags.length ? 'No proposals match the current filter.' : 'No proposals above the selected threshold.' }}
       </AppText>
 
       <TransitionGroup
@@ -332,7 +347,7 @@ onBeforeUnmount(() => {
         class="grid list-none gap-2"
       >
         <TagActionRow
-          v-for="tag in visibleProposedTags"
+          v-for="tag in filteredProposedTags"
           :key="`${tag.name}-${tag.confidence}`"
           :label="tag.name"
           :meta="`${Math.round(tag.confidence * 100)}% confidence${roleLabelForName(tag.name) ? ` • ${roleLabelForName(tag.name)}` : ''}`"

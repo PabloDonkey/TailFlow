@@ -5,6 +5,7 @@ import { useTagMutations } from '../../composables/useTagMutations'
 import { useImageStore } from '../../stores/images'
 import { useTagStore } from '../../stores/tags'
 import { getCatalogIdByTaggingMode } from '../../utils/tagCatalog'
+import { matchesSearchQuery } from '../../utils/searchMatch'
 import AppText from '../../components/ui/AppText.vue'
 import CurrentTagsMutationControls from './components/CurrentTagsMutationControls.vue'
 import CurrentTagsList from './components/CurrentTagsList.vue'
@@ -85,8 +86,7 @@ const {
 })
 
 async function fetchTagSuggestions(query: string): Promise<string[]> {
-  const trimmed = query.trim().toLowerCase()
-  if (!trimmed) {
+  if (!query.trim()) {
     return []
   }
 
@@ -98,7 +98,7 @@ async function fetchTagSuggestions(query: string): Promise<string[]> {
   const currentImageNames = currentImage.value?.tags.map((tag) => tag.name) ?? []
   const mergedCandidates = [...storeNames, ...currentImageNames]
 
-  return mergedCandidates.filter((name) => name.toLowerCase().includes(trimmed))
+  return mergedCandidates.filter((name) => matchesSearchQuery(name, query))
 }
 
 async function handleAddTag(tagName: string) {
@@ -106,10 +106,6 @@ async function handleAddTag(tagName: string) {
     return
   }
   await addTag(tagName)
-}
-
-function formatTagCount(tagCount: number): string {
-  return `${tagCount} tag${tagCount === 1 ? '' : 's'}`
 }
 </script>
 
@@ -125,23 +121,12 @@ function formatTagCount(tagCount: number): string {
     </AppText>
 
     <template v-else>
-      <div class="flex flex-wrap items-center justify-between gap-2">
-        <h3
-          :id="headingId"
-          class="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--tf-color-text-default)]"
-        >
-          Current Tags
-        </h3>
-        <AppText tone="muted">
-          {{ formatTagCount(currentImage.tag_count) }}
-        </AppText>
-      </div>
-
       <div class="mt-3">
         <CurrentTagsMutationControls
           :error-msg="mutationError"
           :selected-tags="selectedTagNames"
           :fetch-suggestions="fetchTagSuggestions"
+          :tag-count="currentImage.tag_count"
           :tag-source="inspectorMode"
           :disabled="mutationLoading"
           @add="handleAddTag"
