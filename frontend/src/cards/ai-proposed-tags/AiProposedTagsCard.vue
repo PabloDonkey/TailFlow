@@ -5,8 +5,8 @@ import type { ProjectTag, TaggingMode } from '../../api'
 import AppNumberField from '../../design-system/AppNumberField.vue'
 import AppSelectField from '../../design-system/AppSelectField.vue'
 import AppSwitchField from '../../design-system/AppSwitchField.vue'
-import AppText from '../ui/AppText.vue'
-import TagInspectorTagRow from './TagInspectorTagRow.vue'
+import AppText from '../../components/ui/AppText.vue'
+import TagActionRow from '../shared/TagActionRow.vue'
 
 let aiInspectorRegionCounter = 0
 
@@ -21,9 +21,11 @@ const props = withDefaults(defineProps<{
   mode: TaggingMode
   currentTags: ProjectTag[]
   disabled?: boolean
+  framed?: boolean
   getTagRoleLabel: (tag: ProjectTag) => string | null
 }>(), {
   disabled: false,
+  framed: true,
 })
 
 const emit = defineEmits<{
@@ -182,7 +184,8 @@ onBeforeUnmount(() => {
 
 <template>
   <section
-    class="flex h-full min-h-0 flex-col rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-3"
+    class="flex h-full min-h-0 flex-col bg-[var(--tf-color-surface)]"
+    :class="props.framed ? 'rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] p-3' : ''"
     role="region"
     :aria-labelledby="aiHeadingId"
   >
@@ -328,7 +331,7 @@ onBeforeUnmount(() => {
         tag="ul"
         class="grid list-none gap-2"
       >
-        <TagInspectorTagRow
+        <TagActionRow
           v-for="tag in visibleProposedTags"
           :key="`${tag.name}-${tag.confidence}`"
           :label="tag.name"

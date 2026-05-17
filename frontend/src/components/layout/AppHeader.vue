@@ -10,7 +10,14 @@ const props = defineProps<{
   projectName?: string
   projects: Project[]
   selectedProjectId: string | null
-  activeRightPanel: 'inspector' | 'tags' | 'projects'
+  openViews: {
+    imageBrowser: boolean
+    canvas: boolean
+    currentTags: boolean
+    aiProposedTags: boolean
+    tagsLibrary: boolean
+    projectDetails: boolean
+  }
   loading?: boolean
   projectPickerOpen?: boolean
   overflowOpen?: boolean
@@ -21,9 +28,9 @@ const emit = defineEmits<{
   openOverflow: []
   refreshProjects: []
   selectProject: [projectId: string]
-  showTagsLibraryPanel: []
-  showTagInspectorPanel: []
-  showProjectsPanel: []
+  toggleView: [
+    view: 'image-browser' | 'canvas' | 'current-tags' | 'ai-proposed-tags' | 'tags-library' | 'project-details',
+  ]
 }>()
 
 const projectMenu = computed<AppMenubarMenu>(() => ({
@@ -49,19 +56,34 @@ const viewsMenu = computed<AppMenubarMenu>(() => ({
   value: 'views',
   items: [
     {
-      label: 'Tag inspector',
-      value: 'show-inspector',
-      selected: props.activeRightPanel === 'inspector',
+      label: 'Image browser',
+      value: 'toggle-image-browser',
+      selected: props.openViews.imageBrowser,
+    },
+    {
+      label: 'Image canvas',
+      value: 'toggle-canvas',
+      selected: props.openViews.canvas,
+    },
+    {
+      label: 'Current tags',
+      value: 'toggle-current-tags',
+      selected: props.openViews.currentTags,
+    },
+    {
+      label: 'AI proposed tags',
+      value: 'toggle-ai-proposed-tags',
+      selected: props.openViews.aiProposedTags,
     },
     {
       label: 'Tags library',
-      value: 'show-tags',
-      selected: props.activeRightPanel === 'tags',
+      value: 'toggle-tags',
+      selected: props.openViews.tagsLibrary,
     },
     {
-      label: 'Project manager',
-      value: 'show-projects',
-      selected: props.activeRightPanel === 'projects',
+      label: 'Project details',
+      value: 'toggle-project-details',
+      selected: props.openViews.projectDetails,
     },
   ],
 }))
@@ -106,18 +128,33 @@ function handleDesktopMenuSelect(payload: { menuValue: string; itemValue: string
     return
   }
 
-  if (payload.itemValue === 'show-tags') {
-    emit('showTagsLibraryPanel')
+  if (payload.itemValue === 'toggle-image-browser') {
+    emit('toggleView', 'image-browser')
     return
   }
 
-  if (payload.itemValue === 'show-inspector') {
-    emit('showTagInspectorPanel')
+  if (payload.itemValue === 'toggle-canvas') {
+    emit('toggleView', 'canvas')
     return
   }
 
-  if (payload.itemValue === 'show-projects') {
-    emit('showProjectsPanel')
+  if (payload.itemValue === 'toggle-current-tags') {
+    emit('toggleView', 'current-tags')
+    return
+  }
+
+  if (payload.itemValue === 'toggle-ai-proposed-tags') {
+    emit('toggleView', 'ai-proposed-tags')
+    return
+  }
+
+  if (payload.itemValue === 'toggle-tags') {
+    emit('toggleView', 'tags-library')
+    return
+  }
+
+  if (payload.itemValue === 'toggle-project-details') {
+    emit('toggleView', 'project-details')
   }
 }
 </script>

@@ -3,9 +3,9 @@ import { computed } from 'vue'
 import { useImageStore, type ImageSortOption } from '../../stores/images'
 import { getProjectImageFileUrl } from '../../api'
 import { useDelayedLoading } from '../../composables/useDelayedLoading'
-import AppErrorText from '../ui/AppErrorText.vue'
-import AppSectionTitle from '../ui/AppSectionTitle.vue'
-import AppText from '../ui/AppText.vue'
+import AppErrorText from '../../components/ui/AppErrorText.vue'
+import AppSectionTitle from '../../components/ui/AppSectionTitle.vue'
+import AppText from '../../components/ui/AppText.vue'
 
 defineProps<{
   selectedProjectId: string | null

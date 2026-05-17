@@ -65,4 +65,5 @@ test.describe('Workspace mode switching', () => {
     await workspace.goto()
     await workspace.expectDesktopQuickActionsHidden()
   })
+
 })

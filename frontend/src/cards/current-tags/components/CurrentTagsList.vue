@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { ProjectTag } from '../../api'
-import AppText from '../ui/AppText.vue'
-import TagInspectorTagRow from './TagInspectorTagRow.vue'
+import type { ProjectTag } from '../../../api'
+import AppText from '../../../components/ui/AppText.vue'
+import TagActionRow from '../../shared/TagActionRow.vue'
 
 const props = defineProps<{
   tags: ProjectTag[]
@@ -35,7 +35,7 @@ function buildTagMeta(tag: ProjectTag): string {
     v-if="props.tags.length"
     class="flex min-h-0 flex-1 list-none flex-col gap-2 overflow-y-auto pr-1"
   >
-    <TagInspectorTagRow
+    <TagActionRow
       v-for="tag in props.tags"
       :key="tag.id"
       :label="tag.name"

@@ -26,12 +26,12 @@ export class WorkspacePageObject {
   }
 
   private async ensureDesktopViewsMenuOpen(): Promise<void> {
-    const projectsOption = this.page.getByRole('menuitem', { name: 'Project manager' })
-    if (await projectsOption.isVisible()) {
+    const tagsOption = this.page.getByRole('menuitem', { name: 'Tags library' })
+    if (await tagsOption.isVisible()) {
       return
     }
     await this.viewsMenuTrigger.click()
-    await expect(projectsOption).toBeVisible()
+    await expect(tagsOption).toBeVisible()
   }
 
   private async desktopViewsOption(option: 'projects' | 'tags' | 'inspector'): Promise<Locator> {
@@ -59,7 +59,7 @@ export class WorkspacePageObject {
 
     await this.openActionsButton.click()
     await expect(this.page.getByRole('button', { name: 'Close workspace actions' })).toBeVisible()
-    await expect(this.page.getByRole('button', { name: 'Project manager' })).toBeVisible()
+    await expect(this.page.getByRole('button', { name: 'Image canvas' })).toBeVisible()
   }
 
   async expectActionsOptionSelected(option: 'projects' | 'tags' | 'inspector'): Promise<void> {
@@ -79,12 +79,18 @@ export class WorkspacePageObject {
   }
 
   async showProjectsMode(): Promise<void> {
-    if (await this.isDesktopViewport()) {
-      const optionLocator = await this.desktopViewsOption('projects')
-      await optionLocator.click()
-    } else {
-      await this.page.getByRole('button', { name: 'Project manager' }).click()
+    const closeCanvasButton = this.page.getByRole('button', { name: 'Close Image Canvas panel' })
+    if (await closeCanvasButton.isVisible()) {
+      await closeCanvasButton.click()
     }
+
+    if (!(await this.isDesktopViewport())) {
+      const projectBrowserTab = this.page.getByRole('button', { name: 'Project Browser' })
+      if (await projectBrowserTab.isVisible()) {
+        await projectBrowserTab.click()
+      }
+    }
+
     await expect(this.page.getByRole('heading', { name: 'Project Browser' })).toBeVisible()
   }
 
@@ -100,12 +106,44 @@ export class WorkspacePageObject {
 
   async showTagInspectorMode(): Promise<void> {
     if (await this.isDesktopViewport()) {
-      const optionLocator = await this.desktopViewsOption('inspector')
+      const optionLocator = this.page.getByRole('menuitem', { name: 'Current tags' })
+      await this.ensureDesktopViewsMenuOpen()
       await optionLocator.click()
       return
     }
 
-    await this.page.getByRole('button', { name: 'Tag inspector' }).click()
+    await this.page.getByRole('button', { name: 'Current tags' }).click()
+  }
+
+  async chooseTaggingFromProjectBrowser(projectName: string): Promise<void> {
+    const projectCard = this.page.getByRole('button', { name: new RegExp(projectName, 'i') })
+    await expect(projectCard).toBeVisible()
+    await projectCard.getByRole('button', { name: 'Tagging' }).click()
+  }
+
+  async expectCanvasVisible(): Promise<void> {
+    await expect(this.page.getByRole('heading', { name: 'Image Canvas' }).first()).toBeVisible()
+  }
+
+  async expectProjectBrowserVisible(): Promise<void> {
+    await expect(this.page.getByRole('heading', { name: 'Project Browser' }).first()).toBeVisible()
+  }
+
+  async expectProjectBrowserHidden(): Promise<void> {
+    await expect(this.page.getByRole('heading', { name: 'Project Browser' })).toHaveCount(0)
+  }
+
+  async closeCanvas(): Promise<void> {
+    await this.page.getByRole('button', { name: 'Close Image Canvas panel' }).click()
+  }
+
+  async expectNonProjectBrowserCardsHidden(): Promise<void> {
+    await expect(this.page.getByRole('heading', { name: 'Image Canvas' })).toHaveCount(0)
+    await expect(this.page.getByRole('heading', { name: 'Image Browser' })).toHaveCount(0)
+    await expect(this.page.getByRole('heading', { name: 'Current Tags' })).toHaveCount(0)
+    await expect(this.page.getByRole('heading', { name: 'AI Proposed Tags' })).toHaveCount(0)
+    await expect(this.page.getByRole('heading', { name: 'Project Details' })).toHaveCount(0)
+    await expect(this.page.getByRole('heading', { name: 'Tags Library' })).toHaveCount(0)
   }
 
   async openMobilePanel(panelName: 'Browse' | 'Inspect' | 'Tags'): Promise<void> {

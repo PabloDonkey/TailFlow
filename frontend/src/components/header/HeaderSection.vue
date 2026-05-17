@@ -1,13 +1,20 @@
 <script setup lang="ts">
 import type { Project } from '../../api'
-import AppHeader from './AppHeader.vue'
-import WorkspaceHeaderOverlays from './WorkspaceHeaderOverlays.vue'
+import AppHeader from '../layout/AppHeader.vue'
+import HeaderOverlays from './HeaderOverlays.vue'
 
 defineProps<{
   projectName?: string
   showProjectPicker: boolean
   showActionsMenu: boolean
-  activeRightPanel: 'inspector' | 'tags' | 'projects'
+  openViews: {
+    imageBrowser: boolean
+    canvas: boolean
+    currentTags: boolean
+    aiProposedTags: boolean
+    tagsLibrary: boolean
+    projectDetails: boolean
+  }
   projects: Project[]
   selectedProjectId: string | null
   loading: boolean
@@ -21,9 +28,9 @@ const emit = defineEmits<{
   refreshProjects: []
   selectProject: [projectId: string]
   closeActionsMenu: []
-  showTagsLibraryPanel: []
-  showTagInspectorPanel: []
-  showProjectsPanel: []
+  toggleView: [
+    view: 'image-browser' | 'canvas' | 'current-tags' | 'ai-proposed-tags' | 'tags-library' | 'project-details',
+  ]
 }>()
 </script>
 
@@ -32,7 +39,7 @@ const emit = defineEmits<{
     :project-name="projectName"
     :projects="projects"
     :selected-project-id="selectedProjectId"
-    :active-right-panel="activeRightPanel"
+    :open-views="openViews"
     :loading="loading"
     :project-picker-open="showProjectPicker"
     :overflow-open="showActionsMenu"
@@ -40,15 +47,13 @@ const emit = defineEmits<{
     @open-overflow="emit('openOverflow')"
     @refresh-projects="emit('refreshProjects')"
     @select-project="(projectId) => emit('selectProject', projectId)"
-    @show-tags-library-panel="emit('showTagsLibraryPanel')"
-    @show-tag-inspector-panel="emit('showTagInspectorPanel')"
-    @show-projects-panel="emit('showProjectsPanel')"
+    @toggle-view="(view) => emit('toggleView', view)"
   />
 
-  <WorkspaceHeaderOverlays
+  <HeaderOverlays
     :show-project-picker="showProjectPicker"
     :show-actions-menu="showActionsMenu"
-    :active-right-panel="activeRightPanel"
+    :open-views="openViews"
     :projects="projects"
     :selected-project-id="selectedProjectId"
     :loading="loading"
@@ -57,8 +62,6 @@ const emit = defineEmits<{
     @refresh-projects="emit('refreshProjects')"
     @select-project="(projectId) => emit('selectProject', projectId)"
     @close-actions-menu="emit('closeActionsMenu')"
-    @show-tags-library-panel="emit('showTagsLibraryPanel')"
-    @show-tag-inspector-panel="emit('showTagInspectorPanel')"
-    @show-projects-panel="emit('showProjectsPanel')"
+    @toggle-view="(view) => emit('toggleView', view)"
   />
 </template>

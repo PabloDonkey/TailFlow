@@ -1,11 +1,32 @@
 <script setup lang="ts">
 import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
-import { onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+
+const props = withDefaults(defineProps<{
+  showLeft?: boolean
+  showRight?: boolean
+}>(), {
+  showLeft: true,
+  showRight: true,
+})
 
 const sidePanelClass =
   'h-full min-h-0 rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-3 overflow-y-auto lg:h-full lg:min-h-0 lg:overflow-y-auto'
 const centerPanelClass =
   'h-full min-h-0 rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-3 overflow-hidden lg:h-full lg:min-h-0 lg:overflow-hidden'
+
+const horizontalLayoutAutoSaveId = computed(() => {
+  if (props.showLeft && props.showRight) {
+    return 'workspace-tagging-layout-left-center-right'
+  }
+  if (props.showLeft) {
+    return 'workspace-tagging-layout-left-center'
+  }
+  if (props.showRight) {
+    return 'workspace-tagging-layout-center-right'
+  }
+  return 'workspace-tagging-layout-center-only'
+})
 
 const isDesktopViewport = ref(false)
 
@@ -51,11 +72,14 @@ onUnmounted(() => {
 
     <SplitterGroup
       v-else
-      auto-save-id="workspace-tagging-layout"
+      :auto-save-id="horizontalLayoutAutoSaveId"
       class="h-full min-h-0 w-full"
       direction="horizontal"
     >
       <SplitterPanel
+        v-if="showLeft"
+        id="workspace-left-panel"
+        :order="1"
         :default-size="25"
         :max-size="35"
         :min-size="18"
@@ -67,11 +91,14 @@ onUnmounted(() => {
       </SplitterPanel>
 
       <SplitterResizeHandle
+        v-if="showLeft"
         class="mx-1 my-1 w-1.5 rounded bg-[var(--tf-color-surface-border)] transition data-[state=drag]:bg-[var(--tf-color-accent)]"
       />
 
       <SplitterPanel
-        :default-size="50"
+        id="workspace-center-panel"
+        :order="2"
+        :default-size="showLeft && showRight ? 50 : 72"
         :min-size="30"
         class="min-h-0"
       >
@@ -81,10 +108,14 @@ onUnmounted(() => {
       </SplitterPanel>
 
       <SplitterResizeHandle
+        v-if="showRight"
         class="mx-1 my-1 w-1.5 rounded bg-[var(--tf-color-surface-border)] transition data-[state=drag]:bg-[var(--tf-color-accent)]"
       />
 
       <SplitterPanel
+        v-if="showRight"
+        id="workspace-right-panel"
+        :order="3"
         :default-size="25"
         :max-size="35"
         :min-size="18"

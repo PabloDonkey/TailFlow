@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import ProjectBrowserPanel from '../components/projects/ProjectBrowserPanel.vue'
+import ProjectBrowserCard from '../cards/project-browser/ProjectBrowserCard.vue'
 
 const mocks = vi.hoisted(() => ({
   listProjectImages: vi.fn().mockResolvedValue([]),
@@ -13,11 +13,11 @@ vi.mock('../api', () => ({
   getProjectImageFileUrl: mocks.getProjectImageFileUrl,
 }))
 
-describe('ProjectBrowserPanel', () => {
+describe('ProjectBrowserCard', () => {
   it('renders project cards sorted by name and emits selection', async () => {
     mocks.listProjectImages.mockResolvedValue([{ id: 'img-1' }])
 
-    const wrapper = mount(ProjectBrowserPanel, {
+    const wrapper = mount(ProjectBrowserCard, {
       props: {
         projects: [
           {
@@ -65,7 +65,7 @@ describe('ProjectBrowserPanel', () => {
   })
 
   it('emits openCreateProject from the top action button', async () => {
-    const wrapper = mount(ProjectBrowserPanel, {
+    const wrapper = mount(ProjectBrowserCard, {
       props: {
         projects: [],
         selectedProjectId: null,
@@ -82,7 +82,7 @@ describe('ProjectBrowserPanel', () => {
   })
 
   it('emits discoverProjects from the discover button', async () => {
-    const wrapper = mount(ProjectBrowserPanel, {
+    const wrapper = mount(ProjectBrowserCard, {
       props: {
         projects: [],
         selectedProjectId: null,
@@ -99,7 +99,7 @@ describe('ProjectBrowserPanel', () => {
   })
 
   it('emits showTagging with project id from a card tagging button', async () => {
-    const wrapper = mount(ProjectBrowserPanel, {
+    const wrapper = mount(ProjectBrowserCard, {
       props: {
         projects: [
           {

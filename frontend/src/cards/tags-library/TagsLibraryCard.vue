@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import AppErrorText from '../ui/AppErrorText.vue'
-import AppSectionTitle from '../ui/AppSectionTitle.vue'
-import AppText from '../ui/AppText.vue'
+import AppErrorText from '../../components/ui/AppErrorText.vue'
+import AppSectionTitle from '../../components/ui/AppSectionTitle.vue'
+import AppText from '../../components/ui/AppText.vue'
 import { useTagStore } from '../../stores/tags'
 
 withDefaults(defineProps<{

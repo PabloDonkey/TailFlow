@@ -1,6 +1,6 @@
 import { mount, flushPromises } from '@vue/test-utils'
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import UploadPage from '../pages/UploadPage.vue'
+import ProjectsPage from '../pages/ProjectsPage.vue'
 
 const mocks = vi.hoisted(() => ({
   projectStore: {
@@ -42,7 +42,7 @@ vi.mock('../stores/projects', () => ({
   useProjectStore: () => mocks.projectStore,
 }))
 
-describe('UploadPage', () => {
+describe('ProjectsPage', () => {
   beforeEach(() => {
     mocks.projectStore.fetchProjects.mockClear()
     mocks.projectStore.createProject.mockClear()
@@ -50,7 +50,7 @@ describe('UploadPage', () => {
   })
 
   it('sends the selected tagging mode when creating a project', async () => {
-    const wrapper = mount(UploadPage)
+    const wrapper = mount(ProjectsPage)
     await flushPromises()
 
     const textInputs = wrapper.findAll('input[type="text"]')
@@ -69,7 +69,7 @@ describe('UploadPage', () => {
   })
 
   it('saves tagging mode updates in project metadata', async () => {
-    const wrapper = mount(UploadPage)
+    const wrapper = mount(ProjectsPage)
     await flushPromises()
 
     await wrapper.get('[data-testid="edit-tagging-mode"]').setValue('booru')

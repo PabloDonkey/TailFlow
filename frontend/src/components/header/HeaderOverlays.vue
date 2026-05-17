@@ -1,12 +1,19 @@
 <script setup lang="ts">
 import type { Project } from '../../api'
-import WorkspaceActionsMenu from './WorkspaceActionsMenu.vue'
-import WorkspaceProjectPickerPanel from '../sidebar/WorkspaceProjectPickerPanel.vue'
+import ViewsMenu from './ViewsMenu.vue'
+import ProjectPickerPanel from './ProjectPickerPanel.vue'
 
 defineProps<{
   showProjectPicker: boolean
   showActionsMenu: boolean
-  activeRightPanel: 'inspector' | 'tags' | 'projects'
+  openViews: {
+    imageBrowser: boolean
+    canvas: boolean
+    currentTags: boolean
+    aiProposedTags: boolean
+    tagsLibrary: boolean
+    projectDetails: boolean
+  }
   projects: Project[]
   selectedProjectId: string | null
   loading: boolean
@@ -18,14 +25,14 @@ const emit = defineEmits<{
   refreshProjects: []
   selectProject: [projectId: string]
   closeActionsMenu: []
-  showTagsLibraryPanel: []
-  showTagInspectorPanel: []
-  showProjectsPanel: []
+  toggleView: [
+    view: 'image-browser' | 'canvas' | 'current-tags' | 'ai-proposed-tags' | 'tags-library' | 'project-details',
+  ]
 }>()
 </script>
 
 <template>
-  <WorkspaceProjectPickerPanel
+  <ProjectPickerPanel
     v-if="showProjectPicker"
     :projects="projects"
     :selected-project-id="selectedProjectId"
@@ -36,12 +43,10 @@ const emit = defineEmits<{
     @select-project="(projectId) => emit('selectProject', projectId)"
   />
 
-  <WorkspaceActionsMenu
+  <ViewsMenu
     v-if="showActionsMenu"
-    :active-right-panel="activeRightPanel"
+    :open-views="openViews"
     @close="emit('closeActionsMenu')"
-    @show-tags-library="emit('showTagsLibraryPanel')"
-    @show-inspector="emit('showTagInspectorPanel')"
-    @show-projects="emit('showProjectsPanel')"
+    @toggle-view="(view) => emit('toggleView', view)"
   />
 </template>

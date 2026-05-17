@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Project } from '../../api'
-import UploadPage from '../../pages/UploadPage.vue'
+import ProjectDetailsEditor from './components/ProjectDetailsEditor.vue'
 
 defineProps<{
   selectedProject: Project | null
@@ -20,9 +20,9 @@ defineProps<{
       Select a project from Project Browser to view metadata, sync state, and upload controls.
     </p>
 
-    <UploadPage
+    <ProjectDetailsEditor
       v-else
-      :details-only="true"
+      :selected-project="selectedProject"
     />
   </div>
 </template>

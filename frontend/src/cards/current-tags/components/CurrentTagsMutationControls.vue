@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { TaggingMode } from '../../api'
-import AppSegmentedToggle from '../../design-system/AppSegmentedToggle.vue'
-import TagAutocompleteInput from '../../design-system/TagAutocompleteInput.vue'
-import AppToolbar from '../../design-system/AppToolbar.vue'
-import AppErrorText from '../ui/AppErrorText.vue'
+import type { TaggingMode } from '../../../api'
+import AppSegmentedToggle from '../../../design-system/AppSegmentedToggle.vue'
+import TagAutocompleteInput from '../../../design-system/TagAutocompleteInput.vue'
+import AppToolbar from '../../../design-system/AppToolbar.vue'
+import AppErrorText from '../../../components/ui/AppErrorText.vue'
 
 const tagSourceOptions = [
   { label: 'e621', value: 'e621' },

@@ -3,8 +3,8 @@ import { computed, ref, watch } from 'vue'
 import type { ProjectImageRead, ProjectImageSummary } from '../../api'
 import { getProjectImageFileUrl } from '../../api'
 import { useDelayedLoading } from '../../composables/useDelayedLoading'
-import AppErrorText from '../ui/AppErrorText.vue'
-import AppText from '../ui/AppText.vue'
+import AppErrorText from '../../components/ui/AppErrorText.vue'
+import AppText from '../../components/ui/AppText.vue'
 
 const props = defineProps<{
   projectId: string | null

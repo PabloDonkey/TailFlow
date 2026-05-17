@@ -1,11 +1,11 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
-import WorkspaceActionsMenu from '../components/layout/WorkspaceActionsMenu.vue'
-import WorkspaceProjectPickerPanel from '../components/sidebar/WorkspaceProjectPickerPanel.vue'
+import ViewsMenu from '../components/header/ViewsMenu.vue'
+import ProjectPickerPanel from '../components/header/ProjectPickerPanel.vue'
 
 describe('Workspace overlays', () => {
   it('keeps project picker positioned below header and closes on backdrop click', async () => {
-    const wrapper = mount(WorkspaceProjectPickerPanel, {
+    const wrapper = mount(ProjectPickerPanel, {
       props: {
         projects: [],
         selectedProjectId: null,
@@ -25,9 +25,16 @@ describe('Workspace overlays', () => {
   })
 
   it('keeps workspace actions menu below header and closes on backdrop click', async () => {
-    const wrapper = mount(WorkspaceActionsMenu, {
+    const wrapper = mount(ViewsMenu, {
       props: {
-        activeRightPanel: 'inspector',
+        openViews: {
+          imageBrowser: true,
+          canvas: true,
+          currentTags: true,
+          aiProposedTags: true,
+          tagsLibrary: false,
+          projectDetails: false,
+        },
       },
     })
 
