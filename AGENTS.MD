@@ -62,6 +62,7 @@ During implementation:
 1. Keep tasks chunked into small iterations that can be completed and validated independently.
 2. Prefer targeted tests during each iteration, then run broader suites at the end.
 3. After each iteration, update `.project/dev-loop.md` and `.project/tasks.md` when scope/status changes.
+4. Before any commit or push, run `make test` and `make test-e2e` from the repository root.
 
 ### Test authority and E2E standards
 
