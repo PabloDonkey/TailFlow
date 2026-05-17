@@ -5,18 +5,23 @@ import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
 import AppShell from '../components/layout/AppShell.vue'
 import HeaderSection from '../components/header/HeaderSection.vue'
 import WorkspaceLayout from '../components/layout/WorkspaceLayout.vue'
-import ImageCanvasCard from '../cards/image-canvas/ImageCanvasCard.vue'
 import WorkspaceMobileViewsTabs, {
   type MobileWorkspaceTab,
 } from '../components/layout/WorkspaceMobileViewsTabs.vue'
 import WorkspacePanelCard from '../components/layout/WorkspacePanelCard.vue'
-import ProjectBrowserCard from '../cards/project-browser/ProjectBrowserCard.vue'
 import ProjectCreateModal from '../components/projects/ProjectCreateModal.vue'
-import ProjectDetailsCard from '../cards/project-details/ProjectDetailsCard.vue'
-import CurrentTagsCard from '../cards/current-tags/CurrentTagsCard.vue'
-import AiProposedTagsCard from '../cards/ai-proposed-tags/AiProposedTagsCard.vue'
-import ImageBrowserCard from '../cards/image-browser/ImageBrowserCard.vue'
-import TagsLibraryCard from '../cards/tags-library/TagsLibraryCard.vue'
+import WorkspaceSideCardContent from './workspace/WorkspaceSideCardContent.vue'
+import {
+  buildWorkspaceCardConfig,
+  defaultSideViewOrder,
+  defaultToggleCardOpenState,
+  type CenterCardId,
+  type CardMeta,
+  type SideViewId,
+  type ToggleCardId,
+  type SideCardConfig,
+  workspaceCardMeta,
+} from './workspace/side-card-service'
 import { useWorkspaceHeaderActions } from '../composables/useWorkspaceHeaderActions'
 import { useWorkspaceImages } from '../composables/useWorkspaceImages'
 import { useProjectStore } from '../stores/projects'
@@ -32,8 +37,6 @@ const showProjectPicker = ref(false)
 const showActionsMenu = ref(false)
 const isMobileViewportRef = ref(false)
 
-type SideViewId = 'image-browser' | 'current-tags' | 'ai-proposed-tags' | 'tags-library' | 'project-details'
-type ToggleCardId = SideViewId | 'canvas'
 type CardId = ToggleCardId | 'project-browser'
 type SideColumnId = 'left' | 'right'
 type SideDropIndicator = {
@@ -41,56 +44,13 @@ type SideDropIndicator = {
   panelIndex: number | null
   edge: 'top' | 'bottom'
 }
-const DEFAULT_LEFT_VIEW_ORDER: SideViewId[] = ['image-browser']
-const DEFAULT_RIGHT_VIEW_ORDER: SideViewId[] = ['current-tags', 'ai-proposed-tags', 'tags-library', 'project-details']
+const DEFAULT_LEFT_VIEW_ORDER: SideViewId[] = defaultSideViewOrder('left')
+const DEFAULT_RIGHT_VIEW_ORDER: SideViewId[] = defaultSideViewOrder('right')
 const DEFAULT_SIDE_VIEW_ORDER: SideViewId[] = [...DEFAULT_LEFT_VIEW_ORDER, ...DEFAULT_RIGHT_VIEW_ORDER]
 
-const cardMeta: Record<CardId, { name: string; draggable: boolean; requiresProjectSelected: boolean }> = {
-  'image-browser': {
-    name: 'Image Browser',
-    draggable: true,
-    requiresProjectSelected: true,
-  },
-  canvas: {
-    name: 'Image Canvas',
-    draggable: false,
-    requiresProjectSelected: true,
-  },
-  'current-tags': {
-    name: 'Current Tags',
-    draggable: true,
-    requiresProjectSelected: true,
-  },
-  'ai-proposed-tags': {
-    name: 'AI Proposed Tags',
-    draggable: true,
-    requiresProjectSelected: true,
-  },
-  'tags-library': {
-    name: 'Tags Library',
-    draggable: true,
-    requiresProjectSelected: false,
-  },
-  'project-details': {
-    name: 'Project Details',
-    draggable: true,
-    requiresProjectSelected: true,
-  },
-  'project-browser': {
-    name: 'Project Browser',
-    draggable: false,
-    requiresProjectSelected: false,
-  },
-}
+const cardMeta: Record<CardId, CardMeta> = workspaceCardMeta
 
-const cardOpenState = ref<Record<ToggleCardId, boolean>>({
-  'image-browser': true,
-  canvas: true,
-  'current-tags': true,
-  'ai-proposed-tags': true,
-  'tags-library': false,
-  'project-details': false,
-})
+const cardOpenState = ref<Record<ToggleCardId, boolean>>({ ...defaultToggleCardOpenState })
 
 const leftViewOrder = ref<SideViewId[]>([...DEFAULT_LEFT_VIEW_ORDER])
 const rightViewOrder = ref<SideViewId[]>([...DEFAULT_RIGHT_VIEW_ORDER])
@@ -156,7 +116,7 @@ const rightVisibleViewIds = computed<SideViewId[]>(() =>
   rightViewOrder.value.filter((viewId) => isCardVisible(viewId)),
 )
 
-const centerPanel = computed<'canvas' | 'project-browser'>(() =>
+const centerPanel = computed<CenterCardId>(() =>
   isCardVisible('canvas') ? 'canvas' : 'project-browser',
 )
 
@@ -184,6 +144,20 @@ const mobileTabs = computed<Array<{ id: MobileWorkspaceTab; label: string }>>(()
   return tabs
 })
 
+const activeMobileSideViewId = computed<SideViewId | null>(() => {
+  if (
+    activeMobileTab.value === 'image-browser'
+    || activeMobileTab.value === 'current-tags'
+    || activeMobileTab.value === 'ai-proposed-tags'
+    || activeMobileTab.value === 'tags-library'
+    || activeMobileTab.value === 'project-details'
+  ) {
+    return activeMobileTab.value
+  }
+
+  return null
+})
+
 const activeMobileTabTitle = computed(() => cardTitle(activeMobileTab.value))
 
 const headerOpenViews = computed(() => ({
@@ -194,6 +168,57 @@ const headerOpenViews = computed(() => ({
   tagsLibrary: isCardOpen('tags-library'),
   projectDetails: isCardOpen('project-details'),
 }))
+
+function sideCardConfig(viewId: SideViewId, framed = false): SideCardConfig {
+  return buildWorkspaceCardConfig(viewId, workspaceCardState(framed), workspaceCardActions())
+}
+
+function centerCardConfig(cardId: CenterCardId): SideCardConfig {
+  return buildWorkspaceCardConfig(cardId, workspaceCardState(false), workspaceCardActions())
+}
+
+function workspaceCardState(framed: boolean) {
+  return {
+    selectedProjectId: projectStore.selectedProjectId,
+    selectedProject: selectedProject.value,
+    currentImageId: imageStore.currentImage?.id ?? null,
+    currentImageTags: imageStore.currentImage?.tags ?? [],
+    framed,
+    currentImage: imageStore.currentImage,
+    orderedImages: orderedImages.value,
+    currentImageIndex: currentImageIndex.value,
+    loading: projectStore.loading || imageStore.imageLoading,
+    error: projectStore.error || imageStore.error,
+    projects: projectStore.projects,
+  }
+}
+
+function workspaceCardActions() {
+  return {
+    selectImage: (imageId: string) => {
+      void handleSelectImage(imageId)
+    },
+    addAiTag: (tagName: string) => {
+      void handleAiProposedTagAdd(tagName)
+    },
+    removeAiTag: (tagName: string) => {
+      void handleAiProposedTagRemove(tagName)
+    },
+    selectProject,
+    openCreateProject: openCreateProjectModal,
+    discoverProjects: () => {
+      void discoverProjectsFromBrowser()
+    },
+    showTaggingFromProjectBrowser: handleShowTaggingFromProjectBrowser,
+    previousImage: goToPreviousImage,
+    nextImage: goToNextImage,
+    jumpToImage: goToImageByIndex,
+  }
+}
+
+const centerPanelConfig = computed(() => centerCardConfig(centerPanel.value))
+const mobileCanvasConfig = computed(() => centerCardConfig('canvas'))
+const mobileProjectBrowserConfig = computed(() => centerCardConfig('project-browser'))
 
 function sidePanelDefaultSize(panelIndex: number, totalPanels: number): number {
   if (totalPanels <= 0) {
@@ -917,40 +942,8 @@ onUnmounted(() => {
                         @dragstart="(event) => onSidePanelDragStart(viewId, event)"
                         @dragend="onSidePanelDragEnd"
                       >
-                        <div v-if="viewId === 'image-browser'">
-                          <ImageBrowserCard
-                            :selected-project-id="projectStore.selectedProjectId"
-                            @select-image="handleSelectImage"
-                          />
-                        </div>
-
-                        <CurrentTagsCard
-                          v-else-if="viewId === 'current-tags'"
-                          :project-id="projectStore.selectedProjectId"
-                          :selected-project="selectedProject"
-                          :framed="false"
-                        />
-
-                        <AiProposedTagsCard
-                          v-else-if="viewId === 'ai-proposed-tags'"
-                          :project-id="projectStore.selectedProjectId"
-                          :image-id="imageStore.currentImage?.id ?? null"
-                          :mode="selectedProject?.tagging_mode ?? 'booru'"
-                          :current-tags="imageStore.currentImage?.tags ?? []"
-                          :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
-                          :framed="false"
-                          @add="handleAiProposedTagAdd"
-                          @remove="handleAiProposedTagRemove"
-                        />
-
-                        <TagsLibraryCard
-                          v-else-if="viewId === 'tags-library'"
-                          :show-close="false"
-                        />
-
-                        <ProjectDetailsCard
-                          v-else
-                          :selected-project="selectedProject"
+                        <WorkspaceSideCardContent
+                          :config="sideCardConfig(viewId, false)"
                         />
                       </WorkspacePanelCard>
                     </div>
@@ -1004,40 +997,8 @@ onUnmounted(() => {
                   @dragstart="(event) => onSidePanelDragStart(viewId, event)"
                   @dragend="onSidePanelDragEnd"
                 >
-                  <div v-if="viewId === 'image-browser'">
-                    <ImageBrowserCard
-                      :selected-project-id="projectStore.selectedProjectId"
-                      @select-image="handleSelectImage"
-                    />
-                  </div>
-
-                  <CurrentTagsCard
-                    v-else-if="viewId === 'current-tags'"
-                    :project-id="projectStore.selectedProjectId"
-                    :selected-project="selectedProject"
-                    :framed="false"
-                  />
-
-                  <AiProposedTagsCard
-                    v-else-if="viewId === 'ai-proposed-tags'"
-                    :project-id="projectStore.selectedProjectId"
-                    :image-id="imageStore.currentImage?.id ?? null"
-                    :mode="selectedProject?.tagging_mode ?? 'booru'"
-                    :current-tags="imageStore.currentImage?.tags ?? []"
-                    :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
-                    :framed="false"
-                    @add="handleAiProposedTagAdd"
-                    @remove="handleAiProposedTagRemove"
-                  />
-
-                  <TagsLibraryCard
-                    v-else-if="viewId === 'tags-library'"
-                    :show-close="false"
-                  />
-
-                  <ProjectDetailsCard
-                    v-else
-                    :selected-project="selectedProject"
+                  <WorkspaceSideCardContent
+                    :config="sideCardConfig(viewId, false)"
                   />
                 </WorkspacePanelCard>
               </div>
@@ -1081,30 +1042,10 @@ onUnmounted(() => {
             </div>
           </template>
 
-          <ImageCanvasCard
-            v-if="centerPanel === 'canvas'"
-            :project-id="projectStore.selectedProjectId"
-            :current-image="imageStore.currentImage"
-            :ordered-images="orderedImages"
-            :current-image-index="currentImageIndex"
-            :loading="projectStore.loading || imageStore.imageLoading"
-            :error="projectStore.error || imageStore.error"
-            @previous="goToPreviousImage"
-            @next="goToNextImage"
-            @jump="goToImageByIndex"
-          />
-
-          <ProjectBrowserCard
-            v-else
-            :projects="projectStore.projects"
-            :selected-project-id="projectStore.selectedProjectId"
-            :loading="projectStore.loading"
-            :discovering="projectStore.loading"
-            :show-actions="false"
-            @select-project="selectProject"
-            @open-create-project="openCreateProjectModal"
-            @discover-projects="discoverProjectsFromBrowser"
-            @show-tagging="handleShowTaggingFromProjectBrowser"
+          <component
+            :is="centerPanelConfig.component"
+            v-bind="centerPanelConfig.props"
+            v-on="centerPanelConfig.listeners"
           />
         </WorkspacePanelCard>
 
@@ -1151,41 +1092,9 @@ onUnmounted(() => {
                         @dragstart="(event) => onSidePanelDragStart(viewId, event)"
                         @dragend="onSidePanelDragEnd"
                       >
-                        <CurrentTagsCard
-                          v-if="viewId === 'current-tags'"
-                          :project-id="projectStore.selectedProjectId"
-                          :selected-project="selectedProject"
-                          :framed="false"
+                        <WorkspaceSideCardContent
+                          :config="sideCardConfig(viewId, false)"
                         />
-
-                        <AiProposedTagsCard
-                          v-else-if="viewId === 'ai-proposed-tags'"
-                          :project-id="projectStore.selectedProjectId"
-                          :image-id="imageStore.currentImage?.id ?? null"
-                          :mode="selectedProject?.tagging_mode ?? 'booru'"
-                          :current-tags="imageStore.currentImage?.tags ?? []"
-                          :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
-                          :framed="false"
-                          @add="handleAiProposedTagAdd"
-                          @remove="handleAiProposedTagRemove"
-                        />
-
-                        <TagsLibraryCard
-                          v-else-if="viewId === 'tags-library'"
-                          :show-close="false"
-                        />
-
-                        <ProjectDetailsCard
-                          v-else-if="viewId === 'project-details'"
-                          :selected-project="selectedProject"
-                        />
-
-                        <div v-else>
-                          <ImageBrowserCard
-                            :selected-project-id="projectStore.selectedProjectId"
-                            @select-image="handleSelectImage"
-                          />
-                        </div>
                       </WorkspacePanelCard>
                     </div>
 
@@ -1238,41 +1147,9 @@ onUnmounted(() => {
                   @dragstart="(event) => onSidePanelDragStart(viewId, event)"
                   @dragend="onSidePanelDragEnd"
                 >
-                  <CurrentTagsCard
-                    v-if="viewId === 'current-tags'"
-                    :project-id="projectStore.selectedProjectId"
-                    :selected-project="selectedProject"
-                    :framed="false"
+                  <WorkspaceSideCardContent
+                    :config="sideCardConfig(viewId, false)"
                   />
-
-                  <AiProposedTagsCard
-                    v-else-if="viewId === 'ai-proposed-tags'"
-                    :project-id="projectStore.selectedProjectId"
-                    :image-id="imageStore.currentImage?.id ?? null"
-                    :mode="selectedProject?.tagging_mode ?? 'booru'"
-                    :current-tags="imageStore.currentImage?.tags ?? []"
-                    :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
-                    :framed="false"
-                    @add="handleAiProposedTagAdd"
-                    @remove="handleAiProposedTagRemove"
-                  />
-
-                  <TagsLibraryCard
-                    v-else-if="viewId === 'tags-library'"
-                    :show-close="false"
-                  />
-
-                  <ProjectDetailsCard
-                    v-else-if="viewId === 'project-details'"
-                    :selected-project="selectedProject"
-                  />
-
-                  <div v-else>
-                    <ImageBrowserCard
-                      :selected-project-id="projectStore.selectedProjectId"
-                      @select-image="handleSelectImage"
-                    />
-                  </div>
                 </WorkspacePanelCard>
               </div>
 
@@ -1337,59 +1214,23 @@ onUnmounted(() => {
           />
         </div>
 
-        <ImageCanvasCard
+        <component
           v-else-if="activeMobileTab === 'canvas'"
-          :project-id="projectStore.selectedProjectId"
-          :current-image="imageStore.currentImage"
-          :ordered-images="orderedImages"
-          :current-image-index="currentImageIndex"
-          :loading="projectStore.loading || imageStore.imageLoading"
-          :error="projectStore.error || imageStore.error"
-          @previous="goToPreviousImage"
-          @next="goToNextImage"
-          @jump="goToImageByIndex"
+          :is="mobileCanvasConfig.component"
+          v-bind="mobileCanvasConfig.props"
+          v-on="mobileCanvasConfig.listeners"
         />
 
-        <CurrentTagsCard
-          v-else-if="activeMobileTab === 'current-tags'"
-          :project-id="projectStore.selectedProjectId"
-          :selected-project="selectedProject"
-          :framed="false"
+        <WorkspaceSideCardContent
+          v-else-if="activeMobileSideViewId"
+          :config="sideCardConfig(activeMobileSideViewId, false)"
         />
 
-        <AiProposedTagsCard
-          v-else-if="activeMobileTab === 'ai-proposed-tags'"
-          :project-id="projectStore.selectedProjectId"
-          :image-id="imageStore.currentImage?.id ?? null"
-          :mode="selectedProject?.tagging_mode ?? 'booru'"
-          :current-tags="imageStore.currentImage?.tags ?? []"
-          :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
-          :framed="false"
-          @add="handleAiProposedTagAdd"
-          @remove="handleAiProposedTagRemove"
-        />
-
-        <TagsLibraryCard
-          v-else-if="activeMobileTab === 'tags-library'"
-          :show-close="false"
-        />
-
-        <ProjectDetailsCard
-          v-else-if="activeMobileTab === 'project-details'"
-          :selected-project="selectedProject"
-        />
-
-        <ProjectBrowserCard
+        <component
           v-else
-          :projects="projectStore.projects"
-          :selected-project-id="projectStore.selectedProjectId"
-          :loading="projectStore.loading"
-          :discovering="projectStore.loading"
-          :show-actions="false"
-          @select-project="selectProject"
-          @open-create-project="openCreateProjectModal"
-          @discover-projects="discoverProjectsFromBrowser"
-          @show-tagging="handleShowTaggingFromProjectBrowser"
+          :is="mobileProjectBrowserConfig.component"
+          v-bind="mobileProjectBrowserConfig.props"
+          v-on="mobileProjectBrowserConfig.listeners"
         />
       </WorkspacePanelCard>
     </section>

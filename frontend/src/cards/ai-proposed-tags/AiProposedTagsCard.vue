@@ -25,7 +25,6 @@ const props = withDefaults(defineProps<{
   currentTags: ProjectTag[]
   disabled?: boolean
   framed?: boolean
-  getTagRoleLabel: (tag: ProjectTag) => string | null
 }>(), {
   disabled: false,
   framed: true,
@@ -66,14 +65,6 @@ const normalizedCurrentTagSet = computed(() =>
   new Set(props.currentTags.map((tag) => tag.name.trim().toLowerCase())),
 )
 
-const currentTagByName = computed(() => {
-  const map = new Map<string, ProjectTag>()
-  for (const tag of props.currentTags) {
-    map.set(tag.name.trim().toLowerCase(), tag)
-  }
-  return map
-})
-
 const visibleProposedTags = computed(() => {
   const minConfidence = confidenceThreshold.value
   return proposedTags.value
@@ -103,7 +94,7 @@ const displayProposedTags = computed(() =>
       key: tag.name,
       label: tag.name,
       metaInline: `${Math.round(tag.confidence * 100)}%`,
-      meta: roleLabelForName(tag.name),
+      meta: null,
       variant: selected ? 'selected' as const : 'default' as const,
       actionIcon: null,
       actionAriaLabel: selected ? `Remove tag ${tag.name}` : `Add tag ${tag.name}`,
@@ -172,14 +163,6 @@ function scheduleAutoScan(): void {
   scanTimer = setTimeout(() => {
     void runScan()
   }, 200)
-}
-
-function roleLabelForName(tagName: string): string | null {
-  const matched = currentTagByName.value.get(tagName.trim().toLowerCase())
-  if (!matched) {
-    return null
-  }
-  return props.getTagRoleLabel(matched)
 }
 
 function isAlreadyApplied(tagName: string): boolean {
