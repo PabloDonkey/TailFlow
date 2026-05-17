@@ -14,7 +14,7 @@ vi.mock('../api', () => ({
 }))
 
 describe('ProjectBrowserCard', () => {
-  it('renders project cards sorted by name and emits selection', async () => {
+  it('renders project cards sorted by name and opens tagging flow on card click', async () => {
     mocks.listProjectImages.mockResolvedValue([{ id: 'img-1' }])
 
     const wrapper = mount(ProjectBrowserCard, {
@@ -62,6 +62,7 @@ describe('ProjectBrowserCard', () => {
 
     await cardButtons[0]!.trigger('click')
     expect(wrapper.emitted('selectProject')?.[0]).toEqual(['1'])
+    expect(wrapper.emitted('showTagging')?.[0]).toEqual(['1'])
   })
 
   it('emits openCreateProject from the top action button', async () => {
@@ -98,7 +99,7 @@ describe('ProjectBrowserCard', () => {
     expect(wrapper.emitted('discoverProjects')).toHaveLength(1)
   })
 
-  it('emits showTagging with project id from a card tagging button', async () => {
+  it('emits showTagging with project id from card click', async () => {
     const wrapper = mount(ProjectBrowserCard, {
       props: {
         projects: [
@@ -123,9 +124,9 @@ describe('ProjectBrowserCard', () => {
 
     await nextTick()
 
-    const taggingButton = wrapper.findAll('button').find((button) => button.text().trim() === 'Tagging')
-    expect(taggingButton).toBeDefined()
-    await taggingButton!.trigger('click')
+    const cardButton = wrapper.find('button.w-full')
+    expect(cardButton.exists()).toBe(true)
+    await cardButton.trigger('click')
 
     expect(wrapper.emitted('showTagging')?.[0]).toEqual(['project-a'])
   })

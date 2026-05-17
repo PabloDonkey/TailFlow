@@ -30,8 +30,8 @@ describe('CurrentTagsList filter', () => {
     const input = wrapper.get('input[aria-label="Filter current tags"]')
     await input.setValue('close up')
 
-    const rows = wrapper.findAll('li')
-    expect(rows).toHaveLength(1)
+    const chips = wrapper.findAll('[data-testid="tag-chip"]')
+    expect(chips).toHaveLength(1)
     expect(wrapper.text()).toContain('close-up')
     expect(wrapper.text()).not.toContain('portrait')
   })

@@ -4,7 +4,7 @@ import type { ProjectTag } from '../../../api'
 import { useTagListFilter } from '../../../composables/useTagListFilter'
 import AppText from '../../../components/ui/AppText.vue'
 import CurrentTagsCopyButton from './CurrentTagsCopyButton.vue'
-import TagActionRow from '../../shared/TagActionRow.vue'
+import TagsTextareaField from '../../shared/TagsTextareaField.vue'
 import TagListFilterInput from '../../shared/TagListFilterInput.vue'
 
 const props = defineProps<{
@@ -22,6 +22,26 @@ const {
   filteredItems: filteredTags,
 } = useTagListFilter(computed(() => props.tags), (tag) => tag.name)
 
+const tagById = computed(() => {
+  const map = new Map<string, ProjectTag>()
+  for (const tag of props.tags) {
+    map.set(tag.id, tag)
+  }
+  return map
+})
+
+const displayTags = computed(() =>
+  filteredTags.value.map((tag) => ({
+    key: tag.id,
+    label: tag.name,
+    meta: buildTagMeta(tag) || null,
+    variant: 'selected' as const,
+    actionIcon: tag.is_protected ? 'lock' : 'x',
+    actionAriaLabel: tag.is_protected ? null : `Remove tag ${tag.name}`,
+    actionDisabled: tag.is_protected,
+  })),
+)
+
 function buildTagMeta(tag: ProjectTag): string {
   const parts: string[] = []
   const roleLabel = props.getTagRoleLabel(tag)
@@ -37,6 +57,14 @@ function buildTagMeta(tag: ProjectTag): string {
 
   return parts.join(' • ')
 }
+
+function handleTagAction(tagId: string): void {
+  const tag = tagById.value.get(tagId)
+  if (!tag || tag.is_protected) {
+    return
+  }
+  emit('remove', tag)
+}
 </script>
 
 <template>
@@ -51,29 +79,20 @@ function buildTagMeta(tag: ProjectTag): string {
       <CurrentTagsCopyButton :tags="props.tags" />
     </div>
 
-    <ul
-      v-if="filteredTags.length"
-      class="flex min-h-0 flex-1 list-none flex-col gap-2 overflow-y-auto pr-1"
-    >
-      <TagActionRow
-        v-for="tag in filteredTags"
-        :key="tag.id"
-        :label="tag.name"
-        :meta="buildTagMeta(tag)"
-        :variant="tag.is_protected ? 'selected' : 'default'"
-        :action-label="tag.is_protected ? 'Protected' : 'Remove'"
-        :action-aria-label="tag.is_protected ? null : `Remove tag ${tag.name}`"
-        :action-kind="tag.is_protected ? null : 'remove'"
-        :action-disabled="tag.is_protected"
-        @action="emit('remove', tag)"
+    <div class="min-h-0 flex-1">
+      <TagsTextareaField
+        v-if="displayTags.length"
+        :items="displayTags"
+        placeholder="Current tags..."
+        @action="handleTagAction"
       />
-    </ul>
 
-    <AppText
-      v-else
-      tone="muted"
-    >
-      {{ props.tags.length ? 'No tags match the current filter.' : 'No tags yet.' }}
-    </AppText>
+      <AppText
+        v-else
+        tone="muted"
+      >
+        {{ props.tags.length ? 'No tags match the current filter.' : 'No tags yet.' }}
+      </AppText>
+    </div>
   </div>
 </template>

@@ -31,10 +31,12 @@ const emit = defineEmits<{
       </h2>
 
       <div class="flex items-center gap-2">
+        <slot name="actions" />
+
         <button
           v-if="draggable"
           type="button"
-          class="rounded-[var(--tf-radius-sm)] border border-[var(--tf-color-surface-border)] px-2 py-1 text-xs text-[var(--tf-color-text-default)]"
+          class="rounded-[8px] border border-[var(--tf-color-surface-border)] px-2 py-1 text-xs text-[var(--tf-color-text-default)]"
           :draggable="draggable"
           :aria-label="`Drag ${title} panel`"
           @dragstart="(event) => emit('dragstart', event)"
@@ -45,7 +47,7 @@ const emit = defineEmits<{
         <button
           v-if="closable"
           type="button"
-          class="rounded-[var(--tf-radius-sm)] border border-[var(--tf-color-surface-border)] px-2 py-1 text-xs text-[var(--tf-color-text-default)]"
+          class="rounded-[8px] border border-[var(--tf-color-surface-border)] px-2 py-1 text-xs text-[var(--tf-color-text-default)]"
           :aria-label="`Close ${title} panel`"
           @click="emit('close')"
         >

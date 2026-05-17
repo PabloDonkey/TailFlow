@@ -56,7 +56,7 @@ function triggerSelection() {
           </span>
           <button
             type="button"
-            class="rounded-[var(--tf-radius-sm)] bg-[rgb(101_186_116)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
+            class="rounded-[8px] bg-[rgb(101_186_116)] px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60"
             :disabled="disabled"
             @click="triggerSelection"
           >

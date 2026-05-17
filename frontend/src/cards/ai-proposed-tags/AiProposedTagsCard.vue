@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { classifyProjectImage } from '../../api'
 import type { ProjectTag, TaggingMode } from '../../api'
 import AppNumberField from '../../design-system/AppNumberField.vue'
@@ -7,10 +7,11 @@ import AppSelectField from '../../design-system/AppSelectField.vue'
 import AppSwitchField from '../../design-system/AppSwitchField.vue'
 import AppText from '../../components/ui/AppText.vue'
 import { useTagListFilter } from '../../composables/useTagListFilter'
-import TagActionRow from '../shared/TagActionRow.vue'
 import TagListFilterInput from '../shared/TagListFilterInput.vue'
+import TagsTextareaField from '../shared/TagsTextareaField.vue'
 
 let aiInspectorRegionCounter = 0
+const AI_CONTROLS_COLLAPSED_STORAGE_KEY = 'tailflow.ai-proposed-tags.controls-collapsed.v1'
 
 interface ProposedTag {
   name: string
@@ -32,6 +33,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   add: [tagName: string]
+  remove: [tagName: string]
 }>()
 
 const modelOptions = [
@@ -43,6 +45,7 @@ const modelOptions = [
 const selectedModel = ref('jtp-3-hydra')
 const autoScan = ref(true)
 const controlsCollapsed = ref(false)
+const proposedFilterMode = ref<'all' | 'selected'>('all')
 const confidenceThreshold = ref(0.35)
 const isScanning = ref(false)
 const scanError = ref<string | null>(null)
@@ -78,10 +81,36 @@ const visibleProposedTags = computed(() => {
     .sort((a, b) => b.confidence - a.confidence)
 })
 
+const selectedProposedTags = computed(() =>
+  visibleProposedTags.value.filter((tag) => isAlreadyApplied(tag.name)),
+)
+
+const modeFilteredProposedTags = computed(() =>
+  proposedFilterMode.value === 'selected'
+    ? selectedProposedTags.value
+    : visibleProposedTags.value,
+)
+
 const {
   filterQuery: proposedFilterQuery,
   filteredItems: filteredProposedTags,
-} = useTagListFilter(visibleProposedTags, (tag) => tag.name)
+} = useTagListFilter(modeFilteredProposedTags, (tag) => tag.name)
+
+const displayProposedTags = computed(() =>
+  filteredProposedTags.value.map((tag) => {
+    const selected = isAlreadyApplied(tag.name)
+    return {
+      key: tag.name,
+      label: tag.name,
+      metaInline: `${Math.round(tag.confidence * 100)}%`,
+      meta: roleLabelForName(tag.name),
+      variant: selected ? 'selected' as const : 'default' as const,
+      actionIcon: null,
+      actionAriaLabel: selected ? `Remove tag ${tag.name}` : `Add tag ${tag.name}`,
+      actionDisabled: props.disabled,
+    }
+  }),
+)
 
 const autoScanHelpText = computed(() => {
   if (autoScan.value) {
@@ -157,16 +186,35 @@ function isAlreadyApplied(tagName: string): boolean {
   return normalizedCurrentTagSet.value.has(tagName.trim().toLowerCase())
 }
 
-function applyProposedTag(tagName: string): void {
-  if (props.disabled || isAlreadyApplied(tagName)) {
+function toggleProposedTag(tagName: string): void {
+  if (props.disabled) {
+    return
+  }
+  if (isAlreadyApplied(tagName)) {
+    emit('remove', tagName)
     return
   }
   emit('add', tagName)
 }
 
+function toggleSelectedMode(): void {
+  proposedFilterMode.value = proposedFilterMode.value === 'selected' ? 'all' : 'selected'
+}
+
 function toggleControls(): void {
   controlsCollapsed.value = !controlsCollapsed.value
 }
+
+onMounted(() => {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const raw = window.localStorage.getItem(AI_CONTROLS_COLLAPSED_STORAGE_KEY)
+  if (raw === '1') {
+    controlsCollapsed.value = true
+  }
+})
 
 watch(
   [() => props.projectId, () => props.imageId, () => props.mode, selectedModel],
@@ -180,6 +228,13 @@ watch(autoScan, (enabled) => {
   if (enabled) {
     scheduleAutoScan()
   }
+})
+
+watch(controlsCollapsed, (collapsed) => {
+  if (typeof window === 'undefined') {
+    return
+  }
+  window.localStorage.setItem(AI_CONTROLS_COLLAPSED_STORAGE_KEY, collapsed ? '1' : '0')
 })
 
 onBeforeUnmount(() => {
@@ -196,36 +251,42 @@ onBeforeUnmount(() => {
     role="region"
     :aria-labelledby="aiHeadingId"
   >
-    <div class="flex flex-wrap items-start justify-between gap-3">
-      <div>
-        <h3
-          :id="aiHeadingId"
-          class="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--tf-color-text-default)]"
-        >
-          AI Proposed Tags
-        </h3>
-      </div>
+    <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--tf-color-text-muted)]">
+      <span>Threshold: {{ Math.round(confidenceThreshold * 100) }}%</span>
+      <span>•</span>
+      <button
+        type="button"
+        class="cursor-pointer rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-3 py-2 text-xs font-medium text-[var(--tf-color-text-default)] transition hover:bg-[var(--tf-color-surface-alt)]"
+        :class="proposedFilterMode === 'selected' ? 'bg-[var(--tf-color-surface-alt)]' : ''"
+        aria-label="Toggle selected proposed tags filter"
+        @click="toggleSelectedMode"
+      >
+        Selected: {{ selectedProposedTags.length }}/{{ visibleProposedTags.length }}
+      </button>
 
-      <div class="flex items-center gap-2">
-        <button
-          type="button"
-          class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-3 py-2 text-xs font-medium text-[var(--tf-color-text-default)] transition hover:bg-[var(--tf-color-surface-alt)]"
-          :aria-controls="aiControlsId"
-          :aria-expanded="!controlsCollapsed"
-          @click="toggleControls"
-        >
-          {{ controlsCollapsed ? 'Show controls' : 'Hide controls' }}
-        </button>
+      <button
+        type="button"
+        class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-3 py-2 text-xs font-medium text-[var(--tf-color-text-default)] transition hover:bg-[var(--tf-color-surface-alt)]"
+        :aria-controls="aiControlsId"
+        :aria-expanded="!controlsCollapsed"
+        @click="toggleControls"
+      >
+        {{ controlsCollapsed ? 'Show controls' : 'Hide controls' }}
+      </button>
 
-        <button
-          type="button"
-          class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-3 py-2 text-xs font-medium text-[var(--tf-color-text-default)] transition hover:bg-[var(--tf-color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-60"
-          :disabled="!imageId || disabled || isScanning"
-          @click="runScan"
-        >
-          {{ isScanning ? 'Scanning…' : 'Scan now' }}
-        </button>
-      </div>
+      <button
+        type="button"
+        class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-3 py-2 text-xs font-medium text-[var(--tf-color-text-default)] transition hover:bg-[var(--tf-color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-60"
+        :disabled="!imageId || disabled || isScanning"
+        @click="runScan"
+      >
+        {{ isScanning ? 'Scanning…' : 'Scan now' }}
+      </button>
+
+      <template v-if="!modelAvailable">
+        <span>•</span>
+        <span>Download progress: {{ downloadProgressPercent }}%</span>
+      </template>
     </div>
 
     <div
@@ -275,16 +336,6 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--tf-color-text-muted)]">
-      <span>Threshold: {{ Math.round(confidenceThreshold * 100) }}%</span>
-      <span>•</span>
-      <span>Visible: {{ filteredProposedTags.length }}</span>
-      <template v-if="!modelAvailable">
-        <span>•</span>
-        <span>Download progress: {{ downloadProgressPercent }}%</span>
-      </template>
-    </div>
-
     <div
       v-if="!modelAvailable"
       class="mt-2 rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface-alt)] px-3 py-2 text-xs text-[var(--tf-color-text-default)]"
@@ -298,7 +349,7 @@ onBeforeUnmount(() => {
 
     <div
       :id="aiListId"
-      class="mt-3 min-h-0 flex-1 overflow-y-auto pr-1"
+      class="mt-3 min-h-0 flex flex-1 flex-col"
       role="group"
       aria-label="AI proposed tags list"
       :aria-describedby="aiControlsId"
@@ -340,37 +391,15 @@ onBeforeUnmount(() => {
         {{ visibleProposedTags.length ? 'No proposals match the current filter.' : 'No proposals above the selected threshold.' }}
       </AppText>
 
-      <TransitionGroup
+      <TagsTextareaField
         v-else
-        name="proposal-list"
-        tag="ul"
-        class="grid list-none gap-2"
-      >
-        <TagActionRow
-          v-for="tag in filteredProposedTags"
-          :key="`${tag.name}-${tag.confidence}`"
-          :label="tag.name"
-          :meta="`${Math.round(tag.confidence * 100)}% confidence${roleLabelForName(tag.name) ? ` • ${roleLabelForName(tag.name)}` : ''}`"
-          :variant="isAlreadyApplied(tag.name) ? 'selected' : 'default'"
-          :action-label="isAlreadyApplied(tag.name) ? 'Selected' : 'Add'"
-          :action-kind="isAlreadyApplied(tag.name) ? null : 'add'"
-          :action-disabled="disabled || isAlreadyApplied(tag.name)"
-          @action="applyProposedTag(tag.name)"
-        />
-      </TransitionGroup>
+        class="min-h-0 flex-1"
+        :items="displayProposedTags"
+        placeholder="AI proposed tags..."
+        :disabled="disabled"
+        click-to-action
+        @action="toggleProposedTag"
+      />
     </div>
   </section>
 </template>
-
-<style scoped>
-.proposal-list-enter-active,
-.proposal-list-leave-active {
-  transition: all 0.16s ease;
-}
-
-.proposal-list-enter-from,
-.proposal-list-leave-to {
-  opacity: 0;
-  transform: translateY(4px);
-}
-</style>

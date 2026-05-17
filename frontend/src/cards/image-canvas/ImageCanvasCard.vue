@@ -49,7 +49,7 @@ function submitImageJump() {
 </script>
 
 <template>
-  <section class="flex h-full min-h-0 flex-col gap-3">
+  <section class="flex h-full min-h-0 flex-col overflow-hidden gap-3">
     <AppText v-if="showLoading">
       Loading…
     </AppText>
@@ -61,15 +61,15 @@ function submitImageJump() {
     </AppText>
 
     <template v-else>
-      <div class="min-h-0 flex-1 overflow-hidden rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-2">
+      <div class="min-h-0 flex-1 overflow-hidden">
         <img
           :src="getProjectImageFileUrl(projectId!, currentImage.id)"
           :alt="currentImage.filename"
-          class="h-full w-full object-contain"
+          class="block h-full w-full object-contain"
         >
       </div>
 
-      <div class="hidden flex-wrap items-center justify-center gap-3 lg:flex">
+      <div class="hidden shrink-0 flex-wrap items-center justify-center gap-3 border-t border-[var(--tf-color-surface-border)] pt-3 lg:flex">
         <button
           data-testid="previous-image-button"
           class="btn btn-secondary rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-3 py-1.5"

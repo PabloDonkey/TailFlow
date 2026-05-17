@@ -348,6 +348,42 @@ function handleShowTaggingFromProjectBrowser(projectId: string) {
   }
 }
 
+function shouldConfirmSharedTagCreation(error: string | null): boolean {
+  return error?.includes('Confirm creation before adding it as a shared tag.') ?? false
+}
+
+async function handleAiProposedTagAdd(tagName: string) {
+  const projectId = projectStore.selectedProjectId
+  const imageId = imageStore.currentImage?.id
+  const tag = tagName.trim()
+
+  if (!projectId || !imageId || !tag) {
+    return
+  }
+
+  let updated = await imageStore.updateTags(projectId, imageId, [tag], [])
+  if (!updated && shouldConfirmSharedTagCreation(imageStore.error)) {
+    const confirmed = window.confirm(
+      `Create "${tag}" as a shared user-defined tag for this project?`,
+    )
+    if (confirmed) {
+      updated = await imageStore.updateTags(projectId, imageId, [tag], [], true)
+    }
+  }
+}
+
+async function handleAiProposedTagRemove(tagName: string) {
+  const projectId = projectStore.selectedProjectId
+  const imageId = imageStore.currentImage?.id
+  const tag = tagName.trim()
+
+  if (!projectId || !imageId || !tag) {
+    return
+  }
+
+  await imageStore.updateTags(projectId, imageId, [], [tag])
+}
+
 async function handleSelectImage(imageId: string) {
   await selectImage(imageId)
 }
@@ -643,6 +679,8 @@ onUnmounted(() => {
                         :current-tags="imageStore.currentImage?.tags ?? []"
                         :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
                         :framed="false"
+                        @add="handleAiProposedTagAdd"
+                        @remove="handleAiProposedTagRemove"
                       />
 
                       <TagsLibraryCard
@@ -708,6 +746,8 @@ onUnmounted(() => {
                   :current-tags="imageStore.currentImage?.tags ?? []"
                   :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
                   :framed="false"
+                  @add="handleAiProposedTagAdd"
+                  @remove="handleAiProposedTagRemove"
                 />
 
                 <TagsLibraryCard
@@ -730,6 +770,27 @@ onUnmounted(() => {
           :draggable="cardMeta[centerPanel].draggable"
           @close="closeCenterPanel"
         >
+          <template v-if="centerPanel === 'project-browser'" #actions>
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="rounded-[8px] border border-[var(--tf-color-surface-border)] bg-transparent px-2 py-1 text-xs font-medium text-[var(--tf-color-text-default)] disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="projectStore.loading"
+                @click="discoverProjectsFromBrowser"
+              >
+                {{ projectStore.loading ? 'Refreshing…' : 'Discover' }}
+              </button>
+              <button
+                type="button"
+                class="rounded-[8px] border border-[var(--tf-color-surface-border)] bg-transparent px-2 py-1 text-xs font-medium text-[var(--tf-color-text-default)] disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="projectStore.loading"
+                @click="openCreateProjectModal"
+              >
+                Create Project
+              </button>
+            </div>
+          </template>
+
           <ImageCanvasCard
             v-if="centerPanel === 'canvas'"
             :project-id="projectStore.selectedProjectId"
@@ -749,6 +810,7 @@ onUnmounted(() => {
             :selected-project-id="projectStore.selectedProjectId"
             :loading="projectStore.loading"
             :discovering="projectStore.loading"
+            :show-actions="false"
             @select-project="selectProject"
             @open-create-project="openCreateProjectModal"
             @discover-projects="discoverProjectsFromBrowser"
@@ -804,6 +866,8 @@ onUnmounted(() => {
                         :current-tags="imageStore.currentImage?.tags ?? []"
                         :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
                         :framed="false"
+                        @add="handleAiProposedTagAdd"
+                        @remove="handleAiProposedTagRemove"
                       />
 
                       <TagsLibraryCard
@@ -869,6 +933,8 @@ onUnmounted(() => {
                   :current-tags="imageStore.currentImage?.tags ?? []"
                   :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
                   :framed="false"
+                  @add="handleAiProposedTagAdd"
+                  @remove="handleAiProposedTagRemove"
                 />
 
                 <TagsLibraryCard
@@ -910,6 +976,27 @@ onUnmounted(() => {
         :draggable="false"
         @close="closeMobileActiveTab"
       >
+        <template v-if="activeMobileTab === 'project-browser'" #actions>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="rounded-[8px] border border-[var(--tf-color-surface-border)] bg-transparent px-2 py-1 text-xs font-medium text-[var(--tf-color-text-default)] disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="projectStore.loading"
+              @click="discoverProjectsFromBrowser"
+            >
+              {{ projectStore.loading ? 'Refreshing…' : 'Discover' }}
+            </button>
+            <button
+              type="button"
+              class="rounded-[8px] border border-[var(--tf-color-surface-border)] bg-transparent px-2 py-1 text-xs font-medium text-[var(--tf-color-text-default)] disabled:cursor-not-allowed disabled:opacity-60"
+              :disabled="projectStore.loading"
+              @click="openCreateProjectModal"
+            >
+              Create Project
+            </button>
+          </div>
+        </template>
+
         <div
           v-if="activeMobileTab === 'image-browser'"
           v-memo="[imageBrowserMemoKey]"
@@ -948,6 +1035,8 @@ onUnmounted(() => {
           :current-tags="imageStore.currentImage?.tags ?? []"
           :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
           :framed="false"
+          @add="handleAiProposedTagAdd"
+          @remove="handleAiProposedTagRemove"
         />
 
         <TagsLibraryCard
@@ -966,6 +1055,7 @@ onUnmounted(() => {
           :selected-project-id="projectStore.selectedProjectId"
           :loading="projectStore.loading"
           :discovering="projectStore.loading"
+          :show-actions="false"
           @select-project="selectProject"
           @open-create-project="openCreateProjectModal"
           @discover-projects="discoverProjectsFromBrowser"
