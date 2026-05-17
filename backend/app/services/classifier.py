@@ -17,6 +17,18 @@ from app.core.config import default_model_storage_path, settings
 from app.core.enums import TaggingMode
 from app.services.tag_import import get_catalog_asset_path
 
+# Pre-bind optional torch.nn symbols so static analyzers see them as always defined.
+Dropout = cast(Any, object)
+Flatten = cast(Any, object)
+Identity = cast(Any, object)
+LayerNorm = cast(Any, object)
+Linear = cast(Any, object)
+ModuleList = cast(Any, object)
+Parameter = cast(Any, object)
+RMSNorm = cast(Any, object)
+init = cast(Any, object)
+TorchModuleBase: type[Any] = object
+
 try:
     import numpy as np
     import safetensors.torch
@@ -45,15 +57,19 @@ try:
         Identity,
         LayerNorm,
         Linear,
-        Module,
         ModuleList,
         Parameter,
         RMSNorm,
         init,
     )
+    from torch.nn import (
+        Module as TorchModule,
+    )
     from torch.nn.functional import scaled_dot_product_attention, silu
     from torchvision import transforms
     from torchvision.transforms import InterpolationMode
+
+    TorchModuleBase = cast(type[Any], TorchModule)
 
     _ML_IMPORT_ERROR: Exception | None = None
 except Exception as exc:  # pragma: no cover - optional runtime dependency
@@ -85,19 +101,6 @@ except Exception as exc:  # pragma: no cover - optional runtime dependency
     profileToProfile = _missing
     exif_transpose = _missing
     safe_open = _missing  # type: ignore[misc]
-    for _symbol in (
-        "Buffer",
-        "Dropout",
-        "Flatten",
-        "Identity",
-        "LayerNorm",
-        "Linear",
-        "Module",
-        "ModuleList",
-        "Parameter",
-        "RMSNorm",
-    ):
-        globals()[_symbol] = cast(Any, object)
     init = _missing
     scaled_dot_product_attention = _missing
     silu = _missing
@@ -490,7 +493,7 @@ class _GatedHead(torch.nn.Module):
         return self.act(activation_output) * self.gate(gate_output)
 
 
-class _SwiGLU(Module):
+class _SwiGLU(TorchModuleBase):  # type: ignore[misc]
     def __init__(self, dim: int = -1) -> None:
         super().__init__()
         self.dim = dim
@@ -500,7 +503,7 @@ class _SwiGLU(Module):
         return silu(f) * g
 
 
-class _BatchLinear(Module):
+class _BatchLinear(TorchModuleBase):  # type: ignore[misc]
     def __init__(
         self,
         batch_shape: tuple[int, ...] | int,
@@ -551,7 +554,7 @@ class _BatchLinear(Module):
         return output
 
 
-class _Mean(Module):
+class _Mean(TorchModuleBase):  # type: ignore[misc]
     def __init__(
         self, dim: tuple[int, ...] | int = -1, *, keepdim: bool = False
     ) -> None:
@@ -563,7 +566,7 @@ class _Mean(Module):
         return x.mean(self.dim, self.keepdim)
 
 
-class _HydraPool(Module):
+class _HydraPool(TorchModuleBase):  # type: ignore[misc]
     def __init__(
         self,
         attn_dim: int,
@@ -626,7 +629,7 @@ class _HydraPool(Module):
         )
         self.out_act = _SwiGLU()
 
-    def create_head(self) -> Module:
+    def create_head(self) -> Any:
         if self.output_dim == 1:
             return Flatten(-2)
         return _Mean(-1)

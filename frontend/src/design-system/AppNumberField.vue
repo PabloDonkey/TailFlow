@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { NumberFieldInput, NumberFieldRoot } from 'reka-ui'
 
-const props = withDefaults(defineProps<{
+withDefaults(defineProps<{
   modelValue: number
   ariaLabel?: string
   min?: number

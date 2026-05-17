@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { SwitchRoot, SwitchThumb } from 'reka-ui'
 
-const props = withDefaults(defineProps<{
+withDefaults(defineProps<{
   modelValue: boolean
   ariaLabel?: string
   disabled?: boolean
