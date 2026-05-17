@@ -3,12 +3,14 @@ withDefaults(defineProps<{
   label: string
   meta?: string | null
   actionLabel?: string
+  actionAriaLabel?: string | null
   actionKind?: 'add' | 'remove' | null
   variant?: 'default' | 'selected'
   actionDisabled?: boolean
 }>(), {
   meta: null,
   actionLabel: 'Add',
+  actionAriaLabel: null,
   actionKind: 'add',
   variant: 'default',
   actionDisabled: false,
@@ -40,6 +42,7 @@ const emit = defineEmits<{
       v-if="actionKind"
       type="button"
       class="text-xs font-medium uppercase tracking-[0.08em] text-[var(--tf-color-text-default)] transition hover:text-[var(--tf-color-action)] disabled:cursor-not-allowed disabled:opacity-60"
+      :aria-label="actionAriaLabel ?? undefined"
       :disabled="actionDisabled"
       @click="emit('action')"
     >

@@ -60,7 +60,7 @@ export class WorkspacePageObject {
   }
 
   async expectMobilePanelTitle(title: string): Promise<void> {
-    await expect(this.page.getByRole('heading', { name: title })).toBeVisible()
+    await expect(this.page.getByRole('heading', { name: title }).first()).toBeVisible()
     await expect(this.page.getByRole('button', { name: 'Close mobile workspace panel' })).toBeVisible()
   }
 

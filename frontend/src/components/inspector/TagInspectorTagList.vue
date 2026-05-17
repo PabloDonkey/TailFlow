@@ -42,6 +42,7 @@ function buildTagMeta(tag: ProjectTag): string {
       :meta="buildTagMeta(tag)"
       :variant="tag.is_protected ? 'selected' : 'default'"
       :action-label="tag.is_protected ? 'Protected' : 'Remove'"
+      :action-aria-label="tag.is_protected ? null : `Remove tag ${tag.name}`"
       :action-kind="tag.is_protected ? null : 'remove'"
       :action-disabled="tag.is_protected"
       @action="emit('remove', tag)"
