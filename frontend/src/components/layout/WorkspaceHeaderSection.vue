@@ -30,10 +30,19 @@ const emit = defineEmits<{
 <template>
   <AppHeader
     :project-name="projectName"
+    :projects="projects"
+    :selected-project-id="selectedProjectId"
+    :active-right-panel="activeRightPanel"
+    :loading="loading"
     :project-picker-open="showProjectPicker"
     :overflow-open="showActionsMenu"
     @open-project-picker="emit('openProjectPicker')"
     @open-overflow="emit('openOverflow')"
+    @refresh-projects="emit('refreshProjects')"
+    @select-project="(projectId) => emit('selectProject', projectId)"
+    @show-tags-library-panel="emit('showTagsLibraryPanel')"
+    @show-tag-inspector-panel="emit('showTagInspectorPanel')"
+    @show-projects-panel="emit('showProjectsPanel')"
   />
 
   <WorkspaceHeaderOverlays
