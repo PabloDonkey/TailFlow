@@ -1,5 +1,9 @@
 """Unit tests for classifier runtime device selection and tensor placement."""
 
+from collections.abc import Iterator
+
+import torch
+from _pytest.monkeypatch import MonkeyPatch
 from app.services import classifier
 
 
@@ -13,7 +17,7 @@ class _FakeModel:
         self._device = device
         self._logits = logits
 
-    def parameters(self):
+    def parameters(self) -> Iterator[_FakeParam]:
         yield _FakeParam(self._device)
 
     def __call__(self, _tensor: object) -> object:
@@ -49,17 +53,17 @@ class _FakeLogits:
 
 
 def test_runtime_device_prefers_cuda_when_available(
-    monkeypatch,
+    monkeypatch: MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(classifier.torch.cuda, "is_available", lambda: True)
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
 
     assert str(classifier._runtime_device()) == "cuda"
 
 
 def test_runtime_device_falls_back_to_cpu_when_cuda_unavailable(
-    monkeypatch,
+    monkeypatch: MonkeyPatch,
 ) -> None:
-    monkeypatch.setattr(classifier.torch.cuda, "is_available", lambda: False)
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: False)
 
     assert str(classifier._runtime_device()) == "cpu"
 

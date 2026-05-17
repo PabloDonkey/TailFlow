@@ -76,26 +76,29 @@ except Exception as exc:  # pragma: no cover - optional runtime dependency
     tf = _missing
     rearrange = _missing
     Image = _missing
-    Direction = _missing
-    ImageCmsFlags = _missing
-    Intent = _missing
-    ImageCmsProfile = _missing
+    Direction = _missing  # type: ignore[misc]
+    ImageCmsFlags = _missing  # type: ignore[misc]
+    Intent = _missing  # type: ignore[misc]
+    ImageCmsProfile = _missing  # type: ignore[misc]
     createProfile = _missing
     getDefaultIntent = _missing
     isIntentSupported = _missing
     profileToProfile = _missing
     exif_transpose = _missing
-    safe_open = _missing
-    Buffer = cast(Any, object)
-    Dropout = cast(Any, object)
-    Flatten = cast(Any, object)
-    Identity = cast(Any, object)
-    LayerNorm = cast(Any, object)
-    Linear = cast(Any, object)
-    Module = cast(Any, object)
-    ModuleList = cast(Any, object)
-    Parameter = cast(Any, object)
-    RMSNorm = cast(Any, object)
+    safe_open = _missing  # type: ignore[misc]
+    for _symbol in (
+        "Buffer",
+        "Dropout",
+        "Flatten",
+        "Identity",
+        "LayerNorm",
+        "Linear",
+        "Module",
+        "ModuleList",
+        "Parameter",
+        "RMSNorm",
+    ):
+        globals()[_symbol] = cast(Any, object)
     init = _missing
     scaled_dot_product_attention = _missing
     silu = _missing
@@ -405,7 +408,7 @@ def _resolve_model_file_set(model_id: str) -> tuple[Path, ...] | None:
     return None
 
 
-class _Fit(torch.nn.Module):  # type: ignore[misc, valid-type]
+class _Fit(torch.nn.Module):
     def __init__(
         self,
         bounds: tuple[int, int] | int,
@@ -416,7 +419,7 @@ class _Fit(torch.nn.Module):  # type: ignore[misc, valid-type]
         super().__init__()
         self.bounds = (bounds, bounds) if isinstance(bounds, int) else bounds
         self.interpolation = (
-            interpolation if interpolation is not None else InterpolationMode.LANCZOS  # type: ignore[attr-defined]
+            interpolation if interpolation is not None else InterpolationMode.LANCZOS
         )
         self.grow = grow
         self.pad = pad
@@ -452,7 +455,7 @@ class _Fit(torch.nn.Module):  # type: ignore[misc, valid-type]
         return tf.pad(resized, [lpad, tpad, rpad, bpad], self.pad)
 
 
-class _CompositeAlpha(torch.nn.Module):  # type: ignore[misc, valid-type]
+class _CompositeAlpha(torch.nn.Module):
     def __init__(self, background: tuple[float, float, float] | float) -> None:
         super().__init__()
         bg = (
@@ -473,7 +476,7 @@ class _CompositeAlpha(torch.nn.Module):  # type: ignore[misc, valid-type]
         return img[..., :3, :, :]
 
 
-class _GatedHead(torch.nn.Module):  # type: ignore[misc, valid-type]
+class _GatedHead(torch.nn.Module):
     def __init__(self, num_features: int, num_classes: int) -> None:
         super().__init__()
         self.num_classes = num_classes
@@ -593,6 +596,12 @@ class _HydraPool(Module):
             input_dim, attn_dim * 2, bias=False, device=device, dtype=dtype
         )
         self.qk_norm = RMSNorm(head_dim, eps=1e-5, elementwise_affine=False)
+
+        self.ff_norm: Any
+        self.ff_in: Any
+        self.ff_act: Any
+        self.ff_drop: Any
+        self.ff_out: Any
 
         if self._has_ff:
             hidden_dim = int(attn_dim * ff_ratio)
@@ -729,7 +738,8 @@ def _load_jtp2_runtime(model_id: str) -> tuple[Any, list[str]]:
         num_classes=len(allowed_tags),
     )
     if model_id == "jtp_pilot2":
-        num_features = int(model.head.in_features)
+        model_head = cast(Any, model.head)
+        num_features = int(model_head.in_features)
         model.head = _GatedHead(num_features, len(allowed_tags))
 
     state_dict = safetensors.torch.load_file(str(model_path), device="cpu")
@@ -750,7 +760,8 @@ def _load_jtp3_runtime() -> tuple[Any, list[str]]:
         raise FileNotFoundError("Required files not found for model 'jtp-3-hydra'.")
 
     model_path = files[0]
-    with safe_open(str(model_path), framework="pt", device="cpu") as file:
+    safe_open_fn = cast(Any, safe_open)
+    with safe_open_fn(str(model_path), framework="pt", device="cpu") as file:
         metadata = file.metadata() or {}
         tensor_keys = file.keys()
         state_dict = {key: file.get_tensor(key) for key in tensor_keys}
@@ -791,7 +802,7 @@ def _load_jtp3_runtime() -> tuple[Any, list[str]]:
         dtype=runtime_dtype,
     )
     model.head = model.attn_pool.create_head()
-    model.num_classes = len(tags)
+    cast(Any, model).num_classes = len(tags)
 
     model.eval().to(dtype=runtime_dtype)
     model.load_state_dict(state_dict, strict=True)
@@ -836,6 +847,9 @@ def _run_jtp2_inference(model: Any, tensor: Any, model_id: str) -> Any:
     return probabilities.cpu()
 
 
+_SRGB_PROFILE: Any
+_INTENT_FLAGS: dict[Any, Any]
+
 if _ML_IMPORT_ERROR is None:
     Image.MAX_IMAGE_PIXELS = None
     _SRGB_PROFILE = createProfile(colorSpace="sRGB")
@@ -848,7 +862,7 @@ if _ML_IMPORT_ERROR is None:
     }
 else:
     _SRGB_PROFILE = None
-    _INTENT_FLAGS: dict[Any, Any] = {}
+    _INTENT_FLAGS = {}
 
 
 def _coalesce_intent(intent: Any) -> Any:
