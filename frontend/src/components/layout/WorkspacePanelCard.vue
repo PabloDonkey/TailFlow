@@ -13,6 +13,7 @@ withDefaults(defineProps<{
 const emit = defineEmits<{
   close: []
   dragstart: [event: DragEvent]
+  dragend: [event: DragEvent]
   dragover: [event: DragEvent]
   drop: [event: DragEvent]
 }>()
@@ -40,6 +41,7 @@ const emit = defineEmits<{
           :draggable="draggable"
           :aria-label="`Drag ${title} panel`"
           @dragstart="(event) => emit('dragstart', event)"
+          @dragend="(event) => emit('dragend', event)"
         >
           Drag
         </button>

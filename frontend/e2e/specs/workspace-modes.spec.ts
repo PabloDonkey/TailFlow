@@ -101,4 +101,46 @@ test.describe('Workspace mode switching', () => {
     expect(detailsAfterReload.x).toBeLessThan(canvasAfterReloadBox.x)
   })
 
+  test('shows drop zone only while dragging and hides after finish @desktop', async ({ page }) => {
+    await installApiMocks(page)
+
+    const workspace = new WorkspacePageObject(page)
+
+    await workspace.goto()
+    await workspace.showProjectsMode()
+    await workspace.chooseTaggingFromProjectBrowser('Sample Project')
+    await workspace.showProjectDetailsMode()
+
+    const dropIndicators = page.getByTestId('side-drop-indicator')
+    await expect(dropIndicators).toHaveCount(0)
+
+    const imageBrowserHeading = page.getByRole('heading', { name: 'Image Browser' }).first()
+    const imageBrowserBeforeDrag = await imageBrowserHeading.boundingBox()
+    expect(imageBrowserBeforeDrag).not.toBeNull()
+    await imageBrowserHeading.dispatchEvent('dragover', { clientY: 0 })
+    await expect(dropIndicators).toHaveCount(0)
+
+    const dragHandle = page.getByRole('button', { name: 'Drag Project Details panel' })
+    const dataTransfer = await page.evaluateHandle(() => new DataTransfer())
+
+    await dragHandle.dispatchEvent('dragstart', { dataTransfer })
+    await imageBrowserHeading.dispatchEvent('dragover', { dataTransfer, clientY: 0 })
+    await expect(dropIndicators).toHaveCount(1)
+
+    const activeIndicator = dropIndicators.first()
+    await expect(activeIndicator).not.toHaveClass(/absolute/)
+
+    const imageBrowserDuringDrag = await imageBrowserHeading.boundingBox()
+    expect(imageBrowserDuringDrag).not.toBeNull()
+    if (imageBrowserBeforeDrag && imageBrowserDuringDrag) {
+      expect(imageBrowserDuringDrag.y).toBeGreaterThan(imageBrowserBeforeDrag.y)
+    }
+
+    await imageBrowserHeading.dispatchEvent('drop', { dataTransfer, clientY: 0 })
+    await expect(dropIndicators).toHaveCount(0)
+
+    await dragHandle.dispatchEvent('dragend', { dataTransfer })
+    await expect(dropIndicators).toHaveCount(0)
+  })
+
 })

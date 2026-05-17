@@ -35,6 +35,12 @@ const isMobileViewportRef = ref(false)
 type SideViewId = 'image-browser' | 'current-tags' | 'ai-proposed-tags' | 'tags-library' | 'project-details'
 type ToggleCardId = SideViewId | 'canvas'
 type CardId = ToggleCardId | 'project-browser'
+type SideColumnId = 'left' | 'right'
+type SideDropIndicator = {
+  column: SideColumnId
+  panelIndex: number | null
+  edge: 'top' | 'bottom'
+}
 const DEFAULT_LEFT_VIEW_ORDER: SideViewId[] = ['image-browser']
 const DEFAULT_RIGHT_VIEW_ORDER: SideViewId[] = ['current-tags', 'ai-proposed-tags', 'tags-library', 'project-details']
 const DEFAULT_SIDE_VIEW_ORDER: SideViewId[] = [...DEFAULT_LEFT_VIEW_ORDER, ...DEFAULT_RIGHT_VIEW_ORDER]
@@ -89,6 +95,7 @@ const cardOpenState = ref<Record<ToggleCardId, boolean>>({
 const leftViewOrder = ref<SideViewId[]>([...DEFAULT_LEFT_VIEW_ORDER])
 const rightViewOrder = ref<SideViewId[]>([...DEFAULT_RIGHT_VIEW_ORDER])
 const draggedSideView = ref<SideViewId | null>(null)
+const sideDropIndicator = ref<SideDropIndicator | null>(null)
 const activeMobileTab = ref<MobileWorkspaceTab>('image-browser')
 const hasSelectedProject = computed(() => Boolean(projectStore.selectedProjectId))
 const WORKSPACE_CARD_STATE_KEY = 'tailflow.workspace-card-state.v1'
@@ -491,11 +498,128 @@ function onSidePanelDragStart(viewId: SideViewId, event: DragEvent) {
   }
 
   draggedSideView.value = viewId
+  sideDropIndicator.value = null
   if (!event.dataTransfer) {
     return
   }
   event.dataTransfer.effectAllowed = 'move'
   event.dataTransfer.setData('text/plain', viewId)
+}
+
+function onSidePanelDragEnd() {
+  draggedSideView.value = null
+  sideDropIndicator.value = null
+}
+
+function handleSidePanelDragOver(
+  column: SideColumnId,
+  panelIndex: number,
+  event: DragEvent,
+) {
+  event.preventDefault()
+
+  if (!draggedSideView.value) {
+    sideDropIndicator.value = null
+    return
+  }
+
+  const targetElement = event.currentTarget as HTMLElement | null
+  if (!targetElement) {
+    sideDropIndicator.value = null
+    return
+  }
+
+  const rect = targetElement.getBoundingClientRect()
+  const edgeThreshold = Math.min(28, rect.height * 0.25)
+
+  if (event.clientY <= rect.top + edgeThreshold) {
+    sideDropIndicator.value = { column, panelIndex, edge: 'top' }
+    return
+  }
+
+  if (event.clientY >= rect.bottom - edgeThreshold) {
+    sideDropIndicator.value = { column, panelIndex, edge: 'bottom' }
+    return
+  }
+
+  sideDropIndicator.value = null
+}
+
+function handleSideColumnDragOver(
+  column: SideColumnId,
+  totalPanels: number,
+  event: DragEvent,
+) {
+  event.preventDefault()
+
+  if (!draggedSideView.value) {
+    sideDropIndicator.value = null
+    return
+  }
+
+  if (totalPanels <= 0) {
+    sideDropIndicator.value = null
+    return
+  }
+
+  const targetElement = event.currentTarget as HTMLElement | null
+  if (!targetElement) {
+    return
+  }
+
+  const rect = targetElement.getBoundingClientRect()
+  const bottomThreshold = Math.min(56, rect.height * 0.2)
+  const isNearBottomEdge = event.clientY >= rect.bottom - bottomThreshold
+
+  if (!isNearBottomEdge) {
+    return
+  }
+
+  sideDropIndicator.value = { column, panelIndex: totalPanels - 1, edge: 'bottom' }
+}
+
+function showSideDropIndicator(column: SideColumnId, panelIndex: number, edge: 'top' | 'bottom'): boolean {
+  const indicator = sideDropIndicator.value
+  return Boolean(
+    draggedSideView.value
+    && indicator
+    && indicator.column === column
+    && indicator.panelIndex === panelIndex
+    && indicator.edge === edge,
+  )
+}
+
+function resolveDropInsertionIndex(
+  column: SideColumnId,
+  totalPanels: number,
+  fallbackIndex: number | null,
+): number | null {
+  if (!sideDropIndicator.value || sideDropIndicator.value.column !== column) {
+    return fallbackIndex
+  }
+
+  const { panelIndex, edge } = sideDropIndicator.value
+  if (panelIndex === null) {
+    return fallbackIndex
+  }
+
+  if (edge === 'top') {
+    return panelIndex
+  }
+
+  return Math.min(panelIndex + 1, totalPanels)
+}
+
+function handleSideDrop(
+  column: SideColumnId,
+  totalPanels: number,
+  event: DragEvent,
+  fallbackIndex: number | null,
+) {
+  event.preventDefault()
+  const insertionIndex = resolveDropInsertionIndex(column, totalPanels, fallbackIndex)
+  moveDraggedSideView(column, insertionIndex)
+  sideDropIndicator.value = null
 }
 
 function removeFromColumns(viewId: SideViewId) {
@@ -522,10 +646,7 @@ function moveDraggedSideView(targetColumn: 'left' | 'right', targetIndex: number
   }
 
   draggedSideView.value = null
-}
-
-function allowSideDrop(event: DragEvent) {
-  event.preventDefault()
+  sideDropIndicator.value = null
 }
 
 function isMobileTabClosable(tabId: MobileWorkspaceTab): boolean {
@@ -756,9 +877,9 @@ onUnmounted(() => {
         <template #left>
           <div
             v-if="leftVisibleViewIds.length > 1"
-            class="h-full min-h-0"
-            @dragover="allowSideDrop"
-            @drop="moveDraggedSideView('left', null)"
+            class="relative h-full min-h-0 overflow-hidden"
+            @dragover="(event) => handleSideColumnDragOver('left', leftVisibleViewIds.length, event)"
+            @drop="(event) => handleSideDrop('left', leftVisibleViewIds.length, event, null)"
           >
             <SplitterGroup
               :auto-save-id="`workspace-left-column-vertical-${leftVisibleViewIds.length}`"
@@ -775,53 +896,72 @@ onUnmounted(() => {
                   class="min-h-0"
                 >
                   <div
-                    class="h-full min-h-0"
-                    @dragover="allowSideDrop"
-                    @drop="moveDraggedSideView('left', index)"
+                    class="relative flex h-full min-h-0 flex-col overflow-hidden"
+                    @dragover="(event) => handleSidePanelDragOver('left', index, event)"
+                    @drop="(event) => handleSideDrop('left', leftVisibleViewIds.length, event, index)"
                   >
-                    <WorkspacePanelCard
-                      :title="cardTitle(viewId)"
-                      :closable="true"
-                      :draggable="cardMeta[viewId].draggable"
-                      @close="closeView(viewId)"
-                      @dragstart="(event) => onSidePanelDragStart(viewId, event)"
-                    >
-                      <div v-if="viewId === 'image-browser'">
-                        <ImageBrowserCard
-                          :selected-project-id="projectStore.selectedProjectId"
-                          @select-image="handleSelectImage"
+                    <div
+                      v-if="showSideDropIndicator('left', index, 'top')"
+                      data-testid="side-drop-indicator"
+                      data-column="left"
+                      data-edge="top"
+                      class="mx-2 my-1 h-10 shrink-0 rounded-[8px] border-2 border-dashed border-[var(--tf-color-accent)] bg-[color-mix(in_srgb,var(--tf-color-accent)_12%,transparent)]"
+                    />
+
+                    <div class="min-h-0 flex-1">
+                      <WorkspacePanelCard
+                        :title="cardTitle(viewId)"
+                        :closable="true"
+                        :draggable="cardMeta[viewId].draggable"
+                        @close="closeView(viewId)"
+                        @dragstart="(event) => onSidePanelDragStart(viewId, event)"
+                        @dragend="onSidePanelDragEnd"
+                      >
+                        <div v-if="viewId === 'image-browser'">
+                          <ImageBrowserCard
+                            :selected-project-id="projectStore.selectedProjectId"
+                            @select-image="handleSelectImage"
+                          />
+                        </div>
+
+                        <CurrentTagsCard
+                          v-else-if="viewId === 'current-tags'"
+                          :project-id="projectStore.selectedProjectId"
+                          :selected-project="selectedProject"
+                          :framed="false"
                         />
-                      </div>
 
-                      <CurrentTagsCard
-                        v-else-if="viewId === 'current-tags'"
-                        :project-id="projectStore.selectedProjectId"
-                        :selected-project="selectedProject"
-                        :framed="false"
-                      />
+                        <AiProposedTagsCard
+                          v-else-if="viewId === 'ai-proposed-tags'"
+                          :project-id="projectStore.selectedProjectId"
+                          :image-id="imageStore.currentImage?.id ?? null"
+                          :mode="selectedProject?.tagging_mode ?? 'booru'"
+                          :current-tags="imageStore.currentImage?.tags ?? []"
+                          :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
+                          :framed="false"
+                          @add="handleAiProposedTagAdd"
+                          @remove="handleAiProposedTagRemove"
+                        />
 
-                      <AiProposedTagsCard
-                        v-else-if="viewId === 'ai-proposed-tags'"
-                        :project-id="projectStore.selectedProjectId"
-                        :image-id="imageStore.currentImage?.id ?? null"
-                        :mode="selectedProject?.tagging_mode ?? 'booru'"
-                        :current-tags="imageStore.currentImage?.tags ?? []"
-                        :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
-                        :framed="false"
-                        @add="handleAiProposedTagAdd"
-                        @remove="handleAiProposedTagRemove"
-                      />
+                        <TagsLibraryCard
+                          v-else-if="viewId === 'tags-library'"
+                          :show-close="false"
+                        />
 
-                      <TagsLibraryCard
-                        v-else-if="viewId === 'tags-library'"
-                        :show-close="false"
-                      />
+                        <ProjectDetailsCard
+                          v-else
+                          :selected-project="selectedProject"
+                        />
+                      </WorkspacePanelCard>
+                    </div>
 
-                      <ProjectDetailsCard
-                        v-else
-                        :selected-project="selectedProject"
-                      />
-                    </WorkspacePanelCard>
+                    <div
+                      v-if="showSideDropIndicator('left', index, 'bottom')"
+                      data-testid="side-drop-indicator"
+                      data-column="left"
+                      data-edge="bottom"
+                      class="mx-2 my-1 h-10 shrink-0 rounded-[8px] border-2 border-dashed border-[var(--tf-color-accent)] bg-[color-mix(in_srgb,var(--tf-color-accent)_12%,transparent)]"
+                    />
                   </div>
                 </SplitterPanel>
 
@@ -831,65 +971,86 @@ onUnmounted(() => {
                 />
               </template>
             </SplitterGroup>
+
           </div>
 
           <div
             v-else
-            class="flex h-full min-h-0 flex-col"
-            @dragover="allowSideDrop"
-            @drop="moveDraggedSideView('left', null)"
+            class="relative flex h-full min-h-0 flex-col overflow-hidden"
+            @dragover="(event) => handleSideColumnDragOver('left', leftVisibleViewIds.length, event)"
+            @drop="(event) => handleSideDrop('left', leftVisibleViewIds.length, event, null)"
           >
             <div
               v-for="(viewId, index) in leftVisibleViewIds"
               :key="viewId"
-              class="h-full min-h-0"
-              @dragover="allowSideDrop"
-              @drop="moveDraggedSideView('left', index)"
+              class="relative flex h-full min-h-0 flex-col overflow-hidden"
+              @dragover="(event) => handleSidePanelDragOver('left', index, event)"
+              @drop="(event) => handleSideDrop('left', leftVisibleViewIds.length, event, index)"
             >
-              <WorkspacePanelCard
-                :title="cardTitle(viewId)"
-                :closable="true"
-                :draggable="cardMeta[viewId].draggable"
-                @close="closeView(viewId)"
-                @dragstart="(event) => onSidePanelDragStart(viewId, event)"
-              >
-                <div v-if="viewId === 'image-browser'">
-                  <ImageBrowserCard
-                    :selected-project-id="projectStore.selectedProjectId"
-                    @select-image="handleSelectImage"
+              <div
+                v-if="showSideDropIndicator('left', index, 'top')"
+                data-testid="side-drop-indicator"
+                data-column="left"
+                data-edge="top"
+                class="mx-2 my-1 h-10 shrink-0 rounded-[8px] border-2 border-dashed border-[var(--tf-color-accent)] bg-[color-mix(in_srgb,var(--tf-color-accent)_12%,transparent)]"
+              />
+
+              <div class="min-h-0 flex-1">
+                <WorkspacePanelCard
+                  :title="cardTitle(viewId)"
+                  :closable="true"
+                  :draggable="cardMeta[viewId].draggable"
+                  @close="closeView(viewId)"
+                  @dragstart="(event) => onSidePanelDragStart(viewId, event)"
+                  @dragend="onSidePanelDragEnd"
+                >
+                  <div v-if="viewId === 'image-browser'">
+                    <ImageBrowserCard
+                      :selected-project-id="projectStore.selectedProjectId"
+                      @select-image="handleSelectImage"
+                    />
+                  </div>
+
+                  <CurrentTagsCard
+                    v-else-if="viewId === 'current-tags'"
+                    :project-id="projectStore.selectedProjectId"
+                    :selected-project="selectedProject"
+                    :framed="false"
                   />
-                </div>
 
-                <CurrentTagsCard
-                  v-else-if="viewId === 'current-tags'"
-                  :project-id="projectStore.selectedProjectId"
-                  :selected-project="selectedProject"
-                  :framed="false"
-                />
+                  <AiProposedTagsCard
+                    v-else-if="viewId === 'ai-proposed-tags'"
+                    :project-id="projectStore.selectedProjectId"
+                    :image-id="imageStore.currentImage?.id ?? null"
+                    :mode="selectedProject?.tagging_mode ?? 'booru'"
+                    :current-tags="imageStore.currentImage?.tags ?? []"
+                    :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
+                    :framed="false"
+                    @add="handleAiProposedTagAdd"
+                    @remove="handleAiProposedTagRemove"
+                  />
 
-                <AiProposedTagsCard
-                  v-else-if="viewId === 'ai-proposed-tags'"
-                  :project-id="projectStore.selectedProjectId"
-                  :image-id="imageStore.currentImage?.id ?? null"
-                  :mode="selectedProject?.tagging_mode ?? 'booru'"
-                  :current-tags="imageStore.currentImage?.tags ?? []"
-                  :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
-                  :framed="false"
-                  @add="handleAiProposedTagAdd"
-                  @remove="handleAiProposedTagRemove"
-                />
+                  <TagsLibraryCard
+                    v-else-if="viewId === 'tags-library'"
+                    :show-close="false"
+                  />
 
-                <TagsLibraryCard
-                  v-else-if="viewId === 'tags-library'"
-                  :show-close="false"
-                />
+                  <ProjectDetailsCard
+                    v-else
+                    :selected-project="selectedProject"
+                  />
+                </WorkspacePanelCard>
+              </div>
 
-                <ProjectDetailsCard
-                  v-else
-                  :selected-project="selectedProject"
-                />
-              </WorkspacePanelCard>
+              <div
+                v-if="showSideDropIndicator('left', index, 'bottom')"
+                data-testid="side-drop-indicator"
+                data-column="left"
+                data-edge="bottom"
+                class="mx-2 my-1 h-10 shrink-0 rounded-[8px] border-2 border-dashed border-[var(--tf-color-accent)] bg-[color-mix(in_srgb,var(--tf-color-accent)_12%,transparent)]"
+              />
             </div>
+
           </div>
         </template>
 
@@ -950,9 +1111,9 @@ onUnmounted(() => {
         <template #right>
           <div
             v-if="rightVisibleViewIds.length > 1"
-            class="h-full min-h-0"
-            @dragover="allowSideDrop"
-            @drop="moveDraggedSideView('right', null)"
+            class="relative h-full min-h-0 overflow-hidden"
+            @dragover="(event) => handleSideColumnDragOver('right', rightVisibleViewIds.length, event)"
+            @drop="(event) => handleSideDrop('right', rightVisibleViewIds.length, event, null)"
           >
             <SplitterGroup
               :auto-save-id="`workspace-right-column-vertical-${rightVisibleViewIds.length}`"
@@ -969,53 +1130,72 @@ onUnmounted(() => {
                   class="min-h-0"
                 >
                   <div
-                    class="h-full min-h-0"
-                    @dragover="allowSideDrop"
-                    @drop="moveDraggedSideView('right', index)"
+                    class="relative flex h-full min-h-0 flex-col overflow-hidden"
+                    @dragover="(event) => handleSidePanelDragOver('right', index, event)"
+                    @drop="(event) => handleSideDrop('right', rightVisibleViewIds.length, event, index)"
                   >
-                    <WorkspacePanelCard
-                      :title="cardTitle(viewId)"
-                      :closable="true"
-                      :draggable="cardMeta[viewId].draggable"
-                      @close="closeView(viewId)"
-                      @dragstart="(event) => onSidePanelDragStart(viewId, event)"
-                    >
-                      <CurrentTagsCard
-                        v-if="viewId === 'current-tags'"
-                        :project-id="projectStore.selectedProjectId"
-                        :selected-project="selectedProject"
-                        :framed="false"
-                      />
+                    <div
+                      v-if="showSideDropIndicator('right', index, 'top')"
+                      data-testid="side-drop-indicator"
+                      data-column="right"
+                      data-edge="top"
+                      class="mx-2 my-1 h-10 shrink-0 rounded-[8px] border-2 border-dashed border-[var(--tf-color-accent)] bg-[color-mix(in_srgb,var(--tf-color-accent)_12%,transparent)]"
+                    />
 
-                      <AiProposedTagsCard
-                        v-else-if="viewId === 'ai-proposed-tags'"
-                        :project-id="projectStore.selectedProjectId"
-                        :image-id="imageStore.currentImage?.id ?? null"
-                        :mode="selectedProject?.tagging_mode ?? 'booru'"
-                        :current-tags="imageStore.currentImage?.tags ?? []"
-                        :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
-                        :framed="false"
-                        @add="handleAiProposedTagAdd"
-                        @remove="handleAiProposedTagRemove"
-                      />
-
-                      <TagsLibraryCard
-                        v-else-if="viewId === 'tags-library'"
-                        :show-close="false"
-                      />
-
-                      <ProjectDetailsCard
-                        v-else-if="viewId === 'project-details'"
-                        :selected-project="selectedProject"
-                      />
-
-                      <div v-else>
-                        <ImageBrowserCard
-                          :selected-project-id="projectStore.selectedProjectId"
-                          @select-image="handleSelectImage"
+                    <div class="min-h-0 flex-1">
+                      <WorkspacePanelCard
+                        :title="cardTitle(viewId)"
+                        :closable="true"
+                        :draggable="cardMeta[viewId].draggable"
+                        @close="closeView(viewId)"
+                        @dragstart="(event) => onSidePanelDragStart(viewId, event)"
+                        @dragend="onSidePanelDragEnd"
+                      >
+                        <CurrentTagsCard
+                          v-if="viewId === 'current-tags'"
+                          :project-id="projectStore.selectedProjectId"
+                          :selected-project="selectedProject"
+                          :framed="false"
                         />
-                      </div>
-                    </WorkspacePanelCard>
+
+                        <AiProposedTagsCard
+                          v-else-if="viewId === 'ai-proposed-tags'"
+                          :project-id="projectStore.selectedProjectId"
+                          :image-id="imageStore.currentImage?.id ?? null"
+                          :mode="selectedProject?.tagging_mode ?? 'booru'"
+                          :current-tags="imageStore.currentImage?.tags ?? []"
+                          :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
+                          :framed="false"
+                          @add="handleAiProposedTagAdd"
+                          @remove="handleAiProposedTagRemove"
+                        />
+
+                        <TagsLibraryCard
+                          v-else-if="viewId === 'tags-library'"
+                          :show-close="false"
+                        />
+
+                        <ProjectDetailsCard
+                          v-else-if="viewId === 'project-details'"
+                          :selected-project="selectedProject"
+                        />
+
+                        <div v-else>
+                          <ImageBrowserCard
+                            :selected-project-id="projectStore.selectedProjectId"
+                            @select-image="handleSelectImage"
+                          />
+                        </div>
+                      </WorkspacePanelCard>
+                    </div>
+
+                    <div
+                      v-if="showSideDropIndicator('right', index, 'bottom')"
+                      data-testid="side-drop-indicator"
+                      data-column="right"
+                      data-edge="bottom"
+                      class="mx-2 my-1 h-10 shrink-0 rounded-[8px] border-2 border-dashed border-[var(--tf-color-accent)] bg-[color-mix(in_srgb,var(--tf-color-accent)_12%,transparent)]"
+                    />
                   </div>
                 </SplitterPanel>
 
@@ -1025,65 +1205,86 @@ onUnmounted(() => {
                 />
               </template>
             </SplitterGroup>
+
           </div>
 
           <div
             v-else
-            class="flex h-full min-h-0 flex-col"
-            @dragover="allowSideDrop"
-            @drop="moveDraggedSideView('right', null)"
+            class="relative flex h-full min-h-0 flex-col overflow-hidden"
+            @dragover="(event) => handleSideColumnDragOver('right', rightVisibleViewIds.length, event)"
+            @drop="(event) => handleSideDrop('right', rightVisibleViewIds.length, event, null)"
           >
             <div
               v-for="(viewId, index) in rightVisibleViewIds"
               :key="viewId"
-              class="h-full min-h-0"
-              @dragover="allowSideDrop"
-              @drop="moveDraggedSideView('right', index)"
+              class="relative flex h-full min-h-0 flex-col overflow-hidden"
+              @dragover="(event) => handleSidePanelDragOver('right', index, event)"
+              @drop="(event) => handleSideDrop('right', rightVisibleViewIds.length, event, index)"
             >
-              <WorkspacePanelCard
-                :title="cardTitle(viewId)"
-                :closable="true"
-                :draggable="cardMeta[viewId].draggable"
-                @close="closeView(viewId)"
-                @dragstart="(event) => onSidePanelDragStart(viewId, event)"
-              >
-                <CurrentTagsCard
-                  v-if="viewId === 'current-tags'"
-                  :project-id="projectStore.selectedProjectId"
-                  :selected-project="selectedProject"
-                  :framed="false"
-                />
+              <div
+                v-if="showSideDropIndicator('right', index, 'top')"
+                data-testid="side-drop-indicator"
+                data-column="right"
+                data-edge="top"
+                class="mx-2 my-1 h-10 shrink-0 rounded-[8px] border-2 border-dashed border-[var(--tf-color-accent)] bg-[color-mix(in_srgb,var(--tf-color-accent)_12%,transparent)]"
+              />
 
-                <AiProposedTagsCard
-                  v-else-if="viewId === 'ai-proposed-tags'"
-                  :project-id="projectStore.selectedProjectId"
-                  :image-id="imageStore.currentImage?.id ?? null"
-                  :mode="selectedProject?.tagging_mode ?? 'booru'"
-                  :current-tags="imageStore.currentImage?.tags ?? []"
-                  :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
-                  :framed="false"
-                  @add="handleAiProposedTagAdd"
-                  @remove="handleAiProposedTagRemove"
-                />
-
-                <TagsLibraryCard
-                  v-else-if="viewId === 'tags-library'"
-                  :show-close="false"
-                />
-
-                <ProjectDetailsCard
-                  v-else-if="viewId === 'project-details'"
-                  :selected-project="selectedProject"
-                />
-
-                <div v-else>
-                  <ImageBrowserCard
-                    :selected-project-id="projectStore.selectedProjectId"
-                    @select-image="handleSelectImage"
+              <div class="min-h-0 flex-1">
+                <WorkspacePanelCard
+                  :title="cardTitle(viewId)"
+                  :closable="true"
+                  :draggable="cardMeta[viewId].draggable"
+                  @close="closeView(viewId)"
+                  @dragstart="(event) => onSidePanelDragStart(viewId, event)"
+                  @dragend="onSidePanelDragEnd"
+                >
+                  <CurrentTagsCard
+                    v-if="viewId === 'current-tags'"
+                    :project-id="projectStore.selectedProjectId"
+                    :selected-project="selectedProject"
+                    :framed="false"
                   />
-                </div>
-              </WorkspacePanelCard>
+
+                  <AiProposedTagsCard
+                    v-else-if="viewId === 'ai-proposed-tags'"
+                    :project-id="projectStore.selectedProjectId"
+                    :image-id="imageStore.currentImage?.id ?? null"
+                    :mode="selectedProject?.tagging_mode ?? 'booru'"
+                    :current-tags="imageStore.currentImage?.tags ?? []"
+                    :get-tag-role-label="(tag) => !tag.is_protected ? null : tag.position === 0 ? 'Trigger' : tag.position === 1 ? 'Class' : 'Protected'"
+                    :framed="false"
+                    @add="handleAiProposedTagAdd"
+                    @remove="handleAiProposedTagRemove"
+                  />
+
+                  <TagsLibraryCard
+                    v-else-if="viewId === 'tags-library'"
+                    :show-close="false"
+                  />
+
+                  <ProjectDetailsCard
+                    v-else-if="viewId === 'project-details'"
+                    :selected-project="selectedProject"
+                  />
+
+                  <div v-else>
+                    <ImageBrowserCard
+                      :selected-project-id="projectStore.selectedProjectId"
+                      @select-image="handleSelectImage"
+                    />
+                  </div>
+                </WorkspacePanelCard>
+              </div>
+
+              <div
+                v-if="showSideDropIndicator('right', index, 'bottom')"
+                data-testid="side-drop-indicator"
+                data-column="right"
+                data-edge="bottom"
+                class="mx-2 my-1 h-10 shrink-0 rounded-[8px] border-2 border-dashed border-[var(--tf-color-accent)] bg-[color-mix(in_srgb,var(--tf-color-accent)_12%,transparent)]"
+              />
             </div>
+
           </div>
         </template>
       </WorkspaceLayout>
