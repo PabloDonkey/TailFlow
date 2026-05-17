@@ -25,6 +25,11 @@ export class WorkspacePageObject {
     return this.viewsMenuTrigger.isVisible()
   }
 
+  private mobileActionsPanel(): Locator {
+    const closeButton = this.page.getByRole('button', { name: 'Close workspace actions' })
+    return closeButton.locator('xpath=following-sibling::section[1]')
+  }
+
   private async ensureDesktopViewsMenuOpen(): Promise<void> {
     const tagsOption = this.page.getByRole('menuitem', { name: 'Tags library' })
     if (await tagsOption.isVisible()) {
@@ -36,9 +41,9 @@ export class WorkspacePageObject {
 
   private async desktopViewsOption(option: 'projects' | 'tags' | 'inspector'): Promise<Locator> {
     const optionLabelByMode: Record<typeof option, string> = {
-      projects: 'Project manager',
+      projects: 'Image browser',
       tags: 'Tags library',
-      inspector: 'Tag inspector',
+      inspector: 'Current tags',
     }
 
     await this.ensureDesktopViewsMenuOpen()
@@ -57,28 +62,41 @@ export class WorkspacePageObject {
       return
     }
 
+    const existingCloseButton = this.page.getByRole('button', { name: 'Close workspace actions' })
+    if (await existingCloseButton.isVisible()) {
+      return
+    }
+
     await this.openActionsButton.click()
-    await expect(this.page.getByRole('button', { name: 'Close workspace actions' })).toBeVisible()
-    await expect(this.page.getByRole('button', { name: 'Image canvas' })).toBeVisible()
+    const closeButton = this.page.getByRole('button', { name: 'Close workspace actions' })
+    await expect(closeButton).toBeVisible()
+    const actionsPanel = this.mobileActionsPanel()
+    await expect(actionsPanel.getByRole('button', { name: 'Image canvas', exact: true })).toBeVisible()
   }
 
   async expectActionsOptionSelected(option: 'projects' | 'tags' | 'inspector'): Promise<void> {
     const optionLabelByMode: Record<typeof option, string> = {
-      projects: 'Project manager',
+      projects: 'Image browser',
       tags: 'Tags library',
-      inspector: 'Tag inspector',
+      inspector: 'Current tags',
     }
 
     if (await this.isDesktopViewport()) {
       const optionLocator = await this.desktopViewsOption(option)
-      await expect(optionLocator).toHaveClass(/font-semibold/)
+      await expect(optionLocator.locator('xpath=.//span[normalize-space()="✓"]')).toHaveCount(1)
       return
     }
 
-    await expect(this.page.getByRole('button', { name: optionLabelByMode[option] })).toHaveAttribute('aria-selected', 'true')
+    const actionsPanel = this.mobileActionsPanel()
+    await expect(actionsPanel.getByRole('button', { name: optionLabelByMode[option], exact: true })).toHaveAttribute('aria-selected', 'true')
   }
 
   async showProjectsMode(): Promise<void> {
+    const closeActionsButton = this.page.getByRole('button', { name: 'Close workspace actions' })
+    if (await closeActionsButton.isVisible()) {
+      await closeActionsButton.click()
+    }
+
     const closeCanvasButton = this.page.getByRole('button', { name: 'Close Image Canvas panel' })
     if (await closeCanvasButton.isVisible()) {
       await closeCanvasButton.click()
@@ -95,30 +113,61 @@ export class WorkspacePageObject {
   }
 
   async showTagsLibraryMode(): Promise<void> {
+    const tagsLibraryHeading = this.page.getByRole('heading', { name: 'Tags Library' }).first()
+    if (await tagsLibraryHeading.isVisible()) {
+      return
+    }
+
     if (await this.isDesktopViewport()) {
       const optionLocator = await this.desktopViewsOption('tags')
       await optionLocator.click()
     } else {
-      await this.page.getByRole('button', { name: 'Tags library' }).click()
+      await this.openMobilePanel('Tags')
     }
-    await expect(this.page.getByRole('heading', { name: 'Tags Library' })).toBeVisible()
+    await expect(tagsLibraryHeading).toBeVisible()
   }
 
   async showTagInspectorMode(): Promise<void> {
+    const currentTagsHeading = this.page.getByRole('heading', { name: 'Current Tags' }).first()
+    if (await currentTagsHeading.isVisible()) {
+      return
+    }
+
     if (await this.isDesktopViewport()) {
-      const optionLocator = this.page.getByRole('menuitem', { name: 'Current tags' })
-      await this.ensureDesktopViewsMenuOpen()
+      const optionLocator = await this.desktopViewsOption('inspector')
       await optionLocator.click()
       return
     }
 
-    await this.page.getByRole('button', { name: 'Current tags' }).click()
+    const closeActionsButton = this.page.getByRole('button', { name: 'Close workspace actions' })
+    if (await closeActionsButton.isVisible()) {
+      await this.mobileActionsPanel().getByRole('button', { name: 'Current tags', exact: true }).click()
+      await expect(currentTagsHeading).toBeVisible()
+      return
+    }
+
+    await this.openMobilePanel('Inspect')
+    await expect(currentTagsHeading).toBeVisible()
   }
 
   async chooseTaggingFromProjectBrowser(projectName: string): Promise<void> {
     const projectCard = this.page.getByRole('button', { name: new RegExp(projectName, 'i') })
     await expect(projectCard).toBeVisible()
-    await projectCard.getByRole('button', { name: 'Tagging' }).click()
+    await projectCard.click()
+  }
+
+  async showProjectDetailsMode(): Promise<void> {
+    if (await this.isDesktopViewport()) {
+      await this.ensureDesktopViewsMenuOpen()
+      const optionLocator = this.page.getByRole('menuitem', { name: 'Project details' })
+      const selected = await optionLocator.getAttribute('aria-selected')
+      if (selected !== 'true') {
+        await optionLocator.click()
+      }
+      return
+    }
+
+    await this.page.getByRole('button', { name: 'Project details' }).click()
   }
 
   async expectCanvasVisible(): Promise<void> {
@@ -147,23 +196,36 @@ export class WorkspacePageObject {
   }
 
   async openMobilePanel(panelName: 'Browse' | 'Inspect' | 'Tags'): Promise<void> {
-    const ariaLabelByPanel: Record<typeof panelName, string> = {
-      Browse: 'Open mobile browser panel',
-      Inspect: 'Open mobile inspector panel',
-      Tags: 'Open mobile tags panel',
+    const tabLabelByPanel: Record<typeof panelName, string> = {
+      Browse: 'Image Browser',
+      Inspect: 'Current Tags',
+      Tags: 'Tags Library',
     }
 
-    await this.page.getByRole('button', { name: ariaLabelByPanel[panelName] }).click()
+    const targetTabLabel = tabLabelByPanel[panelName]
+    const targetTab = this.page.getByRole('button', { name: targetTabLabel, exact: true })
+
+    if (!(await targetTab.isVisible())) {
+      await this.openActionsMenu()
+      await this.mobileActionsPanel().getByRole('button', {
+        name: panelName === 'Tags' ? 'Tags library' : panelName === 'Inspect' ? 'Current tags' : 'Image browser',
+        exact: true,
+      }).click()
+      const closeActionsButton = this.page.getByRole('button', { name: 'Close workspace actions' })
+      if (await closeActionsButton.isVisible()) {
+        await closeActionsButton.click()
+      }
+    }
+
+    await this.page.getByRole('button', { name: targetTabLabel, exact: true }).click()
   }
 
   async expectMobilePanelTitle(title: string): Promise<void> {
     await expect(this.page.getByRole('heading', { name: title }).first()).toBeVisible()
-    await expect(this.page.getByRole('button', { name: 'Close mobile workspace panel' })).toBeVisible()
   }
 
   async closeMobilePanel(): Promise<void> {
-    await this.page.getByRole('button', { name: 'Close mobile workspace panel' }).click()
-    await expect(this.page.getByRole('button', { name: 'Close mobile workspace panel' })).toHaveCount(0)
+    await this.page.getByRole('button', { name: 'Project Browser', exact: true }).click()
   }
 
   async expectDesktopQuickActionsHidden(): Promise<void> {
@@ -207,6 +269,8 @@ export class WorkspacePageObject {
   }
 
   async uploadImageToSelectedProject(fileName = 'upload.png'): Promise<void> {
+    await this.showProjectDetailsMode()
+
     const fileInput = this.page.getByLabel('Upload images to project')
     await fileInput.setInputFiles({
       name: fileName,
@@ -222,8 +286,13 @@ export class WorkspacePageObject {
   }
 
   async addTag(tagName: string): Promise<void> {
-    await this.page.getByLabel('Add tag').fill(tagName)
-    await this.page.getByRole('button', { name: 'Add' }).click()
+    const input = this.page.getByPlaceholder('Search tags')
+    await input.fill(tagName)
+    await input.press('Enter')
+  }
+
+  async selectImage(imageFilename: string): Promise<void> {
+    await this.page.getByRole('button', { name: new RegExp(imageFilename, 'i') }).click()
   }
 
   async expectTagVisible(tagName: string): Promise<void> {

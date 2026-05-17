@@ -16,7 +16,7 @@ async function ensureProjectBrowserMode(page: import('@playwright/test').Page): 
 }
 
 test.describe('Workspace canvas and project browser transitions', () => {
-  test('selecting tagging in Project Browser hides Project Browser and shows Canvas', async ({ page }) => {
+  test('selecting a project in Project Browser hides Project Browser and shows Canvas', async ({ page }) => {
     await installApiMocks(page)
 
     await page.goto('/workspace')
@@ -26,7 +26,7 @@ test.describe('Workspace canvas and project browser transitions', () => {
 
     const sampleProjectCard = page.getByRole('button', { name: /Sample Project/i })
     await expect(sampleProjectCard).toBeVisible()
-    await sampleProjectCard.getByRole('button', { name: 'Tagging' }).click()
+    await sampleProjectCard.click()
 
     await expect(page.getByRole('heading', { name: 'Image Canvas' }).first()).toBeVisible()
     await expect(page.getByRole('heading', { name: 'Project Browser' })).toHaveCount(0)
@@ -42,7 +42,7 @@ test.describe('Workspace canvas and project browser transitions', () => {
 
     const sampleProjectCard = page.getByRole('button', { name: /Sample Project/i })
     await expect(sampleProjectCard).toBeVisible()
-    await sampleProjectCard.getByRole('button', { name: 'Tagging' }).click()
+    await sampleProjectCard.click()
 
     await expect(page.getByRole('heading', { name: 'Image Canvas' }).first()).toBeVisible()
     await page.getByRole('button', { name: 'Close Image Canvas panel' }).click()

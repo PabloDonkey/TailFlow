@@ -53,7 +53,9 @@ test.describe('Project and tagging workflows', () => {
     const workspace = new WorkspacePageObject(page)
 
     await workspace.goto()
-    await workspace.openActionsMenu()
+    await workspace.showProjectsMode()
+    await workspace.chooseTaggingFromProjectBrowser('Sample Project')
+    await workspace.selectImage('sample.png')
     await workspace.showTagInspectorMode()
 
     await workspace.addTag('e2e_new_tag')

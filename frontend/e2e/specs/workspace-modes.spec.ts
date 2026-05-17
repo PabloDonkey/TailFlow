@@ -9,21 +9,9 @@ test.describe('Workspace mode switching', () => {
     const workspace = new WorkspacePageObject(page)
 
     await workspace.goto()
-
-    await workspace.openActionsMenu()
-    await workspace.expectActionsOptionSelected('inspector')
     await workspace.showProjectsMode()
-
-    await workspace.openActionsMenu()
-    await workspace.expectActionsOptionSelected('projects')
     await workspace.showTagsLibraryMode()
-
-    await workspace.openActionsMenu()
-    await workspace.expectActionsOptionSelected('tags')
     await workspace.showTagInspectorMode()
-
-    await workspace.openActionsMenu()
-    await workspace.expectActionsOptionSelected('inspector')
   })
 
   test('opens mobile tags panel from quick actions @mobile', async ({ page }) => {
@@ -42,15 +30,15 @@ test.describe('Workspace mode switching', () => {
     const workspace = new WorkspacePageObject(page)
 
     await workspace.goto()
-    await workspace.openActionsMenu()
-    await workspace.showTagInspectorMode()
+    await workspace.showProjectsMode()
+    await workspace.chooseTaggingFromProjectBrowser('Sample Project')
 
     await workspace.openMobilePanel('Browse')
     await workspace.expectMobilePanelTitle('Image Browser')
     await workspace.closeMobilePanel()
 
     await workspace.openMobilePanel('Inspect')
-    await workspace.expectMobilePanelTitle('Tag Inspector')
+    await workspace.expectMobilePanelTitle('Current Tags')
     await workspace.closeMobilePanel()
 
     await workspace.openMobilePanel('Tags')

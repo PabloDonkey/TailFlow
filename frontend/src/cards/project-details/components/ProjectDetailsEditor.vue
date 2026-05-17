@@ -99,16 +99,8 @@ async function saveProjectMetadata() {
 </script>
 
 <template>
-  <section class="project-details">
-    <h2>Project Details</h2>
-    <p
-      v-if="!selectedProject"
-      class="empty"
-    >
-      Select a project to inspect metadata.
-    </p>
     <div
-      v-else
+      v-if="selectedProject"
       class="details-card"
     >
       <dl>
@@ -239,7 +231,6 @@ async function saveProjectMetadata() {
         </p>
       </div>
     </div>
-  </section>
 </template>
 
 <style scoped>
