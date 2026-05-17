@@ -61,7 +61,7 @@ export interface SideCardFactory {
   build(cardId: WorkspaceCardId, state: WorkspaceCardState, actions: WorkspaceCardActions): WorkspaceCardConfig
 }
 
-export interface WorkspaceCardFactory extends SideCardFactory {}
+export type WorkspaceCardFactory = SideCardFactory
 
 export type CardMeta = {
   name: string
