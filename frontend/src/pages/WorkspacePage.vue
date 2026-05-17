@@ -35,6 +35,9 @@ const isMobileViewportRef = ref(false)
 type SideViewId = 'image-browser' | 'current-tags' | 'ai-proposed-tags' | 'tags-library' | 'project-details'
 type ToggleCardId = SideViewId | 'canvas'
 type CardId = ToggleCardId | 'project-browser'
+const DEFAULT_LEFT_VIEW_ORDER: SideViewId[] = ['image-browser']
+const DEFAULT_RIGHT_VIEW_ORDER: SideViewId[] = ['current-tags', 'ai-proposed-tags', 'tags-library', 'project-details']
+const DEFAULT_SIDE_VIEW_ORDER: SideViewId[] = [...DEFAULT_LEFT_VIEW_ORDER, ...DEFAULT_RIGHT_VIEW_ORDER]
 
 const cardMeta: Record<CardId, { name: string; draggable: boolean; requiresProjectSelected: boolean }> = {
   'image-browser': {
@@ -83,12 +86,16 @@ const cardOpenState = ref<Record<ToggleCardId, boolean>>({
   'project-details': false,
 })
 
-const leftViewOrder = ref<SideViewId[]>(['image-browser'])
-const rightViewOrder = ref<SideViewId[]>(['current-tags', 'ai-proposed-tags', 'tags-library', 'project-details'])
+const leftViewOrder = ref<SideViewId[]>([...DEFAULT_LEFT_VIEW_ORDER])
+const rightViewOrder = ref<SideViewId[]>([...DEFAULT_RIGHT_VIEW_ORDER])
 const draggedSideView = ref<SideViewId | null>(null)
 const activeMobileTab = ref<MobileWorkspaceTab>('image-browser')
 const hasSelectedProject = computed(() => Boolean(projectStore.selectedProjectId))
 const WORKSPACE_CARD_STATE_KEY = 'tailflow.workspace-card-state.v1'
+const restoredProjectSelectionHandled = ref(false)
+const restoredImageSelectionHandled = ref(false)
+const restoredSelectionProjectId = ref<string | null>(null)
+const restoredSelectionImageId = ref<string | null>(null)
 
 const imageBrowserMemoKey = computed(() => {
   const imageSnapshot = imageStore.images
@@ -196,12 +203,12 @@ function sidePanelDefaultSize(panelIndex: number, totalPanels: number): number {
   return base
 }
 
-function sanitizeSideOrder(candidate: unknown, fallback: SideViewId[]): SideViewId[] {
+function sanitizeSideOrder(candidate: unknown): SideViewId[] {
   if (!Array.isArray(candidate)) {
-    return [...fallback]
+    return []
   }
 
-  const valid = new Set<SideViewId>(fallback)
+  const valid = new Set<SideViewId>(DEFAULT_SIDE_VIEW_ORDER)
   const nextOrder: SideViewId[] = []
 
   for (const value of candidate) {
@@ -218,13 +225,39 @@ function sanitizeSideOrder(candidate: unknown, fallback: SideViewId[]): SideView
     nextOrder.push(asSideViewId)
   }
 
-  for (const fallbackId of fallback) {
-    if (!nextOrder.includes(fallbackId)) {
-      nextOrder.push(fallbackId)
+  return nextOrder
+}
+
+function normalizeSideOrders(candidateLeft: unknown, candidateRight: unknown): {
+  left: SideViewId[]
+  right: SideViewId[]
+} {
+  const left = sanitizeSideOrder(candidateLeft)
+  const used = new Set<SideViewId>(left)
+
+  const right = sanitizeSideOrder(candidateRight).filter((viewId) => {
+    if (used.has(viewId)) {
+      return false
     }
+    used.add(viewId)
+    return true
+  })
+
+  for (const defaultViewId of DEFAULT_SIDE_VIEW_ORDER) {
+    if (used.has(defaultViewId)) {
+      continue
+    }
+
+    if (DEFAULT_LEFT_VIEW_ORDER.includes(defaultViewId)) {
+      left.push(defaultViewId)
+    } else {
+      right.push(defaultViewId)
+    }
+
+    used.add(defaultViewId)
   }
 
-  return nextOrder
+  return { left, right }
 }
 
 function loadWorkspaceCardState() {
@@ -243,6 +276,8 @@ function loadWorkspaceCardState() {
       leftOrder?: SideViewId[]
       rightOrder?: SideViewId[]
       activeMobileTab?: MobileWorkspaceTab
+      selectedProjectId?: string | null
+      selectedImageId?: string | null
     }
 
     if (parsed.openState) {
@@ -257,12 +292,18 @@ function loadWorkspaceCardState() {
       }
     }
 
-    leftViewOrder.value = sanitizeSideOrder(parsed.leftOrder, leftViewOrder.value)
-    rightViewOrder.value = sanitizeSideOrder(parsed.rightOrder, rightViewOrder.value)
+    const normalized = normalizeSideOrders(parsed.leftOrder, parsed.rightOrder)
+    leftViewOrder.value = normalized.left
+    rightViewOrder.value = normalized.right
 
     if (parsed.activeMobileTab && typeof parsed.activeMobileTab === 'string') {
       activeMobileTab.value = parsed.activeMobileTab
     }
+
+    restoredSelectionProjectId.value =
+      typeof parsed.selectedProjectId === 'string' ? parsed.selectedProjectId : null
+    restoredSelectionImageId.value =
+      typeof parsed.selectedImageId === 'string' ? parsed.selectedImageId : null
   } catch {
     // Ignore malformed persisted state and continue with defaults.
   }
@@ -278,6 +319,8 @@ function saveWorkspaceCardState() {
     leftOrder: leftViewOrder.value,
     rightOrder: rightViewOrder.value,
     activeMobileTab: activeMobileTab.value,
+    selectedProjectId: projectStore.selectedProjectId,
+    selectedImageId: imageStore.currentImage?.id ?? null,
   }
 
   window.localStorage.setItem(WORKSPACE_CARD_STATE_KEY, JSON.stringify(payload))
@@ -521,6 +564,16 @@ watch(
 )
 
 watch(
+  [
+    () => projectStore.selectedProjectId,
+    () => imageStore.currentImage?.id ?? null,
+  ],
+  () => {
+    saveWorkspaceCardState()
+  },
+)
+
+watch(
   () => queryValue('panel'),
   (panel) => {
     if (panel === 'tags') {
@@ -576,6 +629,82 @@ watch(
     }
 
     await selectImage(imageFromQuery)
+  },
+  { immediate: true },
+)
+
+watch(
+  () => [projectStore.projects.length, queryValue('project')] as const,
+  ([, projectFromQuery]) => {
+    if (restoredProjectSelectionHandled.value) {
+      return
+    }
+
+    if (projectFromQuery) {
+      restoredProjectSelectionHandled.value = true
+      return
+    }
+
+    const restoredProjectId = restoredSelectionProjectId.value
+    if (!restoredProjectId) {
+      restoredProjectSelectionHandled.value = true
+      return
+    }
+
+    const projectExists = projectStore.projects.some((project) => project.id === restoredProjectId)
+    if (!projectExists) {
+      restoredProjectSelectionHandled.value = true
+      return
+    }
+
+    if (projectStore.selectedProjectId !== restoredProjectId) {
+      projectStore.selectProject(restoredProjectId)
+    }
+
+    restoredProjectSelectionHandled.value = true
+  },
+  { immediate: true },
+)
+
+watch(
+  () => [
+    queryValue('image'),
+    projectStore.selectedProjectId,
+    imageStore.imagesLoading,
+    imageStore.images.length,
+  ] as const,
+  async ([imageFromQuery, selectedProjectId, imagesLoading]) => {
+    if (restoredImageSelectionHandled.value) {
+      return
+    }
+
+    if (imageFromQuery) {
+      restoredImageSelectionHandled.value = true
+      return
+    }
+
+    const restoredImageId = restoredSelectionImageId.value
+    if (!restoredImageId) {
+      restoredImageSelectionHandled.value = true
+      return
+    }
+
+    if (!selectedProjectId || imagesLoading) {
+      return
+    }
+
+    const restoredProjectId = restoredSelectionProjectId.value
+    if (restoredProjectId && restoredProjectId !== selectedProjectId) {
+      restoredImageSelectionHandled.value = true
+      return
+    }
+
+    const imageExists = imageStore.images.some((image) => image.id === restoredImageId)
+    if (imageExists && imageStore.currentImage?.id !== restoredImageId) {
+      await selectImage(restoredImageId)
+    }
+
+    restoredImageSelectionHandled.value = true
   },
   { immediate: true },
 )
