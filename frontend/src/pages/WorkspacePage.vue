@@ -9,6 +9,7 @@ import WorkspaceMobileViewsTabs, {
 } from '../components/layout/WorkspaceMobileViewsTabs.vue'
 import WorkspacePanelCard from '../components/layout/WorkspacePanelCard.vue'
 import ProjectCreateModal from '../components/projects/ProjectCreateModal.vue'
+import ImageBrowserCard from '../cards/image-browser/ImageBrowserCard.vue'
 import WorkspaceSideCardContent from './workspace/WorkspaceSideCardContent.vue'
 import WorkspacePanelColumn from './workspace/WorkspacePanelColumn.vue'
 import { useWorkspaceMobileTabs } from './workspace/useWorkspaceMobileTabs'

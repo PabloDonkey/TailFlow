@@ -65,6 +65,7 @@ function submitImageJump() {
         <img
           :src="getProjectImageFileUrl(projectId!, currentImage.id)"
           :alt="currentImage.filename"
+          :aria-description="`Current canvas image: ${currentImage.filename}`"
           class="block h-full w-full object-contain"
         >
       </div>

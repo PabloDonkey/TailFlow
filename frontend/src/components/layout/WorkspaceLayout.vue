@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
+import AppSplitterGroup from '../../design-system/AppSplitterGroup.vue'
+import AppSplitterPanel from '../../design-system/AppSplitterPanel.vue'
+import AppSplitterResizeHandle from '../../design-system/AppSplitterResizeHandle.vue'
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 
 const props = withDefaults(defineProps<{
@@ -70,13 +72,13 @@ onUnmounted(() => {
       />
     </div>
 
-    <SplitterGroup
+    <AppSplitterGroup
       v-else
       :auto-save-id="horizontalLayoutAutoSaveId"
       class="h-full min-h-0 w-full"
       direction="horizontal"
     >
-      <SplitterPanel
+      <AppSplitterPanel
         v-if="showLeft"
         id="workspace-left-panel"
         :order="1"
@@ -88,14 +90,14 @@ onUnmounted(() => {
         <aside :class="sidePanelClass">
           <slot name="left" />
         </aside>
-      </SplitterPanel>
+      </AppSplitterPanel>
 
-      <SplitterResizeHandle
+      <AppSplitterResizeHandle
         v-if="showLeft"
         class="mx-1 my-1 w-1.5 rounded bg-[var(--tf-color-surface-border)] transition data-[state=drag]:bg-[var(--tf-color-accent)]"
       />
 
-      <SplitterPanel
+      <AppSplitterPanel
         id="workspace-center-panel"
         :order="2"
         :default-size="showLeft && showRight ? 50 : 72"
@@ -105,14 +107,14 @@ onUnmounted(() => {
         <section :class="centerPanelClass">
           <slot />
         </section>
-      </SplitterPanel>
+      </AppSplitterPanel>
 
-      <SplitterResizeHandle
+      <AppSplitterResizeHandle
         v-if="showRight"
         class="mx-1 my-1 w-1.5 rounded bg-[var(--tf-color-surface-border)] transition data-[state=drag]:bg-[var(--tf-color-accent)]"
       />
 
-      <SplitterPanel
+      <AppSplitterPanel
         v-if="showRight"
         id="workspace-right-panel"
         :order="3"
@@ -124,7 +126,7 @@ onUnmounted(() => {
         <aside :class="sidePanelClass">
           <slot name="right" />
         </aside>
-      </SplitterPanel>
-    </SplitterGroup>
+      </AppSplitterPanel>
+    </AppSplitterGroup>
   </section>
 </template>

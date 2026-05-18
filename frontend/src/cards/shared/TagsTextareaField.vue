@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { TagsInputInput, TagsInputItem, TagsInputItemText, TagsInputRoot } from 'reka-ui'
+import AppTagsInputInput from '../../design-system/AppTagsInputInput.vue'
+import AppTagsInputItem from '../../design-system/AppTagsInputItem.vue'
+import AppTagsInputItemText from '../../design-system/AppTagsInputItemText.vue'
+import AppTagsInputRoot from '../../design-system/AppTagsInputRoot.vue'
 import { computed } from 'vue'
 
 interface TagsTextareaFieldItem {
@@ -56,12 +59,12 @@ function onChipKeydown(event: KeyboardEvent, item: TagsTextareaFieldItem): void 
 </script>
 
 <template>
-  <TagsInputRoot
+  <AppTagsInputRoot
     :model-value="itemValues"
     class="flex h-full w-full flex-wrap content-start items-start gap-2 overflow-x-hidden overflow-y-auto rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-2"
     :disabled="disabled"
   >
-    <TagsInputItem
+    <AppTagsInputItem
       v-for="item in items"
       :key="item.key"
       :value="item.key"
@@ -76,9 +79,9 @@ function onChipKeydown(event: KeyboardEvent, item: TagsTextareaFieldItem): void 
       ]"
       :tabindex="clickToAction && !item.actionDisabled ? 0 : undefined"
       @click="onChipClick(item)"
-      @keydown="(event) => onChipKeydown(event, item)"
+      @keydown="onChipKeydown($event, item)"
     >
-      <TagsInputItemText class="max-w-[12rem] truncate">{{ item.label }}</TagsInputItemText>
+      <AppTagsInputItemText class="max-w-[12rem] truncate">{{ item.label }}</AppTagsInputItemText>
 
       <span
         v-if="item.metaInline"
@@ -108,12 +111,12 @@ function onChipKeydown(event: KeyboardEvent, item: TagsTextareaFieldItem): void 
       >
         {{ item.actionIcon }}
       </button>
-    </TagsInputItem>
+    </AppTagsInputItem>
 
-    <TagsInputInput
+    <AppTagsInputInput
       :placeholder="placeholder"
       class="min-w-[8rem] grow basis-[10rem] bg-transparent py-1 text-sm text-[var(--tf-color-text-default)] outline-none placeholder:text-[var(--tf-color-text-muted)]"
       :disabled="disabled"
     />
-  </TagsInputRoot>
+  </AppTagsInputRoot>
 </template>

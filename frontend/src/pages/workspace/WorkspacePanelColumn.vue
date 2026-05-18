@@ -1,5 +1,7 @@
 <script setup lang="ts">
-import { SplitterGroup, SplitterPanel, SplitterResizeHandle } from 'reka-ui'
+import AppSplitterGroup from '../../design-system/AppSplitterGroup.vue'
+import AppSplitterPanel from '../../design-system/AppSplitterPanel.vue'
+import AppSplitterResizeHandle from '../../design-system/AppSplitterResizeHandle.vue'
 import WorkspacePanelCard from '../../components/layout/WorkspacePanelCard.vue'
 
 export type WorkspacePanelColumnId = 'left' | 'center' | 'right'
@@ -66,7 +68,7 @@ function showDropIndicator(panelIndex: number, edge: 'top' | 'bottom'): boolean 
       }
     }"
   >
-    <SplitterGroup
+    <AppSplitterGroup
       v-if="panels.length > 1"
       :auto-save-id="`workspace-${columnId}-column-vertical-${panels.length}`"
       class="h-full min-h-0 w-full"
@@ -76,7 +78,7 @@ function showDropIndicator(panelIndex: number, edge: 'top' | 'bottom'): boolean 
         v-for="(panel, index) in panels"
         :key="panel.id"
       >
-        <SplitterPanel
+        <AppSplitterPanel
           :default-size="panelDefaultSize(index, panels.length)"
           :min-size="16"
           class="min-h-0"
@@ -136,14 +138,14 @@ function showDropIndicator(panelIndex: number, edge: 'top' | 'bottom'): boolean 
               class="mx-2 my-1 h-10 shrink-0 rounded-[8px] border-2 border-dashed border-[var(--tf-color-accent)] bg-[color-mix(in_srgb,var(--tf-color-accent)_12%,transparent)]"
             />
           </div>
-        </SplitterPanel>
+        </AppSplitterPanel>
 
-        <SplitterResizeHandle
+        <AppSplitterResizeHandle
           v-if="index < panels.length - 1"
           class="mx-1 my-1 h-1.5 rounded bg-[var(--tf-color-surface-border)] transition data-[state=drag]:bg-[var(--tf-color-accent)]"
         />
       </template>
-    </SplitterGroup>
+    </AppSplitterGroup>
 
     <div
       v-else-if="panels.length === 1"

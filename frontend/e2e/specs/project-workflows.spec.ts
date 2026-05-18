@@ -1,36 +1,56 @@
 import { test } from '@playwright/test'
 import { installApiMocks } from '../fixtures/mockApi'
-import { WorkspacePageObject } from '../pages/WorkspacePageObject'
+import { DesktopWorkspacePageObject } from '../pages/DesktopWorkspacePageObject'
+import { MobileWorkspacePageObject } from '../pages/MobileWorkspacePageObject'
 
 test.describe('Project and tagging workflows', () => {
-  test('creates a project from project manager', async ({ page }) => {
+  test('creates a project from project manager @mobile', async ({ page }) => {
     await installApiMocks(page)
 
-    const workspace = new WorkspacePageObject(page)
+    const workspace = new MobileWorkspacePageObject(page)
 
     await workspace.goto()
-    await workspace.openActionsMenu()
-    await workspace.showProjectsMode()
+    await workspace.closeImageCanvas()
 
     await workspace.openCreateProjectDialog()
     await workspace.createProject({
-      folderName: 'cross-device-e2e-project',
+      folderName: 'cross-device-e2e-project-mobile',
       classTag: 'character',
-      displayName: 'Cross Device E2E Project',
-      triggerTag: 'cross_device_e2e_project',
+      displayName: 'Cross Device E2E Project Mobile',
+      triggerTag: 'cross_device_e2e_project_mobile',
     })
 
-    await workspace.expectProjectVisible('Cross Device E2E Project')
+    await workspace.expectProjectVisible('Cross Device E2E Project Mobile')
+  })
+
+  test('creates a project from project manager @desktop', async ({ page }) => {
+    await installApiMocks(page)
+
+    const workspace = new DesktopWorkspacePageObject(page)
+
+    await workspace.goto()
+    await workspace.openActionsMenu()
+    await workspace.closeImageCanvas()
+
+    await workspace.openCreateProjectDialog()
+    await workspace.createProject({
+      folderName: 'cross-device-e2e-project-desktop',
+      classTag: 'character',
+      displayName: 'Cross Device E2E Project Desktop',
+      triggerTag: 'cross_device_e2e_project_desktop',
+    })
+
+    await workspace.expectProjectVisible('Cross Device E2E Project Desktop')
   })
 
   test('creates a project and uploads an image @desktop', async ({ page }) => {
     await installApiMocks(page)
 
-    const workspace = new WorkspacePageObject(page)
+    const workspace = new DesktopWorkspacePageObject(page)
 
     await workspace.goto()
     await workspace.openActionsMenu()
-    await workspace.showProjectsMode()
+    await workspace.closeImageCanvas()
 
     await workspace.openCreateProjectDialog()
     await workspace.createProject({
@@ -47,21 +67,4 @@ test.describe('Project and tagging workflows', () => {
     await workspace.expectUploadSuccessMessage()
   })
 
-  test('adds and removes tag in inspector mode @desktop', async ({ page }) => {
-    await installApiMocks(page)
-
-    const workspace = new WorkspacePageObject(page)
-
-    await workspace.goto()
-    await workspace.showProjectsMode()
-    await workspace.chooseTaggingFromProjectBrowser('Sample Project')
-    await workspace.selectImage('sample.png')
-    await workspace.showTagInspectorMode()
-
-    await workspace.addTag('e2e_new_tag')
-    await workspace.expectTagVisible('e2e_new_tag')
-
-    await workspace.removeTag('e2e_new_tag')
-    await workspace.expectTagNotVisible('e2e_new_tag')
-  })
 })

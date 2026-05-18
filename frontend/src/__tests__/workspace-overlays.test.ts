@@ -40,7 +40,7 @@ describe('Workspace overlays', () => {
 
     expect(wrapper.classes()).toContain('top-[3.7rem]')
 
-    const closeBackdrop = wrapper.get('button[aria-label="Close workspace actions"]')
+    const closeBackdrop = wrapper.get('[data-testid="workspace-actions-backdrop"]')
     expect(closeBackdrop.classes()).toContain('lg:bg-transparent')
     expect(closeBackdrop.classes()).not.toContain('lg:hidden')
 
