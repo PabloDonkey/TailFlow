@@ -48,6 +48,8 @@ type ImageReadRecord = ImageSummaryRecord & {
 
 const defaultProjectId = '11111111-1111-4111-8111-111111111111'
 const defaultImageId = '22222222-2222-4222-8222-222222222222'
+const secondImageId = '22222222-2222-4222-8222-222222222223'
+const thirdImageId = '22222222-2222-4222-8222-222222222224'
 const isoNow = '2026-04-25T00:00:00+00:00'
 const tinyPng = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Xw8AAoMBgQf6fYQAAAAASUVORK5CYII=',
@@ -96,7 +98,23 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
           relative_path: 'images/sample.png',
           filename: 'sample.png',
           discovered_at: isoNow,
-          tag_count: 2,
+          tag_count: 3,
+        },
+        {
+          id: secondImageId,
+          project_id: defaultProjectId,
+          relative_path: 'images/sample-2.png',
+          filename: 'sample-2.png',
+          discovered_at: isoNow,
+          tag_count: 3,
+        },
+        {
+          id: thirdImageId,
+          project_id: defaultProjectId,
+          relative_path: 'images/sample-3.png',
+          filename: 'sample-3.png',
+          discovered_at: isoNow,
+          tag_count: 3,
         },
       ],
     ],
@@ -112,7 +130,7 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
         filename: 'sample.png',
         discovered_at: isoNow,
         removed_at: null,
-        tag_count: 2,
+        tag_count: 3,
         tags: [
           {
             id: '33333333-3333-4333-8333-333333333333',
@@ -120,6 +138,14 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
             catalog_ids: { e621: '12345' },
             category: 'meta',
             position: 0,
+            is_protected: true,
+          },
+          {
+            id: '33333333-3333-4333-8333-333333333334',
+            name: 'character',
+            catalog_ids: { e621: '5' },
+            category: 'meta',
+            position: 1,
             is_protected: true,
           },
           {
@@ -133,7 +159,101 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
         ],
       },
     ],
+    [
+      `${defaultProjectId}:${secondImageId}`,
+      {
+        id: secondImageId,
+        project_id: defaultProjectId,
+        relative_path: 'images/sample-2.png',
+        filename: 'sample-2.png',
+        discovered_at: isoNow,
+        removed_at: null,
+        tag_count: 3,
+        tags: [
+          {
+            id: '53333333-3333-4333-8333-333333333333',
+            name: 'sample_project',
+            catalog_ids: { e621: '12345' },
+            category: 'meta',
+            position: 0,
+            is_protected: true,
+          },
+          {
+            id: '53333333-3333-4333-8333-333333333334',
+            name: 'character',
+            catalog_ids: { e621: '5' },
+            category: 'meta',
+            position: 1,
+            is_protected: true,
+          },
+          {
+            id: '54444444-4444-4444-8444-444444444444',
+            name: 'safe',
+            catalog_ids: { e621: '1' },
+            category: 'rating',
+            position: 2,
+            is_protected: false,
+          },
+        ],
+      },
+    ],
+    [
+      `${defaultProjectId}:${thirdImageId}`,
+      {
+        id: thirdImageId,
+        project_id: defaultProjectId,
+        relative_path: 'images/sample-3.png',
+        filename: 'sample-3.png',
+        discovered_at: isoNow,
+        removed_at: null,
+        tag_count: 3,
+        tags: [
+          {
+            id: '63333333-3333-4333-8333-333333333333',
+            name: 'sample_project',
+            catalog_ids: { e621: '12345' },
+            category: 'meta',
+            position: 0,
+            is_protected: true,
+          },
+          {
+            id: '63333333-3333-4333-8333-333333333334',
+            name: 'character',
+            catalog_ids: { e621: '5' },
+            category: 'meta',
+            position: 1,
+            is_protected: true,
+          },
+          {
+            id: '64444444-4444-4444-8444-444444444444',
+            name: 'safe',
+            catalog_ids: { e621: '1' },
+            category: 'rating',
+            position: 2,
+            is_protected: false,
+          },
+        ],
+      },
+    ],
   ])
+
+  function upsertProtectedTag(detail: ImageReadRecord, position: number, name: string): void {
+    const existing = detail.tags.find((tag) => tag.position === position && tag.is_protected)
+    if (existing) {
+      existing.name = name
+      return
+    }
+
+    detail.tags.push({
+      id: buildTagId(nextTagCounter),
+      name,
+      catalog_ids: {},
+      category: 'meta',
+      position,
+      is_protected: true,
+    })
+    nextTagCounter += 1
+  }
 
   function buildProjectId(counter: number): string {
     return `aaaaaaaa-aaaa-4aaa-8aaa-${String(counter).padStart(12, '0')}`
@@ -251,6 +371,68 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
     }
 
     await route.fallback()
+  })
+
+  await page.route('**/api/projects/*', async (route) => {
+    if (route.request().method() !== 'PATCH') {
+      await route.fallback()
+      return
+    }
+
+    const url = route.request().url()
+    const match = /\/api\/projects\/([^/]+)$/.exec(url)
+    const projectId = match?.[1]
+    if (!projectId) {
+      await route.fallback()
+      return
+    }
+
+    const payload = JSON.parse(route.request().postData() ?? '{}') as {
+      trigger_tag?: string
+      class_tag?: string
+      tagging_mode?: 'e621' | 'booru'
+    }
+
+    const projectIndex = projects.findIndex((project) => project.id === projectId)
+    if (projectIndex === -1) {
+      await route.fulfill({
+        status: 404,
+        headers: jsonHeaders(),
+        body: JSON.stringify({ detail: 'Project not found' }),
+      })
+      return
+    }
+
+    const currentProject = projects[projectIndex]
+    if (!currentProject) {
+      await route.fallback()
+      return
+    }
+
+    const updatedProject: ProjectRecord = {
+      ...currentProject,
+      trigger_tag: payload.trigger_tag ?? currentProject.trigger_tag,
+      class_tag: payload.class_tag ?? currentProject.class_tag,
+      tagging_mode: payload.tagging_mode ?? currentProject.tagging_mode,
+    }
+    projects[projectIndex] = updatedProject
+
+    for (const [key, detail] of imageDetails.entries()) {
+      if (!key.startsWith(`${projectId}:`)) {
+        continue
+      }
+
+      upsertProtectedTag(detail, 0, updatedProject.trigger_tag)
+      upsertProtectedTag(detail, 1, updatedProject.class_tag)
+      detail.tag_count = detail.tags.length
+      imageDetails.set(key, detail)
+    }
+
+    await route.fulfill({
+      status: 200,
+      headers: jsonHeaders(),
+      body: JSON.stringify(updatedProject),
+    })
   })
 
   await page.route('**/api/projects/*/images', async (route) => {
@@ -404,6 +586,48 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
       status: 200,
       headers: jsonHeaders(),
       body: JSON.stringify(updatedDetail),
+    })
+  })
+
+  await page.route('**/api/projects/*/images/*/classify', async (route) => {
+    const routeInfo = getProjectAndImageFromUrl(route.request().url())
+    if (!routeInfo) {
+      await route.fallback()
+      return
+    }
+
+    const payload = JSON.parse(route.request().postData() ?? '{}') as {
+      model_id?: string
+    }
+
+    const suggestionsByImageId: Record<string, Array<{ name: string; confidence: number }>> = {
+      [defaultImageId]: [
+        { name: 'blue_eyes', confidence: 0.92 },
+        { name: 'smile', confidence: 0.87 },
+      ],
+      [secondImageId]: [
+        { name: 'night', confidence: 0.9 },
+        { name: 'city_lights', confidence: 0.82 },
+      ],
+      [thirdImageId]: [
+        { name: 'running', confidence: 0.88 },
+        { name: 'outdoors', confidence: 0.8 },
+      ],
+    }
+
+    await route.fulfill({
+      status: 200,
+      headers: jsonHeaders(),
+      body: JSON.stringify({
+        suggestions: suggestionsByImageId[routeInfo.imageId] ?? [
+          { name: 'generic_tag', confidence: 0.7 },
+        ],
+        model_id: payload.model_id ?? 'jtp-3-hydra',
+        model_available: true,
+        download_progress_percent: 100,
+        download_proposal_url: null,
+        download_message: null,
+      }),
     })
   })
 

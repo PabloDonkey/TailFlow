@@ -3,3 +3,9 @@
 This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
 
 Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+
+## TailFlow Frontend Rules
+
+- Import `reka-ui` only from files in `src/design-system/`.
+- App code outside `src/design-system/` must consume design-system wrappers (for example `AppPopoverButton`, `AppSelectField`, splitter wrappers).
+- This is enforced by ESLint via `no-restricted-imports` in `eslint.config.js`.

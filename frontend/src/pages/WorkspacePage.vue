@@ -1,55 +1,69 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import AppShell from '../components/layout/AppShell.vue'
-import WorkspaceHeaderSection from '../components/layout/WorkspaceHeaderSection.vue'
-import WorkspaceMobileQuickActions from '../components/layout/WorkspaceMobileQuickActions.vue'
-import WorkspaceMobilePanelContent from '../components/layout/WorkspaceMobilePanelContent.vue'
-import WorkspaceMobilePanelSheet from '../components/layout/WorkspaceMobilePanelSheet.vue'
-import WorkspaceRightPanel from '../components/layout/WorkspaceRightPanel.vue'
+import HeaderSection from '../components/header/HeaderSection.vue'
 import WorkspaceLayout from '../components/layout/WorkspaceLayout.vue'
-import ProjectBrowserPanel from '../components/projects/ProjectBrowserPanel.vue'
+import WorkspaceMobileViewsTabs, {
+  type MobileWorkspaceTab,
+} from '../components/layout/WorkspaceMobileViewsTabs.vue'
+import WorkspacePanelCard from '../components/layout/WorkspacePanelCard.vue'
 import ProjectCreateModal from '../components/projects/ProjectCreateModal.vue'
-import WorkspaceImageBrowserPanel from '../components/sidebar/WorkspaceImageBrowserPanel.vue'
-import WorkspaceTagsLibraryPanel from '../components/sidebar/WorkspaceTagsLibraryPanel.vue'
-import WorkspaceImageViewerPanel from '../components/layout/WorkspaceImageViewerPanel.vue'
+import ImageBrowserCard from '../cards/image-browser/ImageBrowserCard.vue'
+import WorkspaceSideCardContent from './workspace/WorkspaceSideCardContent.vue'
+import WorkspacePanelColumn from './workspace/WorkspacePanelColumn.vue'
+import { useWorkspaceMobileTabs } from './workspace/useWorkspaceMobileTabs'
+import {
+  defaultSideViewOrder,
+  defaultToggleCardOpenState,
+  type CardMeta,
+  type SideViewId,
+  type ToggleCardId,
+  workspaceCardMeta,
+} from './workspace/side-card-service'
 import { useWorkspaceHeaderActions } from '../composables/useWorkspaceHeaderActions'
-import { useWorkspaceOverlayState } from '../composables/useWorkspaceOverlayState'
 import { useWorkspaceImages } from '../composables/useWorkspaceImages'
 import { useProjectStore } from '../stores/projects'
 import { useImageStore } from '../stores/images'
+import { useWorkspaceViewport } from './workspace/useWorkspaceViewport'
+import { useWorkspaceProjectFlows } from './workspace/useWorkspaceProjectFlows'
+import { useWorkspaceAiTagActions } from './workspace/useWorkspaceAiTagActions'
+import { useWorkspacePanelState } from './workspace/useWorkspacePanelState'
+import { useWorkspaceRouteSync } from './workspace/useWorkspaceRouteSync'
+import { useWorkspacePersistence } from './workspace/useWorkspacePersistence'
+import { useWorkspaceCardRuntime } from './workspace/useWorkspaceCardRuntime'
 
 const projectStore = useProjectStore()
 const imageStore = useImageStore()
 const route = useRoute()
+
 const selectedProject = computed(() => projectStore.selectedProject)
-const activeRightPanel = ref<'inspector' | 'tags' | 'projects'>('inspector')
-const showCreateProjectModal = ref(false)
-type WorkspaceMode = 'tagging' | 'projects' | 'tag-library'
-const isMobileViewportRef = ref(false)
+const showProjectPicker = ref(false)
+const showActionsMenu = ref(false)
+const activeMobileTab = ref<MobileWorkspaceTab>('image-browser')
 
-const workspaceMode = computed<WorkspaceMode>(() => {
-  if (activeRightPanel.value === 'projects') {
-    return 'projects'
-  }
-  if (activeRightPanel.value === 'tags') {
-    return 'tag-library'
-  }
-  return 'tagging'
-})
+const WORKSPACE_CARD_STATE_KEY = 'tailflow.workspace-card-state.v1'
+const DEFAULT_LEFT_VIEW_ORDER: SideViewId[] = defaultSideViewOrder('left')
+const DEFAULT_RIGHT_VIEW_ORDER: SideViewId[] = defaultSideViewOrder('right')
 
-const imageBrowserMemoKey = computed(() => {
-  const imageSnapshot = imageStore.images
-    .map((image) => `${image.id}:${image.tag_count}:${image.filename}`)
-    .join('|')
-  return `${projectStore.selectedProjectId ?? 'none'}|${imageStore.sortOption}|${imageSnapshot}`
-})
+type CardId = ToggleCardId | 'project-browser'
+const cardMeta: Record<CardId, CardMeta> = workspaceCardMeta
+
+const {
+  isMobileViewport,
+} = useWorkspaceViewport()
+
+const {
+  showCreateProjectModal,
+  openCreateProjectModal,
+  closeCreateProjectModal,
+  handleProjectCreated,
+  discoverProjectsFromBrowser,
+} = useWorkspaceProjectFlows({ projectStore })
 
 const {
   orderedImages,
   currentImageIndex,
-  previousAvailable,
-  nextAvailable,
   selectImage,
   goToImageByIndex,
   goToPreviousImage,
@@ -57,33 +71,13 @@ const {
 } = useWorkspaceImages({ projectStore, imageStore })
 
 const {
-  showMobilePanel,
-  mobilePanel,
-  showProjectPicker,
-  showActionsMenu,
-  openMobilePanel,
-  closeMobilePanel,
-  openProjectPicker,
-  openOverflow,
-  closeActionsMenu,
-  closeProjectPicker,
-  showTagsLibraryPanel,
-  showTagInspectorPanel,
-  showProjectsPanel,
-} = useWorkspaceOverlayState({ activeRightPanel })
+  handleAiProposedTagAdd,
+  handleAiProposedTagRemove,
+} = useWorkspaceAiTagActions({ projectStore, imageStore })
 
-const mobilePanelTitle = computed(() => {
-  if (mobilePanel.value === 'browser') {
-    return 'Image Browser'
-  }
-  if (mobilePanel.value === 'inspector') {
-    return 'Tag Inspector'
-  }
-  if (mobilePanel.value === 'projects') {
-    return 'Project Manager'
-  }
-  return 'Tags Library'
-})
+function closeProjectPicker() {
+  showProjectPicker.value = false
+}
 
 const {
   refreshProjects,
@@ -93,170 +87,195 @@ const {
   closeProjectPicker,
 })
 
-async function handleSelectImage(imageId: string) {
-  await selectImage(imageId)
-  closeMobilePanel()
+const {
+  cardOpenState,
+  leftViewOrder,
+  rightViewOrder,
+  draggedSideView,
+  sideDropIndicator,
+  leftVisibleViewIds,
+  rightVisibleViewIds,
+  centerPanel,
+  headerOpenViews,
+  leftColumnPanels,
+  rightColumnPanels,
+  centerColumnPanels,
+  isCardOpen,
+  setViewOpen,
+  closeView,
+  closeCenterPanel,
+  onSidePanelDragStart,
+  onSidePanelDragEnd,
+  handleSidePanelDragOver,
+  handleSideColumnDragOver,
+  handleSideDrop,
+  ensureSideViewPlacement,
+} = useWorkspacePanelState({
+  cardMeta,
+  defaultToggleCardOpenState,
+  defaultLeftViewOrder: DEFAULT_LEFT_VIEW_ORDER,
+  defaultRightViewOrder: DEFAULT_RIGHT_VIEW_ORDER,
+  selectedProjectId: computed(() => projectStore.selectedProjectId),
+  onCanvasClosed: () => {
+    projectStore.selectedProjectId = null
+  },
+})
+
+const {
+  mobileTabs,
+  activeMobileSideViewId,
+  activeMobileTabTitle,
+} = useWorkspaceMobileTabs({
+  activeMobileTab,
+  cardOpenState,
+  cardMeta,
+})
+
+function closeActionsMenu() {
+  showActionsMenu.value = false
+}
+
+function openProjectPicker() {
+  showProjectPicker.value = !showProjectPicker.value
+  showActionsMenu.value = false
+}
+
+function openOverflow() {
+  showProjectPicker.value = false
+  showActionsMenu.value = !showActionsMenu.value
+}
+
+function toggleView(view: ToggleCardId) {
+  closeActionsMenu()
+
+  const nextState = !isCardOpen(view)
+  setViewOpen(view, nextState)
+
+  if (nextState && view !== 'canvas') {
+    ensureSideViewPlacement(view)
+  }
+
+  if (!nextState) {
+    const tabView: MobileWorkspaceTab = view
+    if (activeMobileTab.value === tabView) {
+      const fallbackTab = mobileTabs.value.find((tab) => tab.id !== tabView)
+      activeMobileTab.value = fallbackTab?.id ?? 'project-browser'
+    }
+  }
+}
+
+function isMobileTabClosable(tabId: MobileWorkspaceTab): boolean {
+  return tabId !== 'project-browser'
+}
+
+function closeMobileActiveTab() {
+  if (activeMobileTab.value === 'project-browser') {
+    return
+  }
+
+  toggleView(activeMobileTab.value)
 }
 
 function selectProject(projectId: string) {
   projectStore.selectProject(projectId)
 }
 
-function openCreateProjectModal() {
-  showCreateProjectModal.value = true
-}
-
-function closeCreateProjectModal() {
-  showCreateProjectModal.value = false
-}
-
-async function handleProjectCreated(projectId: string) {
-  await projectStore.fetchProjects()
-  projectStore.selectProject(projectId)
-  closeCreateProjectModal()
-}
-
-async function discoverProjectsFromBrowser() {
-  await projectStore.discoverAndRefresh()
-}
-
-function closeTagsLibrary() {
-  activeRightPanel.value = 'inspector'
-}
-
-function isMobileViewport(): boolean {
-  return isMobileViewportRef.value
-}
-
-function updateMobileViewportState() {
-  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
-    isMobileViewportRef.value = false
-    return
-  }
-
-  isMobileViewportRef.value = window.matchMedia('(max-width: 1023px)').matches
-}
-
-onMounted(() => {
-  updateMobileViewportState()
-  window.addEventListener('resize', updateMobileViewportState)
-})
-
-onUnmounted(() => {
-  if (typeof window !== 'undefined') {
-    window.removeEventListener('resize', updateMobileViewportState)
-  }
-})
-
-function handleShowTagsLibraryPanel() {
-  showTagsLibraryPanel()
-  if (isMobileViewport()) {
-    closeMobilePanel()
-  }
-}
-
-function handleShowTagInspectorPanel() {
-  showTagInspectorPanel()
-  if (isMobileViewport()) {
-    closeMobilePanel()
-  }
-}
-
-function handleShowProjectsPanel() {
-  showProjectsPanel()
-  if (isMobileViewport()) {
-    closeMobilePanel()
-  }
-}
-
-function handleSelectProjectFromPicker(projectId: string) {
-  selectProjectFromPicker(projectId)
-  handleShowTagInspectorPanel()
-}
-
-function handleShowTaggingForProject(projectId: string) {
+function handleShowTaggingFromProjectBrowser(projectId: string) {
   if (projectStore.selectedProjectId !== projectId) {
     projectStore.selectProject(projectId)
   }
-  handleShowTagInspectorPanel()
+
+  setViewOpen('canvas', true)
+
+  if (isMobileViewport()) {
+    activeMobileTab.value = 'canvas'
+  }
 }
 
-function queryValue(key: string): string | null {
-  const rawValue = route.query[key]
-  return typeof rawValue === 'string' ? rawValue : null
+async function handleSelectImage(imageId: string) {
+  await selectImage(imageId)
 }
 
-watch(
-  () => queryValue('panel'),
-  (panel) => {
-    if (panel === 'tags') {
-      showTagsLibraryPanel()
-      if (isMobileViewport()) {
-        closeMobilePanel()
-      }
-      return
-    }
+const {
+  sideCardConfig,
+  centerPanelConfig,
+  mobileCanvasConfig,
+  mobileProjectBrowserConfig,
+} = useWorkspaceCardRuntime({
+  projectStore,
+  imageStore,
+  selectedProject,
+  orderedImages,
+  currentImageIndex,
+  centerPanel,
+  selectImage,
+  addAiTag: handleAiProposedTagAdd,
+  removeAiTag: handleAiProposedTagRemove,
+  selectProject,
+  openCreateProject: openCreateProjectModal,
+  discoverProjects: discoverProjectsFromBrowser,
+  showTaggingFromProjectBrowser: handleShowTaggingFromProjectBrowser,
+  previousImage: goToPreviousImage,
+  nextImage: goToNextImage,
+  jumpToImage: goToImageByIndex,
+})
 
-    if (panel === 'projects') {
-      showProjectsPanel()
-      if (isMobileViewport()) {
-        closeMobilePanel()
-      }
-      return
-    }
+const {
+  queryValue,
+} = useWorkspaceRouteSync({
+  route,
+  setViewOpen,
+  activeMobileTab,
+  projectStore,
+  imageStore,
+  selectImage,
+})
 
-    showTagInspectorPanel()
+useWorkspacePersistence({
+  storageKey: WORKSPACE_CARD_STATE_KEY,
+  cardOpenState,
+  leftViewOrder,
+  rightViewOrder,
+  activeMobileTab,
+  defaultLeftViewOrder: DEFAULT_LEFT_VIEW_ORDER,
+  defaultRightViewOrder: DEFAULT_RIGHT_VIEW_ORDER,
+  projectStore,
+  imageStore,
+  selectImage,
+  queryValue,
+})
 
-    if (panel === 'browser' && isMobileViewport()) {
-      openMobilePanel('browser')
-    }
-  },
-  { immediate: true },
-)
+function sidePanelDefaultSize(panelIndex: number, totalPanels: number): number {
+  if (totalPanels <= 0) {
+    return 100
+  }
 
-watch(
-  () => [queryValue('project'), projectStore.projects.length] as const,
-  ([projectFromQuery]) => {
-    if (!projectFromQuery || projectFromQuery === projectStore.selectedProjectId) {
-      return
-    }
+  const base = Math.floor(100 / totalPanels)
+  const remainder = 100 - base * totalPanels
 
-    const projectExists = projectStore.projects.some((project) => project.id === projectFromQuery)
-    if (!projectExists) {
-      return
-    }
+  if (panelIndex === 0) {
+    return base + remainder
+  }
 
-    projectStore.selectProject(projectFromQuery)
-  },
-  { immediate: true },
-)
+  return base
+}
 
-watch(
-  () => [queryValue('image'), projectStore.selectedProjectId] as const,
-  async ([imageFromQuery, selectedProjectId]) => {
-    if (!imageFromQuery || !selectedProjectId) {
-      return
-    }
-
-    if (imageStore.currentImage?.id === imageFromQuery) {
-      return
-    }
-
-    await selectImage(imageFromQuery)
-  },
-  { immediate: true },
-)
-
+const imageBrowserMemoKey = computed(() => {
+  const imageSnapshot = imageStore.images
+    .map((image) => `${image.id}:${image.tag_count}:${image.filename}`)
+    .join('|')
+  return `${projectStore.selectedProjectId ?? 'none'}|${imageStore.sortOption}|${imageSnapshot}`
+})
 </script>
 
 <template>
   <AppShell :full-width="true">
     <template #header>
-      <WorkspaceHeaderSection
+      <HeaderSection
         :project-name="selectedProject?.name"
         :show-project-picker="showProjectPicker"
         :show-actions-menu="showActionsMenu"
-        :active-right-panel="activeRightPanel"
+        :open-views="headerOpenViews"
         :projects="projectStore.projects"
         :selected-project-id="projectStore.selectedProjectId"
         :loading="projectStore.loading"
@@ -265,107 +284,157 @@ watch(
         @open-overflow="openOverflow"
         @close-project-picker="closeProjectPicker"
         @refresh-projects="refreshProjects"
-        @select-project="handleSelectProjectFromPicker"
+        @select-project="selectProjectFromPicker"
         @close-actions-menu="closeActionsMenu"
-        @show-tags-library-panel="handleShowTagsLibraryPanel"
-        @show-tag-inspector-panel="handleShowTagInspectorPanel"
-        @show-projects-panel="handleShowProjectsPanel"
+        @toggle-view="toggleView"
       />
     </template>
 
-    <WorkspaceLayout
-      v-if="workspaceMode === 'tagging'"
+    <section
+      v-if="!isMobileViewport()"
       class="h-full min-h-0"
     >
-      <template #left>
-        <div v-memo="[imageBrowserMemoKey]">
-          <WorkspaceImageBrowserPanel
-            :selected-project-id="projectStore.selectedProjectId"
-            @select-image="handleSelectImage"
-          />
-        </div>
-      </template>
+      <WorkspaceLayout
+        :show-left="leftVisibleViewIds.length > 0"
+        :show-right="rightVisibleViewIds.length > 0"
+        class="h-full min-h-0"
+      >
+        <template #left>
+          <WorkspacePanelColumn
+            column-id="left"
+            :panels="leftColumnPanels"
+            :enable-drag-drop="true"
+            :dragged-panel-id="draggedSideView"
+            :drop-indicator="sideDropIndicator"
+            :panel-default-size="sidePanelDefaultSize"
+            @close="(panelId) => closeView(panelId as SideViewId)"
+            @panel-drag-start="(panelId, event) => onSidePanelDragStart(panelId as SideViewId, event)"
+            @panel-drag-end="onSidePanelDragEnd"
+            @panel-drag-over="(panelIndex, event) => handleSidePanelDragOver('left', panelIndex, event)"
+            @panel-drop="(panelIndex, event) => handleSideDrop('left', leftVisibleViewIds.length, event, panelIndex)"
+            @column-drag-over="(_total, event) => handleSideColumnDragOver('left', leftVisibleViewIds.length, event)"
+            @column-drop="(_total, event) => handleSideDrop('left', leftVisibleViewIds.length, event, null)"
+          >
+            <template #default="{ panel }">
+              <WorkspaceSideCardContent
+                v-if="panel"
+                :config="sideCardConfig(panel.id as SideViewId, false)"
+              />
+            </template>
+          </WorkspacePanelColumn>
+        </template>
 
-      <WorkspaceImageViewerPanel
-        :project-id="projectStore.selectedProjectId"
-        :current-image="imageStore.currentImage"
-        :ordered-images="orderedImages"
-        :current-image-index="currentImageIndex"
-        :loading="projectStore.loading || imageStore.imageLoading"
-        :error="projectStore.error || imageStore.error"
-        @previous="goToPreviousImage"
-        @next="goToNextImage"
-        @jump="goToImageByIndex"
-      />
+        <WorkspacePanelColumn
+          column-id="center"
+          :panels="centerColumnPanels"
+          :panel-default-size="sidePanelDefaultSize"
+          @close="closeCenterPanel"
+        >
+          <template #actions>
+            <component
+              v-if="centerPanelConfig.headerActions"
+              :is="centerPanelConfig.headerActions.component"
+              v-bind="centerPanelConfig.headerActions.props"
+              v-on="centerPanelConfig.headerActions.listeners"
+            />
+          </template>
 
-      <template #right>
-        <WorkspaceRightPanel
-          :active-panel="activeRightPanel"
-          :project-id="projectStore.selectedProjectId"
-          :selected-project="selectedProject"
-          @close-tags-library="closeTagsLibrary"
-        />
-      </template>
-    </WorkspaceLayout>
+          <template #default>
+            <component
+              :is="centerPanelConfig.component"
+              v-bind="centerPanelConfig.props"
+              v-on="centerPanelConfig.listeners"
+            />
+          </template>
+        </WorkspacePanelColumn>
 
-    <section
-      v-else-if="workspaceMode === 'projects'"
-      class="grid min-h-0 grid-cols-1 gap-3 lg:h-full lg:grid-cols-[minmax(240px,320px)_minmax(0,1fr)] lg:items-stretch"
-    >
-      <ProjectBrowserPanel
-        :projects="projectStore.projects"
-        :selected-project-id="projectStore.selectedProjectId"
-        :loading="projectStore.loading"
-        :discovering="projectStore.loading"
-        @select-project="selectProject"
-        @open-create-project="openCreateProjectModal"
-        @discover-projects="discoverProjectsFromBrowser"
-        @show-tagging="handleShowTaggingForProject"
-      />
-
-      <section class="rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-3 lg:h-full lg:min-h-0 lg:overflow-y-auto">
-        <WorkspaceRightPanel
-          active-panel="projects"
-          :project-id="projectStore.selectedProjectId"
-          :selected-project="selectedProject"
-          @close-tags-library="closeTagsLibrary"
-        />
-      </section>
-
-      <ProjectCreateModal
-        v-if="showCreateProjectModal"
-        @close="closeCreateProjectModal"
-        @created="handleProjectCreated"
-      />
+        <template #right>
+          <WorkspacePanelColumn
+            column-id="right"
+            :panels="rightColumnPanels"
+            :enable-drag-drop="true"
+            :dragged-panel-id="draggedSideView"
+            :drop-indicator="sideDropIndicator"
+            :panel-default-size="sidePanelDefaultSize"
+            @close="(panelId) => closeView(panelId as SideViewId)"
+            @panel-drag-start="(panelId, event) => onSidePanelDragStart(panelId as SideViewId, event)"
+            @panel-drag-end="onSidePanelDragEnd"
+            @panel-drag-over="(panelIndex, event) => handleSidePanelDragOver('right', panelIndex, event)"
+            @panel-drop="(panelIndex, event) => handleSideDrop('right', rightVisibleViewIds.length, event, panelIndex)"
+            @column-drag-over="(_total, event) => handleSideColumnDragOver('right', rightVisibleViewIds.length, event)"
+            @column-drop="(_total, event) => handleSideDrop('right', rightVisibleViewIds.length, event, null)"
+          >
+            <template #default="{ panel }">
+              <WorkspaceSideCardContent
+                v-if="panel"
+                :config="sideCardConfig(panel.id as SideViewId, false)"
+              />
+            </template>
+          </WorkspacePanelColumn>
+        </template>
+      </WorkspaceLayout>
     </section>
 
     <section
       v-else
-      class="rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-3 lg:h-full lg:min-h-0 lg:overflow-y-auto"
+      class="h-full min-h-0"
     >
-      <WorkspaceTagsLibraryPanel :show-close="false" />
+      <WorkspaceMobileViewsTabs
+        :tabs="mobileTabs"
+        :active-tab="activeMobileTab"
+        @select="(tab) => (activeMobileTab = tab)"
+      />
+
+      <WorkspacePanelCard
+        :title="activeMobileTabTitle"
+        :closable="isMobileTabClosable(activeMobileTab)"
+        :draggable="false"
+        @close="closeMobileActiveTab"
+      >
+        <template #actions>
+          <component
+            v-if="activeMobileTab === 'project-browser' && mobileProjectBrowserConfig.headerActions"
+            :is="mobileProjectBrowserConfig.headerActions.component"
+            v-bind="mobileProjectBrowserConfig.headerActions.props"
+            v-on="mobileProjectBrowserConfig.headerActions.listeners"
+          />
+        </template>
+
+        <div
+          v-if="activeMobileTab === 'image-browser'"
+          v-memo="[imageBrowserMemoKey]"
+        >
+          <ImageBrowserCard
+            :selected-project-id="projectStore.selectedProjectId"
+            @select-image="handleSelectImage"
+          />
+        </div>
+
+        <component
+          v-else-if="activeMobileTab === 'canvas'"
+          :is="mobileCanvasConfig.component"
+          v-bind="mobileCanvasConfig.props"
+          v-on="mobileCanvasConfig.listeners"
+        />
+
+        <WorkspaceSideCardContent
+          v-else-if="activeMobileSideViewId"
+          :config="sideCardConfig(activeMobileSideViewId, false)"
+        />
+
+        <component
+          v-else
+          :is="mobileProjectBrowserConfig.component"
+          v-bind="mobileProjectBrowserConfig.props"
+          v-on="mobileProjectBrowserConfig.listeners"
+        />
+      </WorkspacePanelCard>
     </section>
 
-    <WorkspaceMobileQuickActions
-      v-if="workspaceMode === 'tagging' && isMobileViewportRef"
-      :previous-available="previousAvailable"
-      :next-available="nextAvailable"
-      @previous="goToPreviousImage"
-      @next="goToNextImage"
-      @open-panel="openMobilePanel"
+    <ProjectCreateModal
+      v-if="showCreateProjectModal"
+      @close="closeCreateProjectModal"
+      @created="handleProjectCreated"
     />
-
-    <WorkspaceMobilePanelSheet
-      v-if="showMobilePanel"
-      :title="mobilePanelTitle"
-      @close="closeMobilePanel"
-    >
-      <WorkspaceMobilePanelContent
-        :panel="mobilePanel"
-        :selected-project-id="projectStore.selectedProjectId"
-        :selected-project="selectedProject"
-        @select-image="handleSelectImage"
-      />
-    </WorkspaceMobilePanelSheet>
   </AppShell>
 </template>

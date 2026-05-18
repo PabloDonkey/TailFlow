@@ -14,6 +14,21 @@ export default [
     },
   },
   {
+    files: ['src/**/*.{ts,vue}'],
+    ignores: ['src/design-system/**'],
+    rules: {
+      'no-restricted-imports': ['error', {
+        paths: [
+          {
+            name: 'reka-ui',
+            message: 'Import reka-ui only from src/design-system wrappers.',
+          },
+        ],
+        patterns: ['reka-ui/*'],
+      }],
+    },
+  },
+  {
     files: ['**/*.vue'],
     languageOptions: {
       parser: vueParser,

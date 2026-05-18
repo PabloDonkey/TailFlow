@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import { nextTick, ref } from 'vue'
+import { defineComponent, nextTick, ref } from 'vue'
 import WorkspacePage from '../pages/WorkspacePage.vue'
 
 const mocks = vi.hoisted(() => ({
@@ -58,46 +58,23 @@ vi.mock('../composables/useWorkspaceHeaderActions', () => ({
   }),
 }))
 
-vi.mock('../composables/useWorkspaceOverlayState', () => ({
-  useWorkspaceOverlayState: (options: { activeRightPanel: { value: 'inspector' | 'tags' | 'projects' } }) => ({
-    showMobilePanel: ref(false),
-    mobilePanel: ref<'browser' | 'inspector' | 'tags' | 'projects'>('browser'),
-    showProjectPicker: ref(false),
-    showActionsMenu: ref(false),
-    openMobilePanel: vi.fn(),
-    closeMobilePanel: vi.fn(),
-    openProjectPicker: vi.fn(),
-    openOverflow: vi.fn(),
-    closeActionsMenu: vi.fn(),
-    closeProjectPicker: vi.fn(),
-    showTagsLibraryPanel: () => {
-      options.activeRightPanel.value = 'tags'
-    },
-    showTagInspectorPanel: () => {
-      options.activeRightPanel.value = 'inspector'
-    },
-    showProjectsPanel: () => {
-      options.activeRightPanel.value = 'projects'
-    },
-  }),
-}))
-
 describe('WorkspacePage modes', () => {
   it('renders full-width tag-library mode when panel query is tags', async () => {
     const wrapper = mount(WorkspacePage, {
       global: {
         stubs: {
           AppShell: { template: '<div><slot name="header" /><slot /></div>' },
-          WorkspaceHeaderSection: { template: '<div data-testid="workspace-header" />' },
+          HeaderSection: { template: '<div data-testid="workspace-header" />' },
           WorkspaceLayout: { template: '<div data-testid="workspace-layout"><slot name="left" /><slot /><slot name="right" /></div>' },
-          WorkspaceImageBrowserPanel: { template: '<div data-testid="image-browser" />' },
-          WorkspaceImageViewerPanel: { template: '<div data-testid="image-viewer" />' },
-          WorkspaceRightPanel: { template: '<div data-testid="right-panel" />' },
-          WorkspaceMobileQuickActions: { template: '<div data-testid="mobile-quick-actions" />' },
-          WorkspaceMobilePanelSheet: { template: '<div data-testid="mobile-panel-sheet"><slot /></div>' },
-          WorkspaceMobilePanelContent: { template: '<div data-testid="mobile-panel-content" />' },
-          WorkspaceTagsLibraryPanel: { template: '<div data-testid="tags-library-panel" />' },
-          ProjectBrowserPanel: { template: '<div data-testid="project-browser" />' },
+          WorkspacePanelCard: { template: '<div data-testid="panel-card"><slot /></div>' },
+          WorkspaceMobileViewsTabs: { template: '<div data-testid="mobile-tabs" />' },
+          ImageBrowserCard: { template: '<div data-testid="image-browser" />' },
+          ImageCanvasCard: { template: '<div data-testid="image-viewer" />' },
+          CurrentTagsCard: { template: '<div data-testid="tag-inspector-panel" />' },
+          AiProposedTagsCard: { template: '<div data-testid="ai-proposed-tags-panel" />' },
+          ProjectDetailsCard: { template: '<div data-testid="project-details-panel" />' },
+          TagsLibraryCard: { template: '<div data-testid="tags-library-panel" />' },
+          ProjectBrowserCard: { template: '<div data-testid="project-browser" />' },
           ProjectCreateModal: { template: '<div data-testid="project-create-modal" />' },
         },
       },
@@ -106,7 +83,64 @@ describe('WorkspacePage modes', () => {
     await nextTick()
 
     expect(wrapper.find('[data-testid="tags-library-panel"]').exists()).toBe(true)
-    expect(wrapper.find('[data-testid="workspace-layout"]').exists()).toBe(false)
-    expect(wrapper.find('[data-testid="mobile-quick-actions"]').exists()).toBe(false)
+    expect(wrapper.find('[data-testid="workspace-layout"]').exists()).toBe(true)
+    expect(wrapper.find('[data-testid="mobile-tabs"]').exists()).toBe(false)
+  })
+
+  it('closes actions menu when toggling a view', async () => {
+    const headerStub = defineComponent({
+      props: {
+        showActionsMenu: {
+          type: Boolean,
+          required: true,
+        },
+      },
+      emits: [
+        'openProjectPicker',
+        'openOverflow',
+        'closeProjectPicker',
+        'refreshProjects',
+        'selectProject',
+        'closeActionsMenu',
+        'toggleView',
+      ],
+      template: `
+        <div data-testid="workspace-header">
+          <button data-testid="open-overflow" @click="$emit('openOverflow')" />
+          <button data-testid="toggle-tags-library" @click="$emit('toggleView', 'tags-library')" />
+          <span data-testid="actions-open">{{ showActionsMenu ? 'open' : 'closed' }}</span>
+        </div>
+      `,
+    })
+
+    const wrapper = mount(WorkspacePage, {
+      global: {
+        stubs: {
+          AppShell: { template: '<div><slot name="header" /><slot /></div>' },
+          HeaderSection: headerStub,
+          WorkspaceLayout: { template: '<div data-testid="workspace-layout"><slot name="left" /><slot /><slot name="right" /></div>' },
+          WorkspacePanelCard: { template: '<div data-testid="panel-card"><slot /></div>' },
+          WorkspaceMobileViewsTabs: { template: '<div data-testid="mobile-tabs" />' },
+          ImageBrowserCard: { template: '<div data-testid="image-browser" />' },
+          ImageCanvasCard: { template: '<div data-testid="image-viewer" />' },
+          CurrentTagsCard: { template: '<div data-testid="tag-inspector-panel" />' },
+          AiProposedTagsCard: { template: '<div data-testid="ai-proposed-tags-panel" />' },
+          ProjectDetailsCard: { template: '<div data-testid="project-details-panel" />' },
+          TagsLibraryCard: { template: '<div data-testid="tags-library-panel" />' },
+          ProjectBrowserCard: { template: '<div data-testid="project-browser" />' },
+          ProjectCreateModal: { template: '<div data-testid="project-create-modal" />' },
+        },
+      },
+    })
+
+    expect(wrapper.get('[data-testid="actions-open"]').text()).toBe('closed')
+
+    await wrapper.get('[data-testid="open-overflow"]').trigger('click')
+    await nextTick()
+    expect(wrapper.get('[data-testid="actions-open"]').text()).toBe('open')
+
+    await wrapper.get('[data-testid="toggle-tags-library"]').trigger('click')
+    await nextTick()
+    expect(wrapper.get('[data-testid="actions-open"]').text()).toBe('closed')
   })
 })

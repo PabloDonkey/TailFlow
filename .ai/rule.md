@@ -6,6 +6,7 @@
 - Before moving to the next iteration, run the smallest relevant validation (error check, focused test, or targeted command).
 - Before switching from plan mode to implementation, if the current branch is `main`, propose checking out a working branch first.
 - Before code edits, explicitly propose the change, explain why it is needed, and name the file or files that will be modified.
+- For each new feature/requirement request, run a short interview first (clarify behavior, constraints, and acceptance criteria) before implementation.
 - After editing any file, run an error check on the modified file(s) before moving on.
 - Before any commit, run the full backend and frontend test suites and proceed only if they pass.
 - Tests are source of truth for behavior. Do not modify any existing test file (`backend/tests/`, `frontend/src/__tests__/`, `frontend/e2e/`) unless the user gives explicit authorization in the current session.

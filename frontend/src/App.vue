@@ -13,7 +13,7 @@ const isWorkspaceRoute = computed(() => route.path === '/workspace')
   >
     <main
       class="mx-auto w-full flex-1"
-      :class="isWorkspaceRoute ? 'max-w-none overflow-hidden p-3 md:p-4' : 'max-w-[768px] p-4'"
+      :class="isWorkspaceRoute ? 'max-w-none overflow-hidden p-0' : 'max-w-[768px] p-4'"
     >
       <RouterView />
     </main>

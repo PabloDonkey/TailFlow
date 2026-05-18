@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
-import ProjectBrowserPanel from '../components/projects/ProjectBrowserPanel.vue'
+import ProjectBrowserCard from '../cards/project-browser/ProjectBrowserCard.vue'
 
 const mocks = vi.hoisted(() => ({
   listProjectImages: vi.fn().mockResolvedValue([]),
@@ -13,11 +13,11 @@ vi.mock('../api', () => ({
   getProjectImageFileUrl: mocks.getProjectImageFileUrl,
 }))
 
-describe('ProjectBrowserPanel', () => {
-  it('renders project cards sorted by name and emits selection', async () => {
+describe('ProjectBrowserCard', () => {
+  it('renders project cards sorted by name and opens tagging flow on card click', async () => {
     mocks.listProjectImages.mockResolvedValue([{ id: 'img-1' }])
 
-    const wrapper = mount(ProjectBrowserPanel, {
+    const wrapper = mount(ProjectBrowserCard, {
       props: {
         projects: [
           {
@@ -62,10 +62,11 @@ describe('ProjectBrowserPanel', () => {
 
     await cardButtons[0]!.trigger('click')
     expect(wrapper.emitted('selectProject')?.[0]).toEqual(['1'])
+    expect(wrapper.emitted('showTagging')?.[0]).toEqual(['1'])
   })
 
   it('emits openCreateProject from the top action button', async () => {
-    const wrapper = mount(ProjectBrowserPanel, {
+    const wrapper = mount(ProjectBrowserCard, {
       props: {
         projects: [],
         selectedProjectId: null,
@@ -82,7 +83,7 @@ describe('ProjectBrowserPanel', () => {
   })
 
   it('emits discoverProjects from the discover button', async () => {
-    const wrapper = mount(ProjectBrowserPanel, {
+    const wrapper = mount(ProjectBrowserCard, {
       props: {
         projects: [],
         selectedProjectId: null,
@@ -98,8 +99,8 @@ describe('ProjectBrowserPanel', () => {
     expect(wrapper.emitted('discoverProjects')).toHaveLength(1)
   })
 
-  it('emits showTagging with project id from a card tagging button', async () => {
-    const wrapper = mount(ProjectBrowserPanel, {
+  it('emits showTagging with project id from card click', async () => {
+    const wrapper = mount(ProjectBrowserCard, {
       props: {
         projects: [
           {
@@ -123,9 +124,9 @@ describe('ProjectBrowserPanel', () => {
 
     await nextTick()
 
-    const taggingButton = wrapper.findAll('button').find((button) => button.text().trim() === 'Tagging')
-    expect(taggingButton).toBeDefined()
-    await taggingButton!.trigger('click')
+    const cardButton = wrapper.find('button.w-full')
+    expect(cardButton.exists()).toBe(true)
+    await cardButton.trigger('click')
 
     expect(wrapper.emitted('showTagging')?.[0]).toEqual(['project-a'])
   })
