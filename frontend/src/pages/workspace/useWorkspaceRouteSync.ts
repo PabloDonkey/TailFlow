@@ -39,8 +39,9 @@ export function useWorkspaceRouteSync(options: UseWorkspaceRouteSyncOptions) {
       }
 
       if (panel === 'projects') {
-        setViewOpen('project-details', true)
-        activeMobileTab.value = 'project-details'
+        setViewOpen('canvas', false)
+        setViewOpen('project-details', false)
+        activeMobileTab.value = 'project-browser'
         return
       }
 

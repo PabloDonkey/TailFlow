@@ -77,6 +77,9 @@ function onChipKeydown(event: KeyboardEvent, item: TagsTextareaFieldItem): void 
           : 'border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface-alt)] text-[var(--tf-color-text-default)]',
         clickToAction && !item.actionDisabled ? 'cursor-pointer' : '',
       ]"
+      :role="clickToAction && !item.actionDisabled ? 'button' : undefined"
+      :aria-label="clickToAction && !item.actionDisabled ? (item.actionAriaLabel ?? `Toggle tag ${item.label}`) : undefined"
+      :aria-disabled="clickToAction && item.actionDisabled ? 'true' : undefined"
       :tabindex="clickToAction && !item.actionDisabled ? 0 : undefined"
       @click="onChipClick(item)"
       @keydown="onChipKeydown($event, item)"

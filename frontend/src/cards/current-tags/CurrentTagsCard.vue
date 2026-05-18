@@ -116,6 +116,13 @@ async function handleAddTag(tagName: string) {
     role="region"
     :aria-labelledby="headingId"
   >
+    <h2
+      :id="headingId"
+      class="sr-only"
+    >
+      Current Tags
+    </h2>
+
     <AppText v-if="!currentImage">
       Select an image to inspect tags.
     </AppText>

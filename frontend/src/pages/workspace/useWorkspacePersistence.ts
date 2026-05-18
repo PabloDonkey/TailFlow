@@ -1,4 +1,4 @@
-import { onMounted, ref, watch, type Ref } from 'vue'
+import { ref, watch, type Ref } from 'vue'
 import type { MobileWorkspaceTab } from '../../components/layout/WorkspaceMobileViewsTabs.vue'
 import type { SideViewId, ToggleCardId } from './side-card-service'
 import type { useImageStore } from '../../stores/images'
@@ -34,6 +34,15 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
   } = options
 
   const defaultSideViewOrder: SideViewId[] = [...defaultLeftViewOrder, ...defaultRightViewOrder]
+  const validMobileTabs: MobileWorkspaceTab[] = [
+    'image-browser',
+    'canvas',
+    'current-tags',
+    'ai-proposed-tags',
+    'tags-library',
+    'project-details',
+    'project-browser',
+  ]
   const restoredProjectSelectionHandled = ref(false)
   const restoredImageSelectionHandled = ref(false)
   const restoredSelectionProjectId = ref<string | null>(null)
@@ -132,7 +141,11 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
       leftViewOrder.value = normalized.left
       rightViewOrder.value = normalized.right
 
-      if (parsed.activeMobileTab && typeof parsed.activeMobileTab === 'string') {
+      if (
+        parsed.activeMobileTab
+        && typeof parsed.activeMobileTab === 'string'
+        && validMobileTabs.includes(parsed.activeMobileTab)
+      ) {
         activeMobileTab.value = parsed.activeMobileTab
       }
 
@@ -144,6 +157,8 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
       // Ignore malformed persisted state and continue with defaults.
     }
   }
+
+  loadWorkspaceCardState()
 
   function saveWorkspaceCardState() {
     if (typeof window === 'undefined') {
@@ -256,7 +271,4 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
     { immediate: true },
   )
 
-  onMounted(() => {
-    loadWorkspaceCardState()
-  })
 }
