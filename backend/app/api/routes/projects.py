@@ -356,7 +356,10 @@ async def get_project_image_file_route(
     return FileResponse(path)
 
 
-@router.delete("/{project_id}/images/{image_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete(
+    "/{project_id}/images/{image_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
 async def delete_project_image_route(
     project_id: uuid.UUID,
     image_id: uuid.UUID,
