@@ -77,6 +77,32 @@ export function useWorkspaceImages(options: UseWorkspaceImagesOptions) {
     await goToImageByIndex(currentImageIndex.value + 1)
   }
 
+  async function deleteCurrentImage(): Promise<void> {
+    const projectId = projectStore.selectedProjectId
+    const currentImage = imageStore.currentImage
+    if (!projectId || !currentImage) {
+      return
+    }
+
+    const deletedIndex = currentImageIndex.value
+    const deletedImageId = currentImage.id
+    const deleted = await imageStore.deleteImage(projectId, deletedImageId)
+    if (!deleted) {
+      return
+    }
+
+    if (imageStore.sortedImages.length === 0) {
+      imageStore.currentImage = null
+      return
+    }
+
+    const nextIndex = Math.min(deletedIndex, imageStore.sortedImages.length - 1)
+    const nextImage = imageStore.sortedImages[nextIndex]
+    if (nextImage) {
+      await imageStore.fetchImage(projectId, nextImage.id)
+    }
+  }
+
   watch(
     () => projectStore.selectedProjectId,
     async (projectId) => {
@@ -109,5 +135,6 @@ export function useWorkspaceImages(options: UseWorkspaceImagesOptions) {
     goToImageByIndex,
     goToPreviousImage,
     goToNextImage,
+    deleteCurrentImage,
   }
 }

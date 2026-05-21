@@ -27,6 +27,7 @@ type UseWorkspaceCardRuntimeOptions = {
   previousImage: () => Promise<void>
   nextImage: () => Promise<void>
   jumpToImage: (index: number) => Promise<void>
+  deleteCurrentImage: () => Promise<void>
 }
 
 export function useWorkspaceCardRuntime(options: UseWorkspaceCardRuntimeOptions) {
@@ -47,6 +48,7 @@ export function useWorkspaceCardRuntime(options: UseWorkspaceCardRuntimeOptions)
     previousImage,
     nextImage,
     jumpToImage,
+    deleteCurrentImage,
   } = options
 
   function workspaceCardState(framed: boolean) {
@@ -90,6 +92,9 @@ export function useWorkspaceCardRuntime(options: UseWorkspaceCardRuntimeOptions)
       },
       jumpToImage: (index: number) => {
         void jumpToImage(index)
+      },
+      deleteCurrentImage: () => {
+        void deleteCurrentImage()
       },
     }
   }

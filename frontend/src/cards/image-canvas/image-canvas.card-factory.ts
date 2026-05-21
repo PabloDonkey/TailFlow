@@ -32,6 +32,9 @@ export const imageCanvasCardFactory: WorkspaceCardFactory = {
             actions.jumpToImage(index)
           }
         },
+        deleteCurrent: () => {
+          actions.deleteCurrentImage()
+        },
       },
     }
   },

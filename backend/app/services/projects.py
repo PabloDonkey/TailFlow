@@ -1,4 +1,5 @@
 import logging
+import hashlib
 import shutil
 import uuid
 from datetime import UTC, datetime
@@ -384,6 +385,7 @@ async def upload_images_to_project(
             await output.write(contents)
 
         stat = destination.stat()
+        content_hash = hashlib.sha256(contents).hexdigest()
         relative_path = destination.relative_to(dataset_path).as_posix()
         record_result = await session.execute(
             select(DatasetImage).where(
@@ -397,6 +399,7 @@ async def upload_images_to_project(
                 project_id=project.id,
                 relative_path=relative_path,
                 filename=destination.name,
+                content_hash=content_hash,
                 file_mtime_ns=stat.st_mtime_ns,
                 file_size_bytes=stat.st_size,
                 removed_at=None,
@@ -405,6 +408,7 @@ async def upload_images_to_project(
             created_records += 1
         else:
             record.filename = destination.name
+            record.content_hash = content_hash
             record.file_mtime_ns = stat.st_mtime_ns
             record.file_size_bytes = stat.st_size
             if record.removed_at is not None:
@@ -422,6 +426,22 @@ async def upload_images_to_project(
         created_records=created_records,
         restored_records=restored_records,
     )
+
+
+async def delete_project_image(
+    session: AsyncSession,
+    project: Project,
+    image: DatasetImage,
+) -> None:
+    if image.removed_at is not None:
+        return
+
+    file_path = Path(project.dataset_path) / image.relative_path
+    if file_path.exists():
+        file_path.unlink()
+
+    image.removed_at = datetime.now(UTC)
+    await session.commit()
 
 
 async def update_project_metadata(

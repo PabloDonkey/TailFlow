@@ -59,6 +59,7 @@ export const ProjectImageSummarySchema = z.object({
   project_id: z.string().uuid(),
   relative_path: z.string(),
   filename: z.string(),
+  content_hash: z.string().nullable().optional(),
   discovered_at: z.string().datetime({ offset: true }),
   tag_count: z.number().int(),
 })
@@ -255,6 +256,16 @@ export async function listProjectImages(projectId: string): Promise<ProjectImage
 
 export async function getProjectImage(projectId: string, imageId: string): Promise<ProjectImageRead> {
   return fetchJSON(ProjectImageReadSchema, `${BASE}/projects/${projectId}/images/${imageId}`)
+}
+
+export async function deleteProjectImage(projectId: string, imageId: string): Promise<void> {
+  const response = await fetch(`${BASE}/projects/${projectId}/images/${imageId}`, {
+    method: 'DELETE',
+  })
+  if (!response.ok) {
+    const body = await response.text().catch(() => '')
+    throw new Error(`API ${response.status}: ${body}`)
+  }
 }
 
 export function getProjectImageFileUrl(projectId: string, imageId: string): string {

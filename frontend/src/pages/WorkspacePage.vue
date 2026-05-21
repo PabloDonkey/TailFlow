@@ -68,6 +68,7 @@ const {
   goToImageByIndex,
   goToPreviousImage,
   goToNextImage,
+  deleteCurrentImage,
 } = useWorkspaceImages({ projectStore, imageStore })
 
 const {
@@ -218,6 +219,7 @@ const {
   previousImage: goToPreviousImage,
   nextImage: goToNextImage,
   jumpToImage: goToImageByIndex,
+  deleteCurrentImage,
 })
 
 const {

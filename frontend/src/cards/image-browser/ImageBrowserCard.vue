@@ -3,10 +3,11 @@ import { computed } from 'vue'
 import { useImageStore, type ImageSortOption } from '../../stores/images'
 import { getProjectImageFileUrl } from '../../api'
 import { useDelayedLoading } from '../../composables/useDelayedLoading'
+import UploadImageDropZone from '../../components/ui/UploadImageDropZone.vue'
 import AppErrorText from '../../components/ui/AppErrorText.vue'
 import AppText from '../../components/ui/AppText.vue'
 
-defineProps<{
+const props = defineProps<{
   selectedProjectId: string | null
 }>()
 
@@ -30,10 +31,19 @@ function formatTagCount(tagCount: number): string {
 </script>
 
 <template>
-  <section class="flex flex-col gap-3">
+  <UploadImageDropZone
+    :project-id="props.selectedProjectId"
+    :existing-filenames="imageStore.images.map((image) => image.filename)"
+    :existing-content-hashes="imageStore.images.flatMap((image) => image.content_hash ? [image.content_hash] : [])"
+  >
+    <template #default="{ isDropActive, dropFeedback, dropFeedbackTone }">
+      <section
+        class="flex h-full min-h-0 flex-col gap-3 rounded-[var(--tf-radius-md)] border border-transparent p-2 transition"
+        :class="isDropActive ? 'border-[var(--tf-color-accent)] bg-[var(--tf-color-surface-muted)]/50' : ''"
+      >
     <div class="flex flex-wrap items-center justify-end gap-2">
       <label
-        v-if="selectedProjectId && imageStore.sortedImages.length"
+        v-if="props.selectedProjectId && imageStore.sortedImages.length"
         class="inline-flex items-center gap-2 text-[0.8rem] text-[var(--tf-color-text-muted)]"
       >
         <span>Sort</span>
@@ -53,7 +63,15 @@ function formatTagCount(tagCount: number): string {
       </label>
     </div>
 
-    <AppText v-if="!selectedProjectId">
+    <p
+      v-if="dropFeedback"
+      class="text-xs"
+      :class="dropFeedbackTone === 'error' ? 'text-[var(--tf-color-danger)]' : dropFeedbackTone === 'success' ? 'text-[var(--tf-color-success)]' : 'text-[var(--tf-color-text-muted)]'"
+    >
+      {{ dropFeedback }}
+    </p>
+
+    <AppText v-if="!props.selectedProjectId">
       Select a project in Projects first.
     </AppText>
     <AppText v-else-if="showLoading">
@@ -78,7 +96,7 @@ function formatTagCount(tagCount: number): string {
         @click="emit('selectImage', img.id)"
       >
         <img
-          :src="getProjectImageFileUrl(selectedProjectId!, img.id)"
+          :src="getProjectImageFileUrl(props.selectedProjectId!, img.id)"
           :alt="img.filename"
           class="block aspect-square w-full object-cover"
           loading="lazy"
@@ -92,5 +110,7 @@ function formatTagCount(tagCount: number): string {
         </div>
       </button>
     </div>
-  </section>
+      </section>
+    </template>
+  </UploadImageDropZone>
 </template>

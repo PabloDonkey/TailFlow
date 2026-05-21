@@ -55,6 +55,7 @@ class ProjectImageSummary(BaseModel):
     project_id: uuid.UUID
     relative_path: str
     filename: str
+    content_hash: str | None = None
     discovered_at: datetime
     tag_count: int = 0
 
