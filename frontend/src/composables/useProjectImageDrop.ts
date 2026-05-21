@@ -185,7 +185,7 @@ export function useProjectImageDrop(options: UseProjectImageDropOptions) {
       return
     }
 
-    let droppedFiles: File[] = []
+    let droppedFiles: File[]
     try {
       droppedFiles = await collectDroppedImageFiles(dataTransfer)
     } catch {
