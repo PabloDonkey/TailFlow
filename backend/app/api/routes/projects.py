@@ -44,6 +44,7 @@ from app.schemas.project import (
 from app.services.classifier import classify_project_image
 from app.services.projects import (
     create_project,
+    delete_project_image,
     discover_projects,
     sync_project,
     update_project_image_tags,
@@ -283,6 +284,7 @@ async def list_project_images_route(
             project_id=image.project_id,
             relative_path=image.relative_path,
             filename=image.filename,
+            content_hash=image.content_hash,
             discovered_at=image.discovered_at,
             tag_count=tag_counts.get(image.id, 0),
         )
@@ -317,6 +319,7 @@ async def get_project_image_route(
         project_id=image.project_id,
         relative_path=image.relative_path,
         filename=image.filename,
+        content_hash=image.content_hash,
         discovered_at=image.discovered_at,
         tag_count=len(tags),
         removed_at=image.removed_at,
@@ -351,6 +354,32 @@ async def get_project_image_file_route(
             detail="Project image file not found on disk.",
         )
     return FileResponse(path)
+
+
+@router.delete(
+    "/{project_id}/images/{image_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_project_image_route(
+    project_id: uuid.UUID,
+    image_id: uuid.UUID,
+    session: AsyncSession = Depends(db_session),
+) -> None:
+    project = await session.get(Project, project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
+
+    image = await session.get(DatasetImage, image_id)
+    if image is None or image.project_id != project.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project image not found.",
+        )
+
+    await delete_project_image(session, project, image)
 
 
 @router.post(
@@ -457,6 +486,7 @@ async def update_project_image_tags_route(
         project_id=image.project_id,
         relative_path=image.relative_path,
         filename=image.filename,
+        content_hash=image.content_hash,
         discovered_at=image.discovered_at,
         tag_count=len(tags),
         removed_at=image.removed_at,

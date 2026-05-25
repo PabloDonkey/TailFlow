@@ -9,6 +9,7 @@ from httpx import AsyncClient
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.models.dataset_image import DatasetImage
 from app.models.tag import Tag
 from app.schemas.project import ProjectCreate
 from app.services.projects import create_project
@@ -396,6 +397,56 @@ async def test_upload_project_images_writes_into_project_dataset(
     sync_payload = sync_response.json()
     assert sync_payload["added_images"] == 0
     assert sync_payload["removed_images"] == 0
+
+
+@pytest.mark.asyncio
+async def test_delete_project_image_soft_deletes_record_and_unlinks_file(
+    client: AsyncClient,
+    session: AsyncSession,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+    create_response = await client.post(
+        "/api/projects",
+        json={"folder_name": "delete-image-project", "class_tag": "subject"},
+    )
+    assert create_response.status_code == 201
+    project_id = create_response.json()["project"]["id"]
+
+    image_bytes = make_png_bytes(12, 12)
+    upload_response = await client.post(
+        f"/api/projects/{project_id}/images",
+        files=[("files", ("delete-me.png", io.BytesIO(image_bytes), "image/png"))],
+    )
+    assert upload_response.status_code == 200
+
+    images_before_delete = await client.get(f"/api/projects/{project_id}/images")
+    assert images_before_delete.status_code == 200
+    image_payload = images_before_delete.json()[0]
+    image_id = image_payload["id"]
+
+    dataset_file = (
+        tmp_path
+        / "delete-image-project"
+        / "dataset"
+        / image_payload["relative_path"]
+    )
+    assert dataset_file.is_file()
+
+    delete_response = await client.delete(
+        f"/api/projects/{project_id}/images/{image_id}"
+    )
+    assert delete_response.status_code == 204
+
+    images_after_delete = await client.get(f"/api/projects/{project_id}/images")
+    assert images_after_delete.status_code == 200
+    assert images_after_delete.json() == []
+
+    deleted_record = await session.get(DatasetImage, uuid.UUID(image_id))
+    assert deleted_record is not None
+    assert deleted_record.removed_at is not None
+    assert not dataset_file.exists()
 
 
 @pytest.mark.asyncio

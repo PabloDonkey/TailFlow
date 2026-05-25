@@ -12,6 +12,8 @@
   --tf-color-text-default: #3a3d4d;
   --tf-color-text-muted: #555a6e;
   --tf-color-text-error: #c00;
+  --tf-color-danger: #c62828;
+  --tf-color-success: #2e7d32;
   --tf-space-2: 0.5rem;
   --tf-space-3: 0.75rem;
   --tf-space-4: 1rem;

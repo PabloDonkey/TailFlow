@@ -59,6 +59,7 @@ export const ProjectImageSummarySchema = z.object({
   project_id: z.string().uuid(),
   relative_path: z.string(),
   filename: z.string(),
+  content_hash: z.string().nullable().optional(),
   discovered_at: z.string().datetime({ offset: true }),
   tag_count: z.number().int(),
 })
@@ -172,6 +173,14 @@ async function fetchJSON<T>(
   return schema.parse(await res.json())
 }
 
+async function fetchVoid(input: RequestInfo, init?: RequestInit): Promise<void> {
+  const res = await fetch(input, init)
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`API ${res.status}: ${body}`)
+  }
+}
+
 // Tags
 
 export async function listTags(): Promise<Tag[]> {
@@ -255,6 +264,12 @@ export async function listProjectImages(projectId: string): Promise<ProjectImage
 
 export async function getProjectImage(projectId: string, imageId: string): Promise<ProjectImageRead> {
   return fetchJSON(ProjectImageReadSchema, `${BASE}/projects/${projectId}/images/${imageId}`)
+}
+
+export async function deleteProjectImage(projectId: string, imageId: string): Promise<void> {
+  await fetchVoid(`${BASE}/projects/${projectId}/images/${imageId}`, {
+    method: 'DELETE',
+  })
 }
 
 export function getProjectImageFileUrl(projectId: string, imageId: string): string {

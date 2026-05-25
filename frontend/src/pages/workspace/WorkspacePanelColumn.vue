@@ -124,7 +124,10 @@ function showDropIndicator(panelIndex: number, edge: 'top' | 'bottom'): boolean 
                 }"
               >
                 <template #actions>
-                  <slot name="actions" :panel="panel" />
+                  <slot
+                    name="actions"
+                    :panel="panel"
+                  />
                 </template>
                 <slot :panel="panel" />
               </WorkspacePanelCard>
@@ -188,7 +191,10 @@ function showDropIndicator(panelIndex: number, edge: 'top' | 'bottom'): boolean 
         }"
       >
         <template #actions>
-          <slot name="actions" :panel="panels[0]" />
+          <slot
+            name="actions"
+            :panel="panels[0]"
+          />
         </template>
         <slot :panel="panels[0]" />
       </WorkspacePanelCard>

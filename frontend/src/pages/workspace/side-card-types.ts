@@ -58,6 +58,7 @@ export type SideCardActions = {
   previousImage: () => void
   nextImage: () => void
   jumpToImage: (index: number) => void
+  deleteCurrentImage: () => void
 }
 
 export type WorkspaceCardActions = SideCardActions

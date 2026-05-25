@@ -109,15 +109,15 @@ export const useProjectStore = defineStore('projects', () => {
     }
   }
 
-  async function uploadImagesToSelectedProject(files: File[]) {
-    if (!selectedProjectId.value || files.length === 0) {
+  async function uploadImagesToProject(projectId: string, files: File[]) {
+    if (!projectId || files.length === 0) {
       return null
     }
 
     uploading.value = true
     error.value = null
     try {
-      lastUpload.value = await api.uploadProjectImages(selectedProjectId.value, files)
+      lastUpload.value = await api.uploadProjectImages(projectId, files)
       await fetchProjects()
       return lastUpload.value
     } catch (e) {
@@ -126,6 +126,14 @@ export const useProjectStore = defineStore('projects', () => {
     } finally {
       uploading.value = false
     }
+  }
+
+  async function uploadImagesToSelectedProject(files: File[]) {
+    if (!selectedProjectId.value) {
+      return null
+    }
+
+    return uploadImagesToProject(selectedProjectId.value, files)
   }
 
   async function updateSelectedProjectMetadata(payload: ProjectUpdatePayload) {
@@ -171,6 +179,7 @@ export const useProjectStore = defineStore('projects', () => {
     discoverAndRefresh,
     syncSelectedProject,
     createProject,
+    uploadImagesToProject,
     uploadImagesToSelectedProject,
     updateSelectedProjectMetadata,
     selectProject,

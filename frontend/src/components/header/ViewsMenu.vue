@@ -76,7 +76,10 @@ const actionButtonClass = (view: 'image-browser' | 'canvas' | 'current-tags' | '
       }"
     >
       <template #anchor>
-        <span class="absolute right-3 top-2 h-0 w-0 lg:right-4 lg:top-2" aria-hidden="true" />
+        <span
+          class="absolute right-3 top-2 h-0 w-0 lg:right-4 lg:top-2"
+          aria-hidden="true"
+        />
       </template>
 
       <p class="m-0 px-2 pb-1 text-xs uppercase tracking-[0.08em] text-[var(--tf-color-text-muted)]">

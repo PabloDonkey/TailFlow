@@ -68,6 +68,24 @@ export const useImageStore = defineStore('images', () => {
     }
   }
 
+  async function deleteImage(projectId: string, id: string): Promise<boolean> {
+    imageLoading.value = true
+    error.value = null
+    try {
+      await api.deleteProjectImage(projectId, id)
+      images.value = images.value.filter((img) => img.id !== id)
+      if (currentImage.value?.id === id) {
+        currentImage.value = null
+      }
+      return true
+    } catch (e) {
+      error.value = String(e)
+      return false
+    } finally {
+      imageLoading.value = false
+    }
+  }
+
   async function updateTags(
     projectId: string,
     id: string,
@@ -117,6 +135,7 @@ export const useImageStore = defineStore('images', () => {
     sortOption,
     fetchImages,
     fetchImage,
+    deleteImage,
     updateTags,
   }
 })

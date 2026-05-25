@@ -84,7 +84,9 @@ function onChipKeydown(event: KeyboardEvent, item: TagsTextareaFieldItem): void 
       @click="onChipClick(item)"
       @keydown="onChipKeydown($event, item)"
     >
-      <AppTagsInputItemText class="max-w-[12rem] truncate">{{ item.label }}</AppTagsInputItemText>
+      <AppTagsInputItemText class="max-w-[12rem] truncate">
+        {{ item.label }}
+      </AppTagsInputItemText>
 
       <span
         v-if="item.metaInline"

@@ -29,6 +29,12 @@ export default [
     },
   },
   {
+    files: ['src/__tests__/**/*.{ts,vue}'],
+    rules: {
+      'vue/one-component-per-file': 'off',
+    },
+  },
+  {
     files: ['**/*.vue'],
     languageOptions: {
       parser: vueParser,

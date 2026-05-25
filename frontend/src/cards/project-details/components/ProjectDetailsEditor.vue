@@ -99,138 +99,138 @@ async function saveProjectMetadata() {
 </script>
 
 <template>
-    <div
-      v-if="selectedProject"
-      class="details-card"
-    >
-      <dl>
-        <div class="row">
-          <dt>Folder</dt>
-          <dd>{{ selectedProject.folder_name }}</dd>
-        </div>
-        <div class="row">
-          <dt>Trigger Tag</dt>
-          <dd>
-            <input
-              v-model="editTriggerTag"
-              type="text"
-            >
-          </dd>
-        </div>
-        <div class="row">
-          <dt>Class Tag</dt>
-          <dd>
-            <input
-              v-model="editClassTag"
-              type="text"
-            >
-          </dd>
-        </div>
-        <div class="row">
-          <dt>Tagging Mode</dt>
-          <dd>
-            <select
-              v-model="editTaggingMode"
-              data-testid="edit-tagging-mode"
-            >
-              <option value="e621">
-                e621
-              </option>
-              <option value="booru">
-                booru
-              </option>
-            </select>
-            <p class="field-help">
-              Shared user-defined tags stay available in both modes.
-            </p>
-          </dd>
-        </div>
-        <div class="row">
-          <dt>Dataset Path</dt>
-          <dd>{{ selectedProject.dataset_path }}</dd>
-        </div>
-        <div class="row">
-          <dt>Last Synced</dt>
-          <dd>{{ formatDate(selectedProject.last_synced_at) }}</dd>
-        </div>
-        <div class="row">
-          <dt>Status</dt>
-          <dd>{{ selectedProject.missing_at ? 'Missing' : 'Present' }}</dd>
-        </div>
-      </dl>
+  <div
+    v-if="selectedProject"
+    class="details-card"
+  >
+    <dl>
+      <div class="row">
+        <dt>Folder</dt>
+        <dd>{{ selectedProject.folder_name }}</dd>
+      </div>
+      <div class="row">
+        <dt>Trigger Tag</dt>
+        <dd>
+          <input
+            v-model="editTriggerTag"
+            type="text"
+          >
+        </dd>
+      </div>
+      <div class="row">
+        <dt>Class Tag</dt>
+        <dd>
+          <input
+            v-model="editClassTag"
+            type="text"
+          >
+        </dd>
+      </div>
+      <div class="row">
+        <dt>Tagging Mode</dt>
+        <dd>
+          <select
+            v-model="editTaggingMode"
+            data-testid="edit-tagging-mode"
+          >
+            <option value="e621">
+              e621
+            </option>
+            <option value="booru">
+              booru
+            </option>
+          </select>
+          <p class="field-help">
+            Shared user-defined tags stay available in both modes.
+          </p>
+        </dd>
+      </div>
+      <div class="row">
+        <dt>Dataset Path</dt>
+        <dd>{{ selectedProject.dataset_path }}</dd>
+      </div>
+      <div class="row">
+        <dt>Last Synced</dt>
+        <dd>{{ formatDate(selectedProject.last_synced_at) }}</dd>
+      </div>
+      <div class="row">
+        <dt>Status</dt>
+        <dd>{{ selectedProject.missing_at ? 'Missing' : 'Present' }}</dd>
+      </div>
+    </dl>
 
-      <button
-        class="btn btn-secondary"
-        :disabled="projectStore.syncing"
-        @click="syncProject"
+    <button
+      class="btn btn-secondary"
+      :disabled="projectStore.syncing"
+      @click="syncProject"
+    >
+      {{ projectStore.syncing ? 'Syncing…' : 'Sync Project' }}
+    </button>
+    <button
+      class="btn btn-secondary"
+      :disabled="projectStore.updating"
+      @click="saveProjectMetadata"
+    >
+      {{ projectStore.updating ? 'Saving…' : 'Save Metadata' }}
+    </button>
+    <p
+      v-if="editFormError"
+      class="error"
+    >
+      {{ editFormError }}
+    </p>
+
+    <p
+      v-if="projectStore.lastSync"
+      class="status"
+    >
+      Sync: +{{ projectStore.lastSync.added_images }} added,
+      -{{ projectStore.lastSync.removed_images }} removed,
+      {{ projectStore.lastSync.restored_images }} restored.
+    </p>
+
+    <div
+      class="upload-box"
+      :class="{ disabled: selectedProject.missing_at !== null }"
+    >
+      <h3>Upload Images to Project</h3>
+      <input
+        type="file"
+        aria-label="Upload images to project"
+        accept="image/*"
+        multiple
+        :disabled="selectedProject.missing_at !== null"
+        @change="onUploadFilesChanged"
       >
-        {{ projectStore.syncing ? 'Syncing…' : 'Sync Project' }}
-      </button>
       <button
-        class="btn btn-secondary"
-        :disabled="projectStore.updating"
-        @click="saveProjectMetadata"
+        class="btn btn-primary"
+        :disabled="projectStore.uploading || selectedProject.missing_at !== null"
+        @click="uploadFilesToProject"
       >
-        {{ projectStore.updating ? 'Saving…' : 'Save Metadata' }}
+        {{ projectStore.uploading ? 'Uploading…' : 'Upload to Dataset' }}
       </button>
       <p
-        v-if="editFormError"
+        v-if="selectedProject.missing_at"
         class="error"
       >
-        {{ editFormError }}
+        Upload disabled because this project's folder is missing.
       </p>
-
       <p
-        v-if="projectStore.lastSync"
-        class="status"
+        v-else-if="uploadFormError"
+        class="error"
       >
-        Sync: +{{ projectStore.lastSync.added_images }} added,
-        -{{ projectStore.lastSync.removed_images }} removed,
-        {{ projectStore.lastSync.restored_images }} restored.
+        {{ uploadFormError }}
       </p>
-
-      <div
-        class="upload-box"
-        :class="{ disabled: selectedProject.missing_at !== null }"
+      <p
+        v-if="projectStore.lastUpload"
+        class="status success"
       >
-        <h3>Upload Images to Project</h3>
-        <input
-          type="file"
-          aria-label="Upload images to project"
-          accept="image/*"
-          multiple
-          :disabled="selectedProject.missing_at !== null"
-          @change="onUploadFilesChanged"
-        >
-        <button
-          class="btn btn-primary"
-          :disabled="projectStore.uploading || selectedProject.missing_at !== null"
-          @click="uploadFilesToProject"
-        >
-          {{ projectStore.uploading ? 'Uploading…' : 'Upload to Dataset' }}
-        </button>
-        <p
-          v-if="selectedProject.missing_at"
-          class="error"
-        >
-          Upload disabled because this project's folder is missing.
-        </p>
-        <p
-          v-else-if="uploadFormError"
-          class="error"
-        >
-          {{ uploadFormError }}
-        </p>
-        <p
-          v-if="projectStore.lastUpload"
-          class="status success"
-        >
-          Upload complete: {{ projectStore.lastUpload.uploaded_files.length }} file(s),
-          {{ projectStore.lastUpload.created_records }} record(s) created,
-          {{ projectStore.lastUpload.restored_records }} restored.
-        </p>
-      </div>
+        Upload complete: {{ projectStore.lastUpload.uploaded_files.length }} file(s),
+        {{ projectStore.lastUpload.created_records }} record(s) created,
+        {{ projectStore.lastUpload.restored_records }} restored.
+      </p>
     </div>
+  </div>
 </template>
 
 <style scoped>
