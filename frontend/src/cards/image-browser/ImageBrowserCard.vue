@@ -41,75 +41,75 @@ function formatTagCount(tagCount: number): string {
         class="flex h-full min-h-0 flex-col gap-3 rounded-[var(--tf-radius-md)] border border-transparent p-2 transition"
         :class="isDropActive ? 'border-[var(--tf-color-accent)] bg-[var(--tf-color-surface-muted)]/50' : ''"
       >
-    <div class="flex flex-wrap items-center justify-end gap-2">
-      <label
-        v-if="props.selectedProjectId && imageStore.sortedImages.length"
-        class="inline-flex items-center gap-2 text-[0.8rem] text-[var(--tf-color-text-muted)]"
-      >
-        <span>Sort</span>
-        <select
-          v-model="imageStore.sortOption"
-          data-testid="gallery-sort"
-          class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] px-2 py-1 text-[0.8rem] text-[var(--tf-color-text-default)]"
-        >
-          <option
-            v-for="option in sortOptions"
-            :key="option.value"
-            :value="option.value"
+        <div class="flex flex-wrap items-center justify-end gap-2">
+          <label
+            v-if="props.selectedProjectId && imageStore.sortedImages.length"
+            class="inline-flex items-center gap-2 text-[0.8rem] text-[var(--tf-color-text-muted)]"
           >
-            {{ option.label }}
-          </option>
-        </select>
-      </label>
-    </div>
-
-    <p
-      v-if="dropFeedback"
-      class="text-xs"
-      :class="dropFeedbackTone === 'error' ? 'text-[var(--tf-color-danger)]' : dropFeedbackTone === 'success' ? 'text-[var(--tf-color-success)]' : 'text-[var(--tf-color-text-muted)]'"
-    >
-      {{ dropFeedback }}
-    </p>
-
-    <AppText v-if="!props.selectedProjectId">
-      Select a project in Projects first.
-    </AppText>
-    <AppText v-else-if="showLoading">
-      Loading…
-    </AppText>
-    <AppErrorText v-else-if="imageStore.error">
-      {{ imageStore.error }}
-    </AppErrorText>
-    <AppText v-else-if="!imageStore.sortedImages.length">
-      No images found for this project.
-    </AppText>
-
-    <div
-      v-else
-      class="grid grid-cols-2 gap-2"
-    >
-      <button
-        v-for="img in imageStore.sortedImages"
-        :key="img.id"
-        type="button"
-        class="card overflow-hidden rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] text-left"
-        @click="emit('selectImage', img.id)"
-      >
-        <img
-          :src="getProjectImageFileUrl(props.selectedProjectId!, img.id)"
-          :alt="img.filename"
-          class="block aspect-square w-full object-cover"
-          loading="lazy"
-        >
-        <div class="flex items-center justify-between gap-1 px-2 py-1.5 text-[0.75rem]">
-          <span
-            class="name flex-1 truncate text-[var(--tf-color-text-default)]"
-            :title="img.filename"
-          >{{ img.filename }}</span>
-          <span class="tag-count whitespace-nowrap text-[var(--tf-color-text-muted)]">{{ formatTagCount(img.tag_count) }}</span>
+            <span>Sort</span>
+            <select
+              v-model="imageStore.sortOption"
+              data-testid="gallery-sort"
+              class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] px-2 py-1 text-[0.8rem] text-[var(--tf-color-text-default)]"
+            >
+              <option
+                v-for="option in sortOptions"
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
+          </label>
         </div>
-      </button>
-    </div>
+
+        <p
+          v-if="dropFeedback"
+          class="text-xs"
+          :class="dropFeedbackTone === 'error' ? 'text-[var(--tf-color-danger)]' : dropFeedbackTone === 'success' ? 'text-[var(--tf-color-success)]' : 'text-[var(--tf-color-text-muted)]'"
+        >
+          {{ dropFeedback }}
+        </p>
+
+        <AppText v-if="!props.selectedProjectId">
+          Select a project in Projects first.
+        </AppText>
+        <AppText v-else-if="showLoading">
+          Loading…
+        </AppText>
+        <AppErrorText v-else-if="imageStore.error">
+          {{ imageStore.error }}
+        </AppErrorText>
+        <AppText v-else-if="!imageStore.sortedImages.length">
+          No images found for this project.
+        </AppText>
+
+        <div
+          v-else
+          class="grid grid-cols-2 gap-2"
+        >
+          <button
+            v-for="img in imageStore.sortedImages"
+            :key="img.id"
+            type="button"
+            class="card overflow-hidden rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] text-left"
+            @click="emit('selectImage', img.id)"
+          >
+            <img
+              :src="getProjectImageFileUrl(props.selectedProjectId!, img.id)"
+              :alt="img.filename"
+              class="block aspect-square w-full object-cover"
+              loading="lazy"
+            >
+            <div class="flex items-center justify-between gap-1 px-2 py-1.5 text-[0.75rem]">
+              <span
+                class="name flex-1 truncate text-[var(--tf-color-text-default)]"
+                :title="img.filename"
+              >{{ img.filename }}</span>
+              <span class="tag-count whitespace-nowrap text-[var(--tf-color-text-muted)]">{{ formatTagCount(img.tag_count) }}</span>
+            </div>
+          </button>
+        </div>
       </section>
     </template>
   </UploadImageDropZone>

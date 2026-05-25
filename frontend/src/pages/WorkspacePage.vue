@@ -334,8 +334,8 @@ const imageBrowserMemoKey = computed(() => {
         >
           <template #actions>
             <component
-              v-if="centerPanelConfig.headerActions"
               :is="centerPanelConfig.headerActions.component"
+              v-if="centerPanelConfig.headerActions"
               v-bind="centerPanelConfig.headerActions.props"
               v-on="centerPanelConfig.headerActions.listeners"
             />
@@ -395,8 +395,8 @@ const imageBrowserMemoKey = computed(() => {
       >
         <template #actions>
           <component
-            v-if="activeMobileTab === 'project-browser' && mobileProjectBrowserConfig.headerActions"
             :is="mobileProjectBrowserConfig.headerActions.component"
+            v-if="activeMobileTab === 'project-browser' && mobileProjectBrowserConfig.headerActions"
             v-bind="mobileProjectBrowserConfig.headerActions.props"
             v-on="mobileProjectBrowserConfig.headerActions.listeners"
           />
@@ -413,8 +413,8 @@ const imageBrowserMemoKey = computed(() => {
         </div>
 
         <component
-          v-else-if="activeMobileTab === 'canvas'"
           :is="mobileCanvasConfig.component"
+          v-else-if="activeMobileTab === 'canvas'"
           v-bind="mobileCanvasConfig.props"
           v-on="mobileCanvasConfig.listeners"
         />
@@ -425,8 +425,8 @@ const imageBrowserMemoKey = computed(() => {
         />
 
         <component
-          v-else
           :is="mobileProjectBrowserConfig.component"
+          v-else
           v-bind="mobileProjectBrowserConfig.props"
           v-on="mobileProjectBrowserConfig.listeners"
         />

@@ -273,8 +273,8 @@ onBeforeUnmount(() => {
     </div>
 
     <div
-      :id="aiControlsId"
       v-show="!controlsCollapsed"
+      :id="aiControlsId"
       class="mt-3 grid gap-3 md:grid-cols-2"
       role="group"
       aria-label="AI proposed tags controls"
@@ -306,8 +306,12 @@ onBeforeUnmount(() => {
 
       <div class="md:col-span-2 flex items-center justify-between rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface-alt)] px-3 py-2">
         <div>
-          <p class="text-sm font-medium text-[var(--tf-color-text-default)]">Auto-scan on image change</p>
-          <p class="text-xs text-[var(--tf-color-text-muted)]">{{ autoScanHelpText }}</p>
+          <p class="text-sm font-medium text-[var(--tf-color-text-default)]">
+            Auto-scan on image change
+          </p>
+          <p class="text-xs text-[var(--tf-color-text-muted)]">
+            {{ autoScanHelpText }}
+          </p>
         </div>
 
         <AppSwitchField
@@ -323,10 +327,24 @@ onBeforeUnmount(() => {
       v-if="!modelAvailable"
       class="mt-2 rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface-alt)] px-3 py-2 text-xs text-[var(--tf-color-text-default)]"
     >
-      <p class="font-medium">Selected model is not installed.</p>
-      <p v-if="downloadMessage" class="mt-1">{{ downloadMessage }}</p>
-      <p v-if="downloadProposalUrl" class="mt-1 break-all">
-        Download source: <a :href="downloadProposalUrl" target="_blank" rel="noreferrer">{{ downloadProposalUrl }}</a>
+      <p class="font-medium">
+        Selected model is not installed.
+      </p>
+      <p
+        v-if="downloadMessage"
+        class="mt-1"
+      >
+        {{ downloadMessage }}
+      </p>
+      <p
+        v-if="downloadProposalUrl"
+        class="mt-1 break-all"
+      >
+        Download source: <a
+          :href="downloadProposalUrl"
+          target="_blank"
+          rel="noreferrer"
+        >{{ downloadProposalUrl }}</a>
       </p>
     </div>
 
