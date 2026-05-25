@@ -426,10 +426,17 @@ async def test_delete_project_image_soft_deletes_record_and_unlinks_file(
     image_payload = images_before_delete.json()[0]
     image_id = image_payload["id"]
 
-    dataset_file = tmp_path / "delete-image-project" / "dataset" / image_payload["relative_path"]
+    dataset_file = (
+        tmp_path
+        / "delete-image-project"
+        / "dataset"
+        / image_payload["relative_path"]
+    )
     assert dataset_file.is_file()
 
-    delete_response = await client.delete(f"/api/projects/{project_id}/images/{image_id}")
+    delete_response = await client.delete(
+        f"/api/projects/{project_id}/images/{image_id}"
+    )
     assert delete_response.status_code == 204
 
     images_after_delete = await client.get(f"/api/projects/{project_id}/images")
