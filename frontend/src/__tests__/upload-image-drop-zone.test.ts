@@ -63,7 +63,8 @@ describe('UploadImageDropZone', () => {
         existingFilenames: [],
       },
       slots: {
-        default: '<template #default="slotProps"><div data-testid="slot-root">{{ String(slotProps.isDropActive) }}</div></template>',
+        default: ({ isDropActive }: { isDropActive: boolean }) =>
+          `<div data-testid="slot-root">${String(isDropActive)}</div>`,
       },
     })
 

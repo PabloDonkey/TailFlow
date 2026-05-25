@@ -173,6 +173,14 @@ async function fetchJSON<T>(
   return schema.parse(await res.json())
 }
 
+async function fetchVoid(input: RequestInfo, init?: RequestInit): Promise<void> {
+  const res = await fetch(input, init)
+  if (!res.ok) {
+    const body = await res.text().catch(() => '')
+    throw new Error(`API ${res.status}: ${body}`)
+  }
+}
+
 // Tags
 
 export async function listTags(): Promise<Tag[]> {
@@ -259,13 +267,9 @@ export async function getProjectImage(projectId: string, imageId: string): Promi
 }
 
 export async function deleteProjectImage(projectId: string, imageId: string): Promise<void> {
-  const response = await fetch(`${BASE}/projects/${projectId}/images/${imageId}`, {
+  await fetchVoid(`${BASE}/projects/${projectId}/images/${imageId}`, {
     method: 'DELETE',
   })
-  if (!response.ok) {
-    const body = await response.text().catch(() => '')
-    throw new Error(`API ${response.status}: ${body}`)
-  }
 }
 
 export function getProjectImageFileUrl(projectId: string, imageId: string): string {

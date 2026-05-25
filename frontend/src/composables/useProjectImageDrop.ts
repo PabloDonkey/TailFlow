@@ -209,8 +209,10 @@ export function useProjectImageDrop(options: UseProjectImageDropOptions) {
     const filesToUpload: File[] = []
     let skippedDuplicates = 0
 
-    for (const file of droppedFiles) {
-      const droppedContentHash = await sha256ForFile(file)
+    const droppedContentHashes = await Promise.all(droppedFiles.map((file) => sha256ForFile(file)))
+
+    for (const [index, file] of droppedFiles.entries()) {
+      const droppedContentHash = droppedContentHashes[index]
       if (droppedContentHash) {
         const normalizedHash = normalizeContentHash(droppedContentHash)
         if (existingContentHashSet.has(normalizedHash) || droppedContentHashSet.has(normalizedHash)) {

@@ -96,7 +96,8 @@ export function useWorkspaceImages(options: UseWorkspaceImagesOptions) {
       return
     }
 
-    const nextIndex = Math.min(deletedIndex, imageStore.sortedImages.length - 1)
+    const boundedDeletedIndex = deletedIndex < 0 ? 0 : deletedIndex
+    const nextIndex = Math.min(boundedDeletedIndex, imageStore.sortedImages.length - 1)
     const nextImage = imageStore.sortedImages[nextIndex]
     if (nextImage) {
       await imageStore.fetchImage(projectId, nextImage.id)
