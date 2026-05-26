@@ -109,7 +109,7 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
     return { left, right }
   }
 
-  function applyParsedWorkspaceCardState(raw: string, _options?: { fromStorageEvent?: boolean }) {
+  function applyParsedWorkspaceCardState(raw: string) {
     try {
       const parsed = JSON.parse(raw) as {
         openState?: Partial<Record<ToggleCardId, boolean>>
@@ -239,7 +239,7 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
       }
 
       // Treat storage updates as an observable external state stream.
-      applyParsedWorkspaceCardState(event.newValue, { fromStorageEvent: true })
+      applyParsedWorkspaceCardState(event.newValue)
     }
 
     window.addEventListener('storage', onStorage)
