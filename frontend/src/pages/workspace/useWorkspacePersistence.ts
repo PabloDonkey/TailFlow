@@ -109,8 +109,7 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
     return { left, right }
   }
 
-  function applyParsedWorkspaceCardState(raw: string, options?: { fromStorageEvent?: boolean }) {
-    const fromStorageEvent = options?.fromStorageEvent ?? false
+  function applyParsedWorkspaceCardState(raw: string, _options?: { fromStorageEvent?: boolean }) {
     try {
       const parsed = JSON.parse(raw) as {
         openState?: Partial<Record<ToggleCardId, boolean>>
