@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import type { ProjectTag } from '../../../api'
+import { useToast } from '../../../composables/useToast'
 
 const props = defineProps<{
   tags: ProjectTag[]
 }>()
 
 const copied = ref(false)
+const { showToast } = useToast()
 
 const copyPayload = computed(() =>
   props.tags.map((tag) => tag.name.trim()).filter((name) => name.length > 0).join(','),
@@ -18,6 +20,7 @@ async function copyTags(): Promise<void> {
   }
 
   await navigator.clipboard.writeText(copyPayload.value)
+  showToast('tags copied to clipboard')
   copied.value = true
   setTimeout(() => {
     copied.value = false

@@ -18,6 +18,7 @@ defineProps<{
   projects: Project[]
   selectedProjectId: string | null
   loading: boolean
+  workspaceLoading?: boolean
   error: string | null
 }>()
 
@@ -41,6 +42,7 @@ const emit = defineEmits<{
     :selected-project-id="selectedProjectId"
     :open-views="openViews"
     :loading="loading"
+    :workspace-loading="workspaceLoading"
     :project-picker-open="showProjectPicker"
     :overflow-open="showActionsMenu"
     @open-project-picker="emit('openProjectPicker')"

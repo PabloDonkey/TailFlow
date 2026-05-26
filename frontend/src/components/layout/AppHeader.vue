@@ -19,6 +19,7 @@ const props = defineProps<{
     projectDetails: boolean
   }
   loading?: boolean
+  workspaceLoading?: boolean
   projectPickerOpen?: boolean
   overflowOpen?: boolean
 }>()
@@ -163,7 +164,7 @@ function handleDesktopMenuSelect(payload: { menuValue: string; itemValue: string
   <header class="sticky top-0 z-[110] bg-[var(--tf-color-header-bg)] px-[0.8rem] py-[0.65rem] text-[var(--tf-color-header-text)] lg:px-4 lg:py-[0.8rem]">
     <div
       v-if="!isDesktopViewport"
-      class="grid grid-cols-[auto_1fr_auto] items-center gap-3"
+      class="grid grid-cols-[auto_1fr] items-center gap-3"
     >
       <AppButton
         aria-label="Open project picker"
@@ -182,18 +183,10 @@ function handleDesktopMenuSelect(payload: { menuValue: string; itemValue: string
           as="h1"
           class="truncate text-[0.95rem] text-white lg:text-base"
         >
-          {{ projectName || 'No project selected' }}
+          <span v-if="workspaceLoading">Loading workspace...</span>
+          <span v-else>{{ projectName || 'No project selected' }}</span>
         </AppSectionTitle>
       </div>
-
-      <AppButton
-        aria-label="Open workspace actions"
-        aria-haspopup="menu"
-        :aria-expanded="overflowOpen ? 'true' : 'false'"
-        @click="$emit('openOverflow')"
-      >
-        ⋮
-      </AppButton>
     </div>
 
     <div
@@ -215,7 +208,8 @@ function handleDesktopMenuSelect(payload: { menuValue: string; itemValue: string
           as="h1"
           class="truncate text-[0.95rem] text-white lg:text-base"
         >
-          {{ projectName || 'No project selected' }}
+          <span v-if="workspaceLoading">Loading workspace...</span>
+          <span v-else>{{ projectName || 'No project selected' }}</span>
         </AppSectionTitle>
       </div>
     </div>

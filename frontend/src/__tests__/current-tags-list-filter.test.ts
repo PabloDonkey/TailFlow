@@ -24,6 +24,9 @@ describe('CurrentTagsList filter', () => {
         ],
         getTagRoleLabel: () => null,
         getTagSourceLabel: () => null,
+        showFilter: true,
+        showTags: true,
+        showCopyButton: true,
       },
     })
 
@@ -51,6 +54,9 @@ describe('CurrentTagsList filter', () => {
         ],
         getTagRoleLabel: () => null,
         getTagSourceLabel: () => null,
+        showFilter: true,
+        showTags: true,
+        showCopyButton: true,
       },
     })
 

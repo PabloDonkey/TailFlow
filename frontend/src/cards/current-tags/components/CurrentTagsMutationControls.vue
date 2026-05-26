@@ -18,8 +18,12 @@ withDefaults(defineProps<{
   tagCount: number
   tagSource?: TaggingMode
   disabled?: boolean
+  showSearch?: boolean
+  searchOnly?: boolean
 }>(), {
   tagSource: 'booru',
+  showSearch: true,
+  searchOnly: false,
 })
 
 const emit = defineEmits<{
@@ -37,12 +41,18 @@ function triggerSelection() {
   <div class="flex w-full flex-col gap-1.5">
     <AppToolbar
       aria-label="Tag mutation toolbar"
-      class="inline-grid grid-cols-3 gap-2"
+      class="inline-grid gap-2"
+      :class="searchOnly ? 'grid-cols-1' : 'grid-cols-3'"
     >
-      <div class="relative min-w-0 col-span-2 self-stretch">
+      <div
+        class="relative min-w-0 self-stretch"
+        :class="searchOnly ? 'col-span-1' : 'col-span-2'"
+      >
         <TagAutocompleteInput
+          v-if="showSearch"
           ref="autocompleteRef"
-          class="h-full w-full [&_.tag-input]:h-full [&_.tag-input]:pr-28"
+          class="h-full w-full [&_.tag-input]:h-full"
+          :class="searchOnly ? '' : '[&_.tag-input]:pr-28'"
           :selected-tags="selectedTags"
           :fetch-suggestions="fetchSuggestions"
           placeholder="Search tags"
@@ -50,7 +60,10 @@ function triggerSelection() {
           @select="(tag) => emit('add', tag)"
         />
 
-        <div class="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
+        <div
+          v-if="!searchOnly"
+          class="absolute right-1.5 top-1/2 flex -translate-y-1/2 items-center gap-1.5"
+        >
           <span class="whitespace-nowrap text-xs text-[var(--tf-color-text-muted)]">
             {{ tagCount }} tags
           </span>
@@ -66,6 +79,7 @@ function triggerSelection() {
       </div>
 
       <AppSelectField
+        v-if="!searchOnly"
         class="min-w-[7rem]"
         :model-value="tagSource ?? 'booru'"
         :options="tagSourceOptions"

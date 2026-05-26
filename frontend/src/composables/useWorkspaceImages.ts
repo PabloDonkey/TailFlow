@@ -25,24 +25,10 @@ export function useWorkspaceImages(options: UseWorkspaceImagesOptions) {
     () => currentImageIndex.value >= 0 && currentImageIndex.value < orderedImages.value.length - 1,
   )
 
-  async function loadFirstImageForSelectedProject(): Promise<void> {
-    if (!projectStore.selectedProjectId) {
-      return
-    }
-
-    await imageStore.fetchImages(projectStore.selectedProjectId)
-    const firstImage = imageStore.sortedImages[0]
-    if (firstImage) {
-      await imageStore.fetchImage(projectStore.selectedProjectId, firstImage.id)
-    }
-  }
-
   async function bootstrapWorkspaceImages(): Promise<void> {
     if (!projectStore.projects.length) {
       await projectStore.fetchProjects()
     }
-
-    await loadFirstImageForSelectedProject()
   }
 
   async function selectImage(imageId: string): Promise<void> {
@@ -114,13 +100,19 @@ export function useWorkspaceImages(options: UseWorkspaceImagesOptions) {
       }
 
       await imageStore.fetchImages(projectId)
-      const firstImage = imageStore.sortedImages[0]
-      if (firstImage) {
-        await imageStore.fetchImage(projectId, firstImage.id)
-      } else {
+
+      const currentImage = imageStore.currentImage
+      if (!currentImage || currentImage.project_id !== projectId) {
+        imageStore.currentImage = null
+        return
+      }
+
+      const currentImageStillExists = imageStore.images.some((image) => image.id === currentImage.id)
+      if (!currentImageStillExists) {
         imageStore.currentImage = null
       }
     },
+    { immediate: true },
   )
 
   onMounted(async () => {

@@ -16,8 +16,18 @@ const props = withDefaults(defineProps<{
   projectId: string | null
   selectedProject: Project | null
   framed?: boolean
+  showControls?: boolean
+  showSearch?: boolean
+  showFilter?: boolean
+  showTags?: boolean
+  showCopyButton?: boolean
 }>(), {
   framed: true,
+  showControls: true,
+  showSearch: true,
+  showFilter: true,
+  showTags: true,
+  showCopyButton: true,
 })
 
 const imageStore = useImageStore()
@@ -128,7 +138,10 @@ async function handleAddTag(tagName: string) {
     </AppText>
 
     <template v-else>
-      <div class="mt-3">
+      <div
+        v-if="props.showControls"
+        class="mt-3"
+      >
         <CurrentTagsMutationControls
           :error-msg="mutationError"
           :selected-tags="selectedTagNames"
@@ -136,6 +149,8 @@ async function handleAddTag(tagName: string) {
           :tag-count="currentImage.tag_count"
           :tag-source="inspectorMode"
           :disabled="mutationLoading"
+          :show-search="props.showSearch"
+          :search-only="props.showSearch && props.showFilter === false && props.showTags === false"
           @add="handleAddTag"
           @update:tag-source="(value) => inspectorMode = value"
         />
@@ -146,6 +161,9 @@ async function handleAddTag(tagName: string) {
         :tags="currentImage.tags"
         :get-tag-role-label="getTagRoleLabel"
         :get-tag-source-label="getTagSourceLabel"
+        :show-filter="props.showFilter"
+        :show-tags="props.showTags"
+        :show-copy-button="props.showCopyButton"
         @remove="removeTag"
       />
     </template>

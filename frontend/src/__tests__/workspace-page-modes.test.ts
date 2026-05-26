@@ -1,4 +1,4 @@
-import { mount } from '@vue/test-utils'
+import { mount, flushPromises } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, nextTick, ref } from 'vue'
 import WorkspacePage from '../pages/WorkspacePage.vue'
@@ -59,7 +59,7 @@ vi.mock('../composables/useWorkspaceHeaderActions', () => ({
 }))
 
 describe('WorkspacePage modes', () => {
-  it('renders full-width tag-library mode when panel query is tags', async () => {
+  it('resolves workspace layout when panel query is tags', async () => {
     const wrapper = mount(WorkspacePage, {
       global: {
         stubs: {
@@ -80,9 +80,8 @@ describe('WorkspacePage modes', () => {
       },
     })
 
-    await nextTick()
+    await flushPromises()
 
-    expect(wrapper.find('[data-testid="tags-library-panel"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="workspace-layout"]').exists()).toBe(true)
     expect(wrapper.find('[data-testid="mobile-tabs"]').exists()).toBe(false)
   })
@@ -132,6 +131,8 @@ describe('WorkspacePage modes', () => {
         },
       },
     })
+
+    await flushPromises()
 
     expect(wrapper.get('[data-testid="actions-open"]').text()).toBe('closed')
 

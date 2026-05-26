@@ -25,48 +25,35 @@ export class MobileWorkspacePageObject extends BaseWorkspacePageObject {
   }
 
   async closeImageCanvas(): Promise<void> {
-    const closeCanvasButton = this.page.getByRole('button', { name: 'Close Image Canvas panel' })
-    if (await closeCanvasButton.isVisible()) {
-      await closeCanvasButton.click()
-    }
-
-    const projectBrowserTab = this.page.getByRole('button', { name: 'Project Browser' })
-    await expect(projectBrowserTab).toBeVisible()
-    await projectBrowserTab.click()
-
     await expect(this.page.getByRole('heading', { name: 'Project Browser' })).toBeVisible()
   }
 
   async showProjectDetailsMode(): Promise<void> {
-    await this.page.getByRole('button', { name: 'Project details' }).click()
+    await this.selectBottomPanel('Project Details')
   }
 
-  async openMobilePanel(panelName: 'Browse' | 'Inspect' | 'Tags'): Promise<void> {
-    const tabLabelByPanel: Record<typeof panelName, string> = {
-      Browse: 'Image Browser',
-      Inspect: 'Current Tags',
-      Tags: 'Tags Library',
-    }
-
-    const targetTabLabel = tabLabelByPanel[panelName]
-    const targetTab = this.page.getByRole('button', { name: targetTabLabel, exact: true })
-
-    if (!(await targetTab.isVisible())) {
-      await this.openActionsMenu()
-      await this.mobileActionsPanel().getByRole('button', {
-        name: panelName === 'Tags' ? 'Tags library' : panelName === 'Inspect' ? 'Current tags' : 'Image browser',
-        exact: true,
-      }).click()
-    }
-
-    await this.page.getByRole('button', { name: targetTabLabel, exact: true }).click()
+  async openBottomPanelMenu(): Promise<void> {
+    await this.page.getByTestId('mobile-panel-menu-button').click()
+    await expect(this.page.getByTestId('mobile-panel-menu')).toBeVisible()
   }
 
-  async expectMobilePanelTitle(title: string): Promise<void> {
+  async selectBottomPanel(panelName: 'Current Tags' | 'AI Proposed Tags' | 'Project Details'): Promise<void> {
+    const panelButton = this.page.getByTestId('mobile-panel-menu').getByRole('button', { name: panelName, exact: true })
+    if (!(await panelButton.isVisible())) {
+      await this.openBottomPanelMenu()
+    }
+
+    await this.page.getByTestId('mobile-panel-menu').getByRole('button', { name: panelName, exact: true }).click()
+  }
+
+  async enterMobileWorkspace(projectName: string, imageName: string): Promise<void> {
+    await this.chooseTaggingFromProjectBrowser(projectName)
+    await this.expectImageBrowserVisible()
+    await this.selectImage(imageName)
+    await this.expectCanvasVisible()
+  }
+
+  async expectBottomPanelTitle(title: string): Promise<void> {
     await expect(this.page.getByRole('heading', { name: title }).first()).toBeVisible()
-  }
-
-  async closeMobilePanel(): Promise<void> {
-    await this.page.getByRole('button', { name: 'Project Browser', exact: true }).click()
   }
 }
