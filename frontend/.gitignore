@@ -27,4 +27,4 @@ e2e/specs/seed.spec.ts
 *.njsproj
 *.sln
 *.sw?
-.vscode/
+
