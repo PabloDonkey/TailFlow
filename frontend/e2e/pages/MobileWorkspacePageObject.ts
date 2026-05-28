@@ -51,9 +51,30 @@ export class MobileWorkspacePageObject extends BaseWorkspacePageObject {
     await this.expectImageBrowserVisible()
     await this.selectImage(imageName)
     await this.expectCanvasVisible()
+    // Wait for the image detail to finish loading so currentImage is populated
+    await expect(this.page.getByRole('img', { name: new RegExp(imageName, 'i') })).toBeVisible()
   }
 
   async expectBottomPanelTitle(title: string): Promise<void> {
     await expect(this.page.getByRole('heading', { name: title }).first()).toBeVisible()
+  }
+
+  async deleteCurrentImage(): Promise<void> {
+    const trashButton = this.page.getByRole('button', { name: 'Delete current image' })
+    await expect(trashButton).toBeEnabled()
+    await trashButton.click()
+    const dialog = this.page.getByRole('alertdialog')
+    await expect(dialog).toBeVisible()
+    await dialog.getByRole('button', { name: 'Delete' }).click()
+  }
+
+  async expectCanvasImageWithFilename(filename: string): Promise<void> {
+    await expect(
+      this.page.locator(`img[aria-description="Current canvas image: ${filename}"]`),
+    ).toBeVisible()
+  }
+
+  async expectCanvasEmptyState(): Promise<void> {
+    await expect(this.page.getByText('Select an image from the browser panel.')).toBeVisible()
   }
 }

@@ -24,7 +24,7 @@ test.describe('Workspace Image Canvas card', () => {
     await imageCanvasCard.expectCanvasImageWithFilename('sample-2.png')
 
     await imageCanvasCard.jumpToImageNumber(3)
-    await imageCanvasCard.expectCanvasImageWithFilename('sample.png')
+    await imageCanvasCard.expectCanvasImageWithFilename('sample-3.png')
 
     await imageBrowserCard.selectImage('sample-3.png')
     await imageCanvasCard.expectCanvasImageWithFilename('sample-3.png')

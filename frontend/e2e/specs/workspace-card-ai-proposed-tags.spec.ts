@@ -11,7 +11,7 @@ test.describe('Workspace AI Proposed Tags card', () => {
     const currentTagsCard = new CurrentTagsCardPageObject(page)
 
     await aiProposedTagsCard.goto()
-    await aiProposedTagsCard.openCardWithImage('Sample Project', 'sample.png')
+    await aiProposedTagsCard.openCardWithImage('Sample Project', 'sample-1.png')
     await aiProposedTagsCard.expectCardVisible()
 
     await aiProposedTagsCard.runManualScan()

@@ -76,6 +76,7 @@ describe('WorkspacePage modes', () => {
           TagsLibraryCard: { template: '<div data-testid="tags-library-panel" />' },
           ProjectBrowserCard: { template: '<div data-testid="project-browser" />' },
           ProjectCreateModal: { template: '<div data-testid="project-create-modal" />' },
+          AppAlertDialog: { template: '<div />' },
         },
       },
     })
@@ -128,6 +129,7 @@ describe('WorkspacePage modes', () => {
           TagsLibraryCard: { template: '<div data-testid="tags-library-panel" />' },
           ProjectBrowserCard: { template: '<div data-testid="project-browser" />' },
           ProjectCreateModal: { template: '<div data-testid="project-create-modal" />' },
+          AppAlertDialog: { template: '<div />' },
         },
       },
     })

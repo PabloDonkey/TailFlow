@@ -19,7 +19,7 @@ test.describe('Workspace Project Details card', () => {
     })
 
     await projectDetailsCard.selectImage('sample-2.png')
-    await projectDetailsCard.selectImage('sample.png')
+    await projectDetailsCard.selectImage('sample-1.png')
     await projectDetailsCard.showCurrentTagsMode()
     await projectDetailsCard.expectTagVisible('updated_trigger')
     await projectDetailsCard.expectTagVisible('updated_class')

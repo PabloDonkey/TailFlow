@@ -17,7 +17,7 @@ test.describe('Workspace Refresh Regression', () => {
     await mobileWorkspace.goto()
 
     // We expect the project browser stage on first mobile visit unless URL states otherwise
-    await mobileWorkspace.enterMobileWorkspace('Sample Project', 'sample.png')
+    await mobileWorkspace.enterMobileWorkspace('Sample Project', 'sample-1.png')
     await mobileWorkspace.selectBottomPanel('Project Details')
 
     // Wait for the state to persist

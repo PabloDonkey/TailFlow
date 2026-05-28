@@ -12,6 +12,7 @@ import CurrentTagsCard from '../cards/current-tags/CurrentTagsCard.vue'
 import WorkspaceSideCardContent from './workspace/WorkspaceSideCardContent.vue'
 import WorkspacePanelColumn from './workspace/WorkspacePanelColumn.vue'
 import AppText from '../components/ui/AppText.vue'
+import AppAlertDialog from '../design-system/AppAlertDialog.vue'
 import {
   defaultSideViewOrder,
   defaultToggleCardOpenState,
@@ -40,6 +41,7 @@ const route = useRoute()
 const selectedProject = computed(() => projectStore.selectedProject)
 const showProjectPicker = ref(false)
 const showActionsMenu = ref(false)
+const showMobileDeleteConfirm = ref(false)
 
 type MobileWorkspaceStage = 'project-browser' | 'image-browser' | 'workspace'
 type MobileWorkspaceBottomPanel = 'current-tags' | 'ai-proposed-tags' | 'project-details'
@@ -243,6 +245,11 @@ function goBackToImageBrowser() {
   }
 
   mobileStage.value = 'image-browser'
+}
+
+async function handleMobileDeleteConfirm(): Promise<void> {
+  showMobileDeleteConfirm.value = false
+  await deleteCurrentImage()
 }
 
 async function handleMobilePanelAction(actionId: string) {
@@ -549,13 +556,31 @@ const imageBrowserMemoKey = computed(() => {
         @select-action="handleMobilePanelAction"
       >
         <template #canvas-header-actions>
-          <button
-            type="button"
-            class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-1 text-xs text-[var(--tf-color-text-default)]"
-            @click="goBackToImageBrowser"
-          >
-            Back
-          </button>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              class="inline-flex h-7 w-7 items-center justify-center rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] text-[var(--tf-color-text-muted)] transition hover:border-[var(--tf-color-danger)] hover:text-[var(--tf-color-danger)] disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label="Delete current image"
+              :disabled="!imageStore.currentImage"
+              @click="showMobileDeleteConfirm = true"
+            >
+              <svg viewBox="0 0 24 24" class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+              </svg>
+            </button>
+
+            <button
+              type="button"
+              class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-1 text-xs text-[var(--tf-color-text-default)]"
+              @click="goBackToImageBrowser"
+            >
+              Back
+            </button>
+          </div>
         </template>
 
         <template #canvas>
@@ -585,6 +610,15 @@ const imageBrowserMemoKey = computed(() => {
           />
         </template>
       </WorkspaceMobileSplitLayout>
+
+      <AppAlertDialog
+        :open="showMobileDeleteConfirm"
+        title="Delete current image?"
+        :description="imageStore.currentImage ? `This permanently deletes ${imageStore.currentImage.filename} from the project dataset.` : 'This permanently deletes the current image from the project dataset.'"
+        confirm-label="Delete"
+        @update:open="(open) => (showMobileDeleteConfirm = open)"
+        @confirm="handleMobileDeleteConfirm"
+      />
     </section>
 
     <ProjectCreateModal
