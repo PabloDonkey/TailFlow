@@ -21,7 +21,9 @@ test.describe('Workspace Refresh Regression', () => {
     await mobileWorkspace.selectBottomPanel('Project Details')
 
     // Wait for the state to persist
-    await page.waitForTimeout(500)
+    await expect.poll(async () => {
+      return await page.evaluate(() => window.localStorage.getItem('tailflow.workspace-card-state.v1') ?? '')
+    }).toContain('"activeMobileBottomPanel":"project-details"')
 
     // 2. Setup mock again for reload (installApiMocks handles persistent mocks if we needed to but doing it again applies to the context if lost)
     await installApiMocks(page)
