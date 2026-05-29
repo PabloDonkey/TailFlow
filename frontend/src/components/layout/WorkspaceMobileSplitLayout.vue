@@ -76,7 +76,19 @@ function handlePointerDown(event: PointerEvent): void {
     target.removeEventListener('pointerup', onPointerUp)
     target.removeEventListener('pointercancel', onPointerUp)
 
-    emit('update:splitPercent', snapSplitValue(clampedSplitPercent.value))
+    const container = containerRef.value
+    if (!container) {
+      return
+    }
+
+    const rect = container.getBoundingClientRect()
+    if (rect.height <= 0) {
+      return
+    }
+
+    const nextPercent = ((upEvent.clientY - rect.top) / rect.height) * 100
+    const clamped = Math.max(0, Math.min(100, nextPercent))
+    emit('update:splitPercent', snapSplitValue(clamped))
   }
 
   target.addEventListener('pointermove', onPointerMove)
