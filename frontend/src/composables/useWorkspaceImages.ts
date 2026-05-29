@@ -96,10 +96,16 @@ export function useWorkspaceImages(options: UseWorkspaceImagesOptions) {
       if (!projectId) {
         imageStore.images = []
         imageStore.currentImage = null
+        imageStore.imagesLoadedProjectId = null
         return
       }
 
-      await imageStore.fetchImages(projectId)
+      const imagesAlreadyLoaded = imageStore.imagesLoadedProjectId === projectId
+      const imagesLoadingForProject = imageStore.imagesLoadingProjectId === projectId
+
+      if (!imagesAlreadyLoaded && !imagesLoadingForProject) {
+        await imageStore.fetchImages(projectId)
+      }
 
       const currentImage = imageStore.currentImage
       if (!currentImage || currentImage.project_id !== projectId) {

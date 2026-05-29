@@ -20,11 +20,14 @@ export const useImageStore = defineStore('images', () => {
   const images = ref<ProjectImageSummary[]>([])
   const currentImage = ref<ProjectImageRead | null>(null)
   const imagesLoading = ref(false)
+  const imagesLoadingProjectId = ref<string | null>(null)
+  const imagesLoadedProjectId = ref<string | null>(null)
   const imageLoading = ref(false)
   const tagMutationLoading = ref(false)
   const loading = computed(() => imagesLoading.value || imageLoading.value || tagMutationLoading.value)
   const error = ref<string | null>(null)
   const sortOption = ref<ImageSortOption>('name-asc')
+  let inFlightFetchImages: Promise<void> | null = null
 
   const sortedImages = computed(() => {
     const sorted = [...images.value]
@@ -45,14 +48,34 @@ export const useImageStore = defineStore('images', () => {
   })
 
   async function fetchImages(projectId: string) {
+    if (
+      imagesLoading.value
+      && imagesLoadingProjectId.value === projectId
+      && inFlightFetchImages
+    ) {
+      await inFlightFetchImages
+      return
+    }
+
     imagesLoading.value = true
+    imagesLoadingProjectId.value = projectId
     error.value = null
+    inFlightFetchImages = (async () => {
+      try {
+        images.value = await api.listProjectImages(projectId)
+        imagesLoadedProjectId.value = projectId
+      } catch (e) {
+        error.value = String(e)
+      } finally {
+        imagesLoading.value = false
+        imagesLoadingProjectId.value = null
+      }
+    })()
+
     try {
-      images.value = await api.listProjectImages(projectId)
-    } catch (e) {
-      error.value = String(e)
+      await inFlightFetchImages
     } finally {
-      imagesLoading.value = false
+      inFlightFetchImages = null
     }
   }
 
@@ -128,6 +151,8 @@ export const useImageStore = defineStore('images', () => {
     sortedImages,
     currentImage,
     imagesLoading,
+    imagesLoadingProjectId,
+    imagesLoadedProjectId,
     imageLoading,
     tagMutationLoading,
     loading,
