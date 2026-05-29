@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import type { TaggingMode } from '../../../api'
-import AppSelectField from '../../../design-system/AppSelectField.vue'
-import TagAutocompleteInput from '../../../design-system/TagAutocompleteInput.vue'
-import AppToolbar from '../../../design-system/AppToolbar.vue'
+import AppSelectField from '../../../design-system/reka/AppSelectField.vue'
+import TagAutocompleteInput from '../../../design-system/reka/TagAutocompleteInput.vue'
+import AppToolbar from '../../../design-system/reka/AppToolbar.vue'
 import AppErrorText from '../../../components/ui/AppErrorText.vue'
 
 const tagSourceOptions = [

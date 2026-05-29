@@ -4,15 +4,15 @@ import { useRoute } from 'vue-router'
 import AppShell from '../components/layout/AppShell.vue'
 import HeaderSection from '../components/header/HeaderSection.vue'
 import WorkspaceLayout from '../components/layout/WorkspaceLayout.vue'
-import WorkspaceMobileSplitLayout from '../components/layout/WorkspaceMobileSplitLayout.vue'
 import WorkspacePanelCard from '../components/layout/WorkspacePanelCard.vue'
 import ProjectCreateModal from '../components/projects/ProjectCreateModal.vue'
 import ImageBrowserCard from '../cards/image-browser/ImageBrowserCard.vue'
 import CurrentTagsCard from '../cards/current-tags/CurrentTagsCard.vue'
+import AiProposedTagsCard from '../cards/ai-proposed-tags/AiProposedTagsCard.vue'
 import WorkspaceSideCardContent from './workspace/WorkspaceSideCardContent.vue'
 import WorkspacePanelColumn from './workspace/WorkspacePanelColumn.vue'
 import AppText from '../components/ui/AppText.vue'
-import AppAlertDialog from '../design-system/AppAlertDialog.vue'
+import WorkspaceMobileCanvas from './workspace/WorkspaceMobileCanvas.vue'
 import {
   defaultSideViewOrder,
   defaultToggleCardOpenState,
@@ -41,16 +41,19 @@ const route = useRoute()
 const selectedProject = computed(() => projectStore.selectedProject)
 const showProjectPicker = ref(false)
 const showActionsMenu = ref(false)
-const showMobileDeleteConfirm = ref(false)
 
 type MobileWorkspaceStage = 'project-browser' | 'image-browser' | 'workspace'
 type MobileWorkspaceBottomPanel = 'current-tags' | 'ai-proposed-tags' | 'project-details'
 type MobileCurrentTagsViewMode = 'tags-only' | 'filter-only' | 'search-only'
+type MobileAiProposedTagsViewMode = 'essentials' | 'advanced'
 
 const mobileStage = ref<MobileWorkspaceStage>('project-browser')
 const activeMobileBottomPanel = ref<MobileWorkspaceBottomPanel>('current-tags')
 const mobileWorkspaceSplitPercent = ref(60)
 const mobileCurrentTagsViewMode = ref<MobileCurrentTagsViewMode>('tags-only')
+const mobileAiProposedTagsViewMode = ref<MobileAiProposedTagsViewMode>('essentials')
+const mobileAiScanRequestNonce = ref(0)
+const mobileAiSelectedToggleRequestNonce = ref(0)
 
 const WORKSPACE_CARD_STATE_KEY = 'tailflow.workspace-card-state.v1'
 const DEFAULT_LEFT_VIEW_ORDER: SideViewId[] = defaultSideViewOrder('left')
@@ -72,31 +75,54 @@ const mobileBottomPanelOptions = computed<Array<{ id: MobileWorkspaceBottomPanel
 const activeMobileBottomPanelTitle = computed(() => cardMeta[activeMobileBottomPanel.value].name)
 
 const mobileCurrentPanelActions = computed<Array<{ id: string; label: string }>>(() => {
-  if (activeMobileBottomPanel.value !== 'current-tags') {
-    return []
+  if (activeMobileBottomPanel.value === 'current-tags') {
+    const mode = mobileCurrentTagsViewMode.value
+
+    return [
+      {
+        id: 'copy-current-tags',
+        label: `Copy Current Tags${currentImageTagsPayload.value ? '' : ' (Empty)'}`,
+      },
+      {
+        id: 'set-current-tags-view-tags-only',
+        label: `${mode === 'tags-only' ? 'Active: ' : ''}Show Only Tags`,
+      },
+      {
+        id: 'set-current-tags-view-filter-only',
+        label: `${mode === 'filter-only' ? 'Active: ' : ''}Show Only Filter`,
+      },
+      {
+        id: 'set-current-tags-view-search-only',
+        label: `${mode === 'search-only' ? 'Active: ' : ''}Show Only Search`,
+      },
+    ]
   }
 
-  const mode = mobileCurrentTagsViewMode.value
+  if (activeMobileBottomPanel.value === 'ai-proposed-tags') {
+    const mode = mobileAiProposedTagsViewMode.value
 
-  return [
-    {
-      id: 'copy-current-tags',
-      label: `Copy Current Tags${currentImageTagsPayload.value ? '' : ' (Empty)'}`,
-    },
-    {
-      id: 'set-current-tags-view-tags-only',
-      label: `${mode === 'tags-only' ? 'Active: ' : ''}Show Only Tags`,
-    },
-    {
-      id: 'set-current-tags-view-filter-only',
-      label: `${mode === 'filter-only' ? 'Active: ' : ''}Show Only Filter`,
-    },
-    {
-      id: 'set-current-tags-view-search-only',
-      label: `${mode === 'search-only' ? 'Active: ' : ''}Show Only Search`,
-    },
-  ]
+    return [
+      {
+        id: 'set-ai-proposed-tags-view-essentials',
+        label: `${mode === 'essentials' ? 'Active: ' : ''}Show Proposals + Filter + Scan`,
+      },
+      {
+        id: 'set-ai-proposed-tags-view-advanced',
+        label: `${mode === 'advanced' ? 'Active: ' : ''}Show Advanced Controls`,
+      },
+    ]
+  }
+
+  return []
 })
+
+const mobileAiProposedTagsDisplay = computed(() => ({
+  showTopBar: mobileAiProposedTagsViewMode.value === 'advanced',
+  showFilter: true,
+  showScanControls: false,
+  showAdvancedControls: mobileAiProposedTagsViewMode.value === 'advanced',
+  showTagsList: mobileAiProposedTagsViewMode.value !== 'advanced',
+}))
 const currentImageTagsPayload = computed(() => {
   const tags = imageStore.currentImage?.tags ?? []
   return tags.map((tag) => tag.name.trim()).filter((name) => name.length > 0).join(',')
@@ -248,8 +274,23 @@ function goBackToImageBrowser() {
 }
 
 async function handleMobileDeleteConfirm(): Promise<void> {
-  showMobileDeleteConfirm.value = false
   await deleteCurrentImage()
+}
+
+function handleMobileAiScanRequest(): void {
+  if (activeMobileBottomPanel.value !== 'ai-proposed-tags') {
+    return
+  }
+
+  mobileAiScanRequestNonce.value += 1
+}
+
+function handleMobileAiSelectedToggleRequest(): void {
+  if (activeMobileBottomPanel.value !== 'ai-proposed-tags') {
+    return
+  }
+
+  mobileAiSelectedToggleRequestNonce.value += 1
 }
 
 async function handleMobilePanelAction(actionId: string) {
@@ -275,6 +316,16 @@ async function handleMobilePanelAction(actionId: string) {
 
   if (actionId === 'set-current-tags-view-search-only') {
     mobileCurrentTagsViewMode.value = 'search-only'
+    return
+  }
+
+  if (actionId === 'set-ai-proposed-tags-view-essentials') {
+    mobileAiProposedTagsViewMode.value = 'essentials'
+    return
+  }
+
+  if (actionId === 'set-ai-proposed-tags-view-advanced') {
+    mobileAiProposedTagsViewMode.value = 'advanced'
   }
 }
 
@@ -325,6 +376,7 @@ const {
   mobileStage,
   activeMobileBottomPanel,
   mobileCurrentTagsViewMode,
+  mobileAiProposedTagsViewMode,
   mobileWorkspaceSplitPercent,
   defaultLeftViewOrder: DEFAULT_LEFT_VIEW_ORDER,
   defaultRightViewOrder: DEFAULT_RIGHT_VIEW_ORDER,
@@ -386,7 +438,7 @@ const imageBrowserMemoKey = computed(() => {
 
     <section
       v-if="isWorkspaceRestorePending"
-      class="grid h-full min-h-0 place-items-center"
+      class="grid min-h-0 flex-1 place-items-center"
     >
       <AppText tone="muted">
         Loading workspace...
@@ -395,7 +447,7 @@ const imageBrowserMemoKey = computed(() => {
 
     <section
       v-else-if="!isMobileViewport()"
-      class="h-full min-h-0"
+      class="min-h-0 flex-1"
     >
       <WorkspaceLayout
         :show-left="leftVisibleViewIds.length > 0"
@@ -480,7 +532,7 @@ const imageBrowserMemoKey = computed(() => {
 
     <section
       v-else
-      class="-mx-3 -mt-3 h-full min-h-0"
+      class="-mx-3 -mb-3 -mt-3 min-h-0 flex-1"
     >
       <WorkspacePanelCard
         v-if="mobileStage === 'project-browser'"
@@ -543,55 +595,30 @@ const imageBrowserMemoKey = computed(() => {
         </div>
       </WorkspacePanelCard>
 
-      <WorkspaceMobileSplitLayout
+      <WorkspaceMobileCanvas
         v-else
         :split-percent="mobileWorkspaceSplitPercent"
         :panel-title="activeMobileBottomPanelTitle"
         :panel-options="mobileBottomPanelOptions"
         :active-panel-id="activeMobileBottomPanel"
         :current-panel-actions="mobileCurrentPanelActions"
+        :show-panel-scan-button="activeMobileBottomPanel === 'ai-proposed-tags' && mobileAiProposedTagsViewMode !== 'advanced'"
+        :show-panel-selected-toggle-button="activeMobileBottomPanel === 'ai-proposed-tags' && mobileAiProposedTagsViewMode !== 'advanced'"
+        :current-image-exists="!!imageStore.currentImage"
+        :current-image-filename="imageStore.currentImage?.filename"
+        :can-go-to-previous="currentImageIndex > 0"
+        :can-go-to-next="currentImageIndex >= 0 && currentImageIndex < orderedImages.length - 1"
         :rounded="false"
         @update:split-percent="(value) => (mobileWorkspaceSplitPercent = value)"
         @select-panel="(panelId) => (activeMobileBottomPanel = panelId as MobileWorkspaceBottomPanel)"
         @select-action="handleMobilePanelAction"
+        @delete-confirm="handleMobileDeleteConfirm"
+        @go-back="goBackToImageBrowser"
+        @scan-panel="handleMobileAiScanRequest"
+        @toggle-panel-selected-filter="handleMobileAiSelectedToggleRequest"
+        @navigate-previous="goToPreviousImage"
+        @navigate-next="goToNextImage"
       >
-        <template #canvas-header-actions>
-          <div class="flex items-center gap-2">
-            <button
-              type="button"
-              class="inline-flex h-7 w-7 items-center justify-center rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] text-[var(--tf-color-text-muted)] transition hover:border-[var(--tf-color-danger)] hover:text-[var(--tf-color-danger)] disabled:cursor-not-allowed disabled:opacity-50"
-              aria-label="Delete current image"
-              :disabled="!imageStore.currentImage"
-              @click="showMobileDeleteConfirm = true"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                class="h-3.5 w-3.5"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                aria-hidden="true"
-              >
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                <path d="M10 11v6" />
-                <path d="M14 11v6" />
-                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-              </svg>
-            </button>
-
-            <button
-              type="button"
-              class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-2 py-1 text-xs text-[var(--tf-color-text-default)]"
-              @click="goBackToImageBrowser"
-            >
-              Back
-            </button>
-          </div>
-        </template>
-
         <template #canvas>
           <component
             :is="mobileCanvasConfig.component"
@@ -613,21 +640,33 @@ const imageBrowserMemoKey = computed(() => {
             :show-copy-button="false"
           />
 
+          <AiProposedTagsCard
+            v-else-if="activeMobileBottomPanel === 'ai-proposed-tags'"
+            :project-id="projectStore.selectedProjectId"
+            :image-id="imageStore.currentImage?.id ?? null"
+            :mode="selectedProject?.tagging_mode ?? 'booru'"
+            :current-tags="imageStore.currentImage?.tags ?? []"
+            :framed="false"
+            :show-top-bar="mobileAiProposedTagsDisplay.showTopBar"
+            :show-filter="mobileAiProposedTagsDisplay.showFilter"
+            :show-scan-controls="mobileAiProposedTagsDisplay.showScanControls"
+            :show-advanced-controls="mobileAiProposedTagsDisplay.showAdvancedControls"
+            :show-tags-list="mobileAiProposedTagsDisplay.showTagsList"
+            :show-controls-toggle="false"
+            :show-selected-toggle="false"
+            :show-inline-scan-button="false"
+            :scan-request-nonce="mobileAiScanRequestNonce"
+            :selected-toggle-request-nonce="mobileAiSelectedToggleRequestNonce"
+            @add="handleAiProposedTagAdd"
+            @remove="handleAiProposedTagRemove"
+          />
+
           <WorkspaceSideCardContent
             v-else
             :config="sideCardConfig(activeMobileBottomPanel, false)"
           />
         </template>
-      </WorkspaceMobileSplitLayout>
-
-      <AppAlertDialog
-        :open="showMobileDeleteConfirm"
-        title="Delete current image?"
-        :description="imageStore.currentImage ? `This permanently deletes ${imageStore.currentImage.filename} from the project dataset.` : 'This permanently deletes the current image from the project dataset.'"
-        confirm-label="Delete"
-        @update:open="(open) => (showMobileDeleteConfirm = open)"
-        @confirm="handleMobileDeleteConfirm"
-      />
+      </WorkspaceMobileCanvas>
     </section>
 
     <ProjectCreateModal

@@ -15,16 +15,20 @@ export default [
   },
   {
     files: ['src/**/*.{ts,vue}'],
-    ignores: ['src/design-system/**'],
+    ignores: ['src/design-system/reka/**', 'src/design-system/motion/**'],
     rules: {
       'no-restricted-imports': ['error', {
         paths: [
           {
             name: 'reka-ui',
-            message: 'Import reka-ui only from src/design-system wrappers.',
+            message: 'Import reka-ui only from src/design-system/reka wrappers.',
+          },
+          {
+            name: 'motion-v',
+            message: 'Import motion-v only from src/design-system/motion wrappers.',
           },
         ],
-        patterns: ['reka-ui/*'],
+        patterns: ['reka-ui/*', 'motion-v/*'],
       }],
     },
   },

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import AppSplitterGroup from '../../design-system/AppSplitterGroup.vue'
-import AppSplitterPanel from '../../design-system/AppSplitterPanel.vue'
-import AppSplitterResizeHandle from '../../design-system/AppSplitterResizeHandle.vue'
+import AppSplitterGroup from '../../design-system/reka/AppSplitterGroup.vue'
+import AppSplitterPanel from '../../design-system/reka/AppSplitterPanel.vue'
+import AppSplitterResizeHandle from '../../design-system/reka/AppSplitterResizeHandle.vue'
 import WorkspacePanelCard from '../../components/layout/WorkspacePanelCard.vue'
 
 export type WorkspacePanelColumnId = 'left' | 'center' | 'right'

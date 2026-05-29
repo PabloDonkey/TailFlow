@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Project } from '../../api'
-import AppMenubar, { type AppMenubarMenu } from '../../design-system/AppMenubar.vue'
+import AppMenubar, { type AppMenubarMenu } from '../../design-system/reka/AppMenubar.vue'
 import AppButton from '../ui/AppButton.vue'
 import AppSectionTitle from '../ui/AppSectionTitle.vue'
 import AppText from '../ui/AppText.vue'

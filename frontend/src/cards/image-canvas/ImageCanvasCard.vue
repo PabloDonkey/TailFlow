@@ -4,7 +4,7 @@ import type { ProjectImageRead, ProjectImageSummary } from '../../api'
 import { getProjectImageFileUrl } from '../../api'
 import { useDelayedLoading } from '../../composables/useDelayedLoading'
 import UploadImageDropZone from '../../components/ui/UploadImageDropZone.vue'
-import AppAlertDialog from '../../design-system/AppAlertDialog.vue'
+import AppAlertDialog from '../../design-system/reka/AppAlertDialog.vue'
 import AppErrorText from '../../components/ui/AppErrorText.vue'
 import AppText from '../../components/ui/AppText.vue'
 

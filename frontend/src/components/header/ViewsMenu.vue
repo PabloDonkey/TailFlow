@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import AppPopoverButton from '../../design-system/AppPopoverButton.vue'
+import AppPopoverButton from '../../design-system/reka/AppPopoverButton.vue'
 
 const props = defineProps<{
   openViews: {

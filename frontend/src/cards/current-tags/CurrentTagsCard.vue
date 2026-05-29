@@ -139,33 +139,34 @@ async function handleAddTag(tagName: string) {
 
     <template v-else>
       <div
-        v-if="props.showControls"
-        class="mt-3"
+        class="flex min-h-0 flex-1 flex-col"
+        :class="props.framed ? 'gap-3 pt-3' : 'gap-2'"
       >
-        <CurrentTagsMutationControls
-          :error-msg="mutationError"
-          :selected-tags="selectedTagNames"
-          :fetch-suggestions="fetchTagSuggestions"
-          :tag-count="currentImage.tag_count"
-          :tag-source="inspectorMode"
-          :disabled="mutationLoading"
-          :show-search="props.showSearch"
-          :search-only="props.showSearch && props.showFilter === false && props.showTags === false"
-          @add="handleAddTag"
-          @update:tag-source="(value) => inspectorMode = value"
+        <div v-if="props.showControls">
+          <CurrentTagsMutationControls
+            :error-msg="mutationError"
+            :selected-tags="selectedTagNames"
+            :fetch-suggestions="fetchTagSuggestions"
+            :tag-count="currentImage.tag_count"
+            :tag-source="inspectorMode"
+            :disabled="mutationLoading"
+            :show-search="props.showSearch"
+            :search-only="props.showSearch && props.showFilter === false && props.showTags === false"
+            @add="handleAddTag"
+            @update:tag-source="(value) => inspectorMode = value"
+          />
+        </div>
+
+        <CurrentTagsList
+          :tags="currentImage.tags"
+          :get-tag-role-label="getTagRoleLabel"
+          :get-tag-source-label="getTagSourceLabel"
+          :show-filter="props.showFilter"
+          :show-tags="props.showTags"
+          :show-copy-button="props.showCopyButton"
+          @remove="removeTag"
         />
       </div>
-
-      <CurrentTagsList
-        class="mt-3"
-        :tags="currentImage.tags"
-        :get-tag-role-label="getTagRoleLabel"
-        :get-tag-source-label="getTagSourceLabel"
-        :show-filter="props.showFilter"
-        :show-tags="props.showTags"
-        :show-copy-button="props.showCopyButton"
-        @remove="removeTag"
-      />
     </template>
   </section>
 </template>

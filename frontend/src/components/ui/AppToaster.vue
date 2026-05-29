@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { useToast } from '../../composables/useToast'
-import AppToastProvider from '../../design-system/AppToastProvider.vue'
-import AppToastRoot from '../../design-system/AppToastRoot.vue'
-import AppToastTitle from '../../design-system/AppToastTitle.vue'
-import AppToastViewport from '../../design-system/AppToastViewport.vue'
+import AppToastProvider from '../../design-system/reka/AppToastProvider.vue'
+import AppToastRoot from '../../design-system/reka/AppToastRoot.vue'
+import AppToastTitle from '../../design-system/reka/AppToastTitle.vue'
+import AppToastViewport from '../../design-system/reka/AppToastViewport.vue'
 
 const { toasts, removeToast } = useToast()
 </script>

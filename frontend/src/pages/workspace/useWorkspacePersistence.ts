@@ -6,6 +6,7 @@ import type { useProjectStore } from '../../stores/projects'
 type MobileWorkspaceStage = 'project-browser' | 'image-browser' | 'workspace'
 type MobileWorkspaceBottomPanel = 'current-tags' | 'ai-proposed-tags' | 'project-details'
 type MobileCurrentTagsViewMode = 'tags-only' | 'filter-only' | 'search-only'
+type MobileAiProposedTagsViewMode = 'essentials' | 'advanced'
 
 type UseWorkspacePersistenceOptions = {
   storageKey: string
@@ -15,6 +16,7 @@ type UseWorkspacePersistenceOptions = {
   mobileStage: Ref<MobileWorkspaceStage>
   activeMobileBottomPanel: Ref<MobileWorkspaceBottomPanel>
   mobileCurrentTagsViewMode: Ref<MobileCurrentTagsViewMode>
+  mobileAiProposedTagsViewMode: Ref<MobileAiProposedTagsViewMode>
   mobileWorkspaceSplitPercent: Ref<number>
   defaultLeftViewOrder: SideViewId[]
   defaultRightViewOrder: SideViewId[]
@@ -33,6 +35,7 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
     mobileStage,
     activeMobileBottomPanel,
     mobileCurrentTagsViewMode,
+    mobileAiProposedTagsViewMode,
     mobileWorkspaceSplitPercent,
     defaultLeftViewOrder,
     defaultRightViewOrder,
@@ -50,6 +53,7 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
   ]
   const validMobileStages: MobileWorkspaceStage[] = ['project-browser', 'image-browser', 'workspace']
   const validMobileCurrentTagsViewModes: MobileCurrentTagsViewMode[] = ['tags-only', 'filter-only', 'search-only']
+  const validMobileAiProposedTagsViewModes: MobileAiProposedTagsViewMode[] = ['essentials', 'advanced']
   const isWorkspaceRestorePending = ref(true)
 
   function sanitizeSideOrder(candidate: unknown): SideViewId[] {
@@ -118,6 +122,7 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
         mobileStage?: MobileWorkspaceStage
         activeMobileBottomPanel?: MobileWorkspaceBottomPanel
         mobileCurrentTagsViewMode?: MobileCurrentTagsViewMode
+        mobileAiProposedTagsViewMode?: MobileAiProposedTagsViewMode
         mobileWorkspaceSplitPercent?: number
         selectedProjectId?: string | null
         selectedImageId?: string | null
@@ -154,6 +159,12 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
       if (typeof parsed.mobileCurrentTagsViewMode === 'string') {
         if (validMobileCurrentTagsViewModes.includes(parsed.mobileCurrentTagsViewMode)) {
           mobileCurrentTagsViewMode.value = parsed.mobileCurrentTagsViewMode
+        }
+      }
+
+      if (typeof parsed.mobileAiProposedTagsViewMode === 'string') {
+        if (validMobileAiProposedTagsViewModes.includes(parsed.mobileAiProposedTagsViewMode)) {
+          mobileAiProposedTagsViewMode.value = parsed.mobileAiProposedTagsViewMode
         }
       }
 
@@ -198,6 +209,7 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
       mobileStage: mobileStage.value,
       activeMobileBottomPanel: activeMobileBottomPanel.value,
       mobileCurrentTagsViewMode: mobileCurrentTagsViewMode.value,
+      mobileAiProposedTagsViewMode: mobileAiProposedTagsViewMode.value,
       mobileWorkspaceSplitPercent: mobileWorkspaceSplitPercent.value,
       selectedProjectId: projectStore.selectedProjectId,
       selectedImageId: imageStore.currentImage?.id ?? null,
@@ -214,6 +226,7 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
       mobileStage,
       activeMobileBottomPanel,
       mobileCurrentTagsViewMode,
+      mobileAiProposedTagsViewMode,
       mobileWorkspaceSplitPercent,
     ],
     () => {
