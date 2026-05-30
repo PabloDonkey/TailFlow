@@ -830,7 +830,10 @@ async def preview_project_dataset_rename(
     sidecar_update_count = sum(
         1
         for row in plan_rows
-        if row.sidecar_needs_update or row.current_relative_path != row.proposed_relative_path
+        if (
+            row.sidecar_needs_update
+            or row.current_relative_path != row.proposed_relative_path
+        )
     )
 
     return ProjectDatasetRenamePreviewResponse(
@@ -880,7 +883,9 @@ async def apply_project_dataset_rename(
 
     for row in plan_rows:
         current_path = dataset_path / row.current_relative_path
-        temporary_path = _temporary_rename_path(dataset_path, current_path.suffix.lower())
+        temporary_path = _temporary_rename_path(
+            dataset_path, current_path.suffix.lower()
+        )
         shutil.move(str(current_path), str(temporary_path))
         temp_paths[row.image.id] = temporary_path
 
@@ -890,8 +895,13 @@ async def apply_project_dataset_rename(
         target_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.move(str(temporary_path), str(target_path))
 
-        old_sidecar_path = _sidecar_path_for_image(dataset_path, row.current_relative_path)
-        if old_sidecar_path.exists() and old_sidecar_path != target_path.with_suffix(".txt"):
+        old_sidecar_path = _sidecar_path_for_image(
+            dataset_path, row.current_relative_path
+        )
+        if (
+            old_sidecar_path.exists()
+            and old_sidecar_path != target_path.with_suffix(".txt")
+        ):
             old_sidecar_path.unlink()
 
         sidecar_path = target_path.with_suffix(".txt")

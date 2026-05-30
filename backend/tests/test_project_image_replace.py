@@ -52,7 +52,12 @@ async def test_replace_project_image_preserves_tags_and_record_identity(
     assert replaced_payload['id'] == image_id
     assert [tag['name'] for tag in replaced_payload['tags']] == before_tags
 
-    image_file = tmp_path / 'replace-image-project' / 'dataset' / replaced_payload['relative_path']
+    image_file = (
+        tmp_path
+        / 'replace-image-project'
+        / 'dataset'
+        / replaced_payload['relative_path']
+    )
     assert image_file.is_file()
     assert image_file.read_bytes() == replaced_bytes
 
