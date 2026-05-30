@@ -15,6 +15,10 @@ import {
   imageBrowserSideCardFactory,
 } from '../../cards/image-browser/image-browser.side-card-factory'
 import {
+  imageInfoCardMeta,
+  imageInfoSideCardFactory,
+} from '../../cards/image-info/image-info.side-card-factory'
+import {
   projectBrowserCardFactory,
   projectBrowserCardMeta,
 } from '../../cards/project-browser/project-browser.card-factory'
@@ -59,6 +63,7 @@ export type {
 const workspaceCardFactories: Record<WorkspaceCardId, WorkspaceCardFactory> = {
   canvas: imageCanvasCardFactory,
   'image-browser': imageBrowserSideCardFactory,
+  'image-info': imageInfoSideCardFactory,
   'current-tags': currentTagsSideCardFactory,
   'ai-proposed-tags': aiProposedTagsSideCardFactory,
   'tags-library': tagsLibrarySideCardFactory,
@@ -69,6 +74,7 @@ const workspaceCardFactories: Record<WorkspaceCardId, WorkspaceCardFactory> = {
 export const workspaceCardMeta: Record<WorkspaceCardId, CardMeta> = {
   canvas: imageCanvasCardMeta,
   'image-browser': imageBrowserCardMeta,
+  'image-info': imageInfoCardMeta,
   'current-tags': currentTagsCardMeta,
   'ai-proposed-tags': aiProposedTagsCardMeta,
   'tags-library': tagsLibraryCardMeta,
@@ -78,6 +84,7 @@ export const workspaceCardMeta: Record<WorkspaceCardId, CardMeta> = {
 
 export const sideCardMeta: Record<SideViewId, CardMeta> = {
   'image-browser': workspaceCardMeta['image-browser'],
+  'image-info': workspaceCardMeta['image-info'],
   'current-tags': workspaceCardMeta['current-tags'],
   'ai-proposed-tags': workspaceCardMeta['ai-proposed-tags'],
   'tags-library': workspaceCardMeta['tags-library'],
@@ -93,6 +100,7 @@ export function defaultSideViewOrder(column: 'left' | 'right'): SideViewId[] {
 
 export const defaultToggleCardOpenState: Record<ToggleCardId, boolean> = {
   'image-browser': true,
+  'image-info': false,
   canvas: true,
   'current-tags': true,
   'ai-proposed-tags': true,

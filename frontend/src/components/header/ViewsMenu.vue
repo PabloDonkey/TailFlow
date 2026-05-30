@@ -4,6 +4,7 @@ import AppPopoverButton from '../../design-system/reka/AppPopoverButton.vue'
 const props = defineProps<{
   openViews: {
     imageBrowser: boolean
+    imageInfo: boolean
     canvas: boolean
     currentTags: boolean
     aiProposedTags: boolean
@@ -15,7 +16,14 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: []
   toggleView: [
-    view: 'image-browser' | 'canvas' | 'current-tags' | 'ai-proposed-tags' | 'tags-library' | 'project-details',
+    view:
+      | 'image-browser'
+      | 'image-info'
+      | 'canvas'
+      | 'current-tags'
+      | 'ai-proposed-tags'
+      | 'tags-library'
+      | 'project-details',
   ]
 }>()
 
@@ -28,9 +36,14 @@ const actionButtonActiveClass =
 const actionButtonInactiveClass =
   'bg-transparent text-[var(--tf-color-text-default)] hover:bg-[var(--tf-color-surface-border)]'
 
-const isPanelSelected = (view: 'image-browser' | 'canvas' | 'current-tags' | 'ai-proposed-tags' | 'tags-library' | 'project-details'): 'true' | 'false' => {
+const isPanelSelected = (
+  view: 'image-browser' | 'image-info' | 'canvas' | 'current-tags' | 'ai-proposed-tags' | 'tags-library' | 'project-details',
+): 'true' | 'false' => {
   if (view === 'image-browser') {
     return props.openViews.imageBrowser ? 'true' : 'false'
+  }
+  if (view === 'image-info') {
+    return props.openViews.imageInfo ? 'true' : 'false'
   }
   if (view === 'canvas') {
     return props.openViews.canvas ? 'true' : 'false'
@@ -47,7 +60,9 @@ const isPanelSelected = (view: 'image-browser' | 'canvas' | 'current-tags' | 'ai
   return props.openViews.projectDetails ? 'true' : 'false'
 }
 
-const actionButtonClass = (view: 'image-browser' | 'canvas' | 'current-tags' | 'ai-proposed-tags' | 'tags-library' | 'project-details'): string => {
+const actionButtonClass = (
+  view: 'image-browser' | 'image-info' | 'canvas' | 'current-tags' | 'ai-proposed-tags' | 'tags-library' | 'project-details',
+): string => {
   const selected = isPanelSelected(view) === 'true'
   return `${actionButtonBaseClass} ${selected ? actionButtonActiveClass : actionButtonInactiveClass}`
 }
@@ -93,6 +108,15 @@ const actionButtonClass = (view: 'image-browser' | 'canvas' | 'current-tags' | '
         @click="emit('toggleView', 'image-browser')"
       >
         Image browser
+      </button>
+
+      <button
+        type="button"
+        :aria-selected="isPanelSelected('image-info')"
+        :class="actionButtonClass('image-info')"
+        @click="emit('toggleView', 'image-info')"
+      >
+        Image info
       </button>
 
       <button

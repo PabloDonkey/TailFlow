@@ -5,7 +5,7 @@ import type { useImageStore } from '../../stores/images'
 import type { useProjectStore } from '../../stores/projects'
 
 type MobileWorkspaceStage = 'project-browser' | 'image-browser' | 'workspace'
-type MobileWorkspaceBottomPanel = 'current-tags' | 'ai-proposed-tags' | 'project-details'
+type MobileWorkspaceBottomPanel = 'current-tags' | 'ai-proposed-tags' | 'project-details' | 'image-info'
 
 type UseWorkspaceRouteSyncOptions = {
   route: RouteLocationNormalizedLoaded

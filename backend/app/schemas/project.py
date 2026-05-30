@@ -106,6 +106,36 @@ class ProjectImageUploadResponse(BaseModel):
     restored_records: int
 
 
+class ProjectImageReplaceResponse(BaseModel):
+    project_id: uuid.UUID
+    image_id: uuid.UUID
+    relative_path: str
+    filename: str
+    content_hash: str | None = None
+
+
+class ProjectDatasetRenamePlanItem(BaseModel):
+    image_id: uuid.UUID
+    current_relative_path: str
+    proposed_relative_path: str
+    sidecar_content: str
+
+
+class ProjectDatasetRenamePreviewResponse(BaseModel):
+    project_id: uuid.UUID
+    total_images: int
+    rename_count: int
+    sidecar_update_count: int
+    items: list[ProjectDatasetRenamePlanItem] = Field(default_factory=list)
+
+
+class ProjectDatasetRenameApplyResponse(BaseModel):
+    project_id: uuid.UUID
+    total_images: int
+    renamed_images: int
+    sidecars_updated: int
+
+
 class ProjectSyncResponse(BaseModel):
     project_id: uuid.UUID
     added_images: int

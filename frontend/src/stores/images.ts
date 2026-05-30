@@ -109,6 +109,34 @@ export const useImageStore = defineStore('images', () => {
     }
   }
 
+  async function replaceImage(projectId: string, id: string, file: File): Promise<ProjectImageRead | null> {
+    imageLoading.value = true
+    error.value = null
+    try {
+      const updated = await api.replaceProjectImage(projectId, id, file)
+      currentImage.value = updated
+
+      const idx = images.value.findIndex((img) => img.id === id)
+      const existing = idx !== -1 ? images.value[idx] : undefined
+      if (existing !== undefined) {
+        images.value[idx] = {
+          ...existing,
+          filename: updated.filename,
+          relative_path: updated.relative_path,
+          content_hash: updated.content_hash,
+          tag_count: updated.tag_count,
+        }
+      }
+
+      return updated
+    } catch (e) {
+      error.value = String(e)
+      return null
+    } finally {
+      imageLoading.value = false
+    }
+  }
+
   async function updateTags(
     projectId: string,
     id: string,
@@ -161,6 +189,7 @@ export const useImageStore = defineStore('images', () => {
     fetchImages,
     fetchImage,
     deleteImage,
+    replaceImage,
     updateTags,
   }
 })

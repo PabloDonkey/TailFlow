@@ -38,7 +38,7 @@ async function loadProjectPreviews(projects: Project[]): Promise<void> {
         if (!firstImage) {
           return [project.id, null] as const
         }
-        return [project.id, getProjectImageFileUrl(project.id, firstImage.id)] as const
+        return [project.id, getProjectImageFileUrl(project.id, firstImage.id, firstImage.content_hash ?? firstImage.discovered_at)] as const
       } catch {
         return [project.id, null] as const
       }

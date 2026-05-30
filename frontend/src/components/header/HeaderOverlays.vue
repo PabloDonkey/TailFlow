@@ -8,6 +8,7 @@ defineProps<{
   showActionsMenu: boolean
   openViews: {
     imageBrowser: boolean
+    imageInfo: boolean
     canvas: boolean
     currentTags: boolean
     aiProposedTags: boolean
@@ -26,7 +27,14 @@ const emit = defineEmits<{
   selectProject: [projectId: string]
   closeActionsMenu: []
   toggleView: [
-    view: 'image-browser' | 'canvas' | 'current-tags' | 'ai-proposed-tags' | 'tags-library' | 'project-details',
+    view:
+      | 'image-browser'
+      | 'image-info'
+      | 'canvas'
+      | 'current-tags'
+      | 'ai-proposed-tags'
+      | 'tags-library'
+      | 'project-details',
   ]
 }>()
 </script>

@@ -1,4 +1,5 @@
 import ImageCanvasCard from './ImageCanvasCard.vue'
+import ImageCanvasHeaderActions from './ImageCanvasHeaderActions.vue'
 import type { WorkspaceCardFactory } from '../../pages/workspace/side-card-types'
 import { imageCanvasCardMeta } from './image-canvas.card-meta'
 
@@ -34,6 +35,25 @@ export const imageCanvasCardFactory: WorkspaceCardFactory = {
         },
         deleteCurrent: () => {
           actions.deleteCurrentImage()
+        },
+      },
+      headerActions: {
+        component: ImageCanvasHeaderActions,
+        props: {
+          currentImageExists: Boolean(state.currentImage),
+          loading: state.loading,
+        },
+        listeners: {
+          uploadImages: (files: unknown) => {
+            if (Array.isArray(files) && files.every((file) => file instanceof File)) {
+              actions.uploadImagesToCurrentProject(files)
+            }
+          },
+          replaceImage: (file: unknown) => {
+            if (file instanceof File) {
+              actions.replaceCurrentImage(file)
+            }
+          },
         },
       },
     }

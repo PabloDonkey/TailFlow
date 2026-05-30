@@ -67,6 +67,7 @@ export function useWorkspacePanelState(options: UseWorkspacePanelStateOptions) {
 
   const headerOpenViews = computed(() => ({
     imageBrowser: isCardOpen('image-browser'),
+    imageInfo: isCardOpen('image-info'),
     canvas: isCardOpen('canvas'),
     currentTags: isCardOpen('current-tags'),
     aiProposedTags: isCardOpen('ai-proposed-tags'),

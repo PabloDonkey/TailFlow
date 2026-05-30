@@ -1,6 +1,7 @@
 <script setup lang="ts">
 export type MobileWorkspaceTab =
   | 'image-browser'
+  | 'image-info'
   | 'canvas'
   | 'current-tags'
   | 'ai-proposed-tags'

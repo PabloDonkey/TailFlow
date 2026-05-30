@@ -4,7 +4,7 @@ import type { useImageStore } from '../../stores/images'
 import type { useProjectStore } from '../../stores/projects'
 
 type MobileWorkspaceStage = 'project-browser' | 'image-browser' | 'workspace'
-type MobileWorkspaceBottomPanel = 'current-tags' | 'ai-proposed-tags' | 'project-details'
+type MobileWorkspaceBottomPanel = 'current-tags' | 'ai-proposed-tags' | 'project-details' | 'image-info'
 type MobileCurrentTagsViewMode = 'tags-only' | 'filter-only' | 'search-only'
 type MobileAiProposedTagsViewMode = 'essentials' | 'advanced'
 
@@ -50,6 +50,7 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
     'current-tags',
     'ai-proposed-tags',
     'project-details',
+    'image-info',
   ]
   const validMobileStages: MobileWorkspaceStage[] = ['project-browser', 'image-browser', 'workspace']
   const validMobileCurrentTagsViewModes: MobileCurrentTagsViewMode[] = ['tags-only', 'filter-only', 'search-only']

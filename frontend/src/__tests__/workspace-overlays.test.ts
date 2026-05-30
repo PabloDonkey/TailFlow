@@ -29,6 +29,7 @@ describe('Workspace overlays', () => {
       props: {
         openViews: {
           imageBrowser: true,
+          imageInfo: false,
           canvas: true,
           currentTags: true,
           aiProposedTags: true,

@@ -3,6 +3,7 @@ import type { Project, ProjectImageRead, ProjectImageSummary, ProjectTag } from 
 
 export type SideViewId =
   | 'image-browser'
+  | 'image-info'
   | 'current-tags'
   | 'ai-proposed-tags'
   | 'tags-library'
@@ -59,6 +60,8 @@ export type SideCardActions = {
   nextImage: () => void
   jumpToImage: (index: number) => void
   deleteCurrentImage: () => void
+  uploadImagesToCurrentProject: (files: File[]) => void
+  replaceCurrentImage: (file: File) => void
 }
 
 export type WorkspaceCardActions = SideCardActions

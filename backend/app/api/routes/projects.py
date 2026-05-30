@@ -25,6 +25,8 @@ from app.models.project import Project
 from app.schemas.project import (
     ProjectCreate,
     ProjectCreateResponse,
+    ProjectDatasetRenameApplyResponse,
+    ProjectDatasetRenamePreviewResponse,
     ProjectDiscoverResponse,
     ProjectImageClassifyRequest,
     ProjectImageClassifyResponse,
@@ -43,9 +45,12 @@ from app.schemas.project import (
 )
 from app.services.classifier import classify_project_image
 from app.services.projects import (
+    apply_project_dataset_rename,
     create_project,
     delete_project_image,
     discover_projects,
+    preview_project_dataset_rename,
+    replace_project_image_file,
     sync_project,
     update_project_image_tags,
     update_project_metadata,
@@ -253,6 +258,83 @@ async def upload_project_images_route(
         )
 
     return await upload_images_to_project(session, project, files)
+
+
+@router.post(
+    "/{project_id}/dataset/rename-preview",
+    response_model=ProjectDatasetRenamePreviewResponse,
+)
+async def preview_project_dataset_rename_route(
+    project_id: uuid.UUID,
+    session: AsyncSession = Depends(db_session),
+) -> ProjectDatasetRenamePreviewResponse:
+    project = await session.get(Project, project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
+
+    return await preview_project_dataset_rename(session, project)
+
+
+@router.post(
+    "/{project_id}/dataset/rename-apply",
+    response_model=ProjectDatasetRenameApplyResponse,
+)
+async def apply_project_dataset_rename_route(
+    project_id: uuid.UUID,
+    session: AsyncSession = Depends(db_session),
+) -> ProjectDatasetRenameApplyResponse:
+    project = await session.get(Project, project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
+
+    return await apply_project_dataset_rename(session, project)
+
+
+@router.post(
+    "/{project_id}/images/{image_id}/replace",
+    response_model=ProjectImageRead,
+)
+async def replace_project_image_route(
+    project_id: uuid.UUID,
+    image_id: uuid.UUID,
+    file: UploadFile = File(...),
+    session: AsyncSession = Depends(db_session),
+) -> ProjectImageRead:
+    """Replace one existing project image file while preserving its tag links."""
+    project = await session.get(Project, project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
+
+    image = await session.get(DatasetImage, image_id)
+    if image is None or image.project_id != project.id or image.removed_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project image not found.",
+        )
+
+    await replace_project_image_file(session, project, image, file)
+    tags = await _read_project_image_tags(session, project, image)
+
+    return ProjectImageRead(
+        id=image.id,
+        project_id=image.project_id,
+        relative_path=image.relative_path,
+        filename=image.filename,
+        content_hash=image.content_hash,
+        discovered_at=image.discovered_at,
+        tag_count=len(tags),
+        removed_at=image.removed_at,
+        tags=tags,
+    )
 
 
 @router.get("/{project_id}/images", response_model=list[ProjectImageSummary])

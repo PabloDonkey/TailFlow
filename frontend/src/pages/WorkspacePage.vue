@@ -43,7 +43,7 @@ const showProjectPicker = ref(false)
 const showActionsMenu = ref(false)
 
 type MobileWorkspaceStage = 'project-browser' | 'image-browser' | 'workspace'
-type MobileWorkspaceBottomPanel = 'current-tags' | 'ai-proposed-tags' | 'project-details'
+type MobileWorkspaceBottomPanel = 'current-tags' | 'ai-proposed-tags' | 'project-details' | 'image-info'
 type MobileCurrentTagsViewMode = 'tags-only' | 'filter-only' | 'search-only'
 type MobileAiProposedTagsViewMode = 'essentials' | 'advanced'
 
@@ -66,6 +66,7 @@ const allMobileBottomPanels: Array<{ id: MobileWorkspaceBottomPanel; label: stri
   { id: 'current-tags', label: cardMeta['current-tags'].name },
   { id: 'ai-proposed-tags', label: cardMeta['ai-proposed-tags'].name },
   { id: 'project-details', label: cardMeta['project-details'].name },
+  { id: 'image-info', label: cardMeta['image-info'].name },
 ]
 
 const mobileBottomPanelOptions = computed<Array<{ id: MobileWorkspaceBottomPanel; label: string }>>(() => (
@@ -277,6 +278,47 @@ async function handleMobileDeleteConfirm(): Promise<void> {
   await deleteCurrentImage()
 }
 
+async function handleUploadImagesToCurrentProject(files: File[]): Promise<void> {
+  const projectId = projectStore.selectedProjectId
+  if (!projectId || files.length === 0) {
+    return
+  }
+
+  const uploadResult = await projectStore.uploadImagesToProject(projectId, files)
+  if (!uploadResult) {
+    return
+  }
+
+  await imageStore.fetchImages(projectId)
+
+  const firstUploadedPath = uploadResult.uploaded_files[0]
+  if (firstUploadedPath) {
+    const uploadedImage = imageStore.images.find((image) => image.relative_path === firstUploadedPath)
+    if (uploadedImage) {
+      await imageStore.fetchImage(projectId, uploadedImage.id)
+    }
+  }
+
+  showToast(`Added ${uploadResult.uploaded_files.length} image(s) to dataset`)
+}
+
+async function handleReplaceCurrentImage(file: File): Promise<void> {
+  const projectId = projectStore.selectedProjectId
+  const currentImage = imageStore.currentImage
+  if (!projectId || !currentImage) {
+    return
+  }
+
+  const replaced = await imageStore.replaceImage(projectId, currentImage.id, file)
+  if (!replaced) {
+    return
+  }
+
+  await imageStore.fetchImages(projectId)
+  await imageStore.fetchImage(projectId, currentImage.id)
+  showToast(`Replaced image ${currentImage.filename}`)
+}
+
 function handleMobileAiScanRequest(): void {
   if (activeMobileBottomPanel.value !== 'ai-proposed-tags') {
     return
@@ -352,6 +394,8 @@ const {
   nextImage: goToNextImage,
   jumpToImage: goToImageByIndex,
   deleteCurrentImage,
+  uploadImagesToCurrentProject: handleUploadImagesToCurrentProject,
+  replaceCurrentImage: handleReplaceCurrentImage,
 })
 
 const {
@@ -618,6 +662,8 @@ const imageBrowserMemoKey = computed(() => {
         @toggle-panel-selected-filter="handleMobileAiSelectedToggleRequest"
         @navigate-previous="goToPreviousImage"
         @navigate-next="goToNextImage"
+        @replace-image="handleReplaceCurrentImage"
+        @upload-images="handleUploadImagesToCurrentProject"
       >
         <template #canvas>
           <component

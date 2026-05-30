@@ -94,7 +94,7 @@ function confirmDeleteCurrent(): void {
         <template v-else>
           <div class="min-h-0 flex-1 overflow-hidden">
             <img
-              :src="getProjectImageFileUrl(projectId!, currentImage.id)"
+              :src="getProjectImageFileUrl(projectId!, currentImage.id, currentImage.content_hash ?? currentImage.discovered_at)"
               :alt="currentImage.filename"
               :aria-description="`Current canvas image: ${currentImage.filename}`"
               class="block h-full w-full object-contain"

@@ -12,6 +12,7 @@ const props = defineProps<{
   selectedProjectId: string | null
   openViews: {
     imageBrowser: boolean
+    imageInfo: boolean
     canvas: boolean
     currentTags: boolean
     aiProposedTags: boolean
@@ -30,7 +31,14 @@ const emit = defineEmits<{
   refreshProjects: []
   selectProject: [projectId: string]
   toggleView: [
-    view: 'image-browser' | 'canvas' | 'current-tags' | 'ai-proposed-tags' | 'tags-library' | 'project-details',
+    view:
+      | 'image-browser'
+      | 'image-info'
+      | 'canvas'
+      | 'current-tags'
+      | 'ai-proposed-tags'
+      | 'tags-library'
+      | 'project-details',
   ]
 }>()
 
@@ -60,6 +68,11 @@ const viewsMenu = computed<AppMenubarMenu>(() => ({
       label: 'Image browser',
       value: 'toggle-image-browser',
       selected: props.openViews.imageBrowser,
+    },
+    {
+      label: 'Image info',
+      value: 'toggle-image-info',
+      selected: props.openViews.imageInfo,
     },
     {
       label: 'Image canvas',
@@ -131,6 +144,11 @@ function handleDesktopMenuSelect(payload: { menuValue: string; itemValue: string
 
   if (payload.itemValue === 'toggle-image-browser') {
     emit('toggleView', 'image-browser')
+    return
+  }
+
+  if (payload.itemValue === 'toggle-image-info') {
+    emit('toggleView', 'image-info')
     return
   }
 

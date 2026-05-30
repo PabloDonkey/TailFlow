@@ -96,7 +96,7 @@ function formatTagCount(tagCount: number): string {
             @click="emit('selectImage', img.id)"
           >
             <img
-              :src="getProjectImageFileUrl(props.selectedProjectId!, img.id)"
+              :src="getProjectImageFileUrl(props.selectedProjectId!, img.id, img.content_hash ?? img.discovered_at)"
               :alt="img.filename"
               class="block aspect-square w-full object-cover"
               loading="lazy"
