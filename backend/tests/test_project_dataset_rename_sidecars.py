@@ -98,3 +98,159 @@ async def test_project_dataset_rename_preview_and_apply_updates_sidecars(
     refreshed_by_id = {item["id"]: item for item in refreshed_items}
     assert refreshed_by_id[zebra["id"]]["relative_path"] == "1.png"
     assert refreshed_by_id[lion["id"]]["relative_path"] == "2.png"
+
+
+@pytest.mark.asyncio
+async def test_project_dataset_rename_apply_handles_relative_path_swaps(
+    client: AsyncClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+
+    created = await client.post(
+        "/api/projects",
+        json={
+            "folder_name": "rename-swap-project",
+            "trigger_tag": "my_trigger",
+            "class_tag": "my_class",
+        },
+    )
+    assert created.status_code == 201
+    project_id = created.json()["project"]["id"]
+
+    uploaded = await client.post(
+        f"/api/projects/{project_id}/images",
+        files=[
+            ("files", ("2.png", io.BytesIO(make_png_bytes(10, 10)), "image/png")),
+            ("files", ("1.png", io.BytesIO(make_png_bytes(12, 12)), "image/png")),
+        ],
+    )
+    assert uploaded.status_code == 200
+
+    preview = await client.post(f"/api/projects/{project_id}/dataset/rename-preview")
+    assert preview.status_code == 200
+    preview_payload = preview.json()
+    assert preview_payload["rename_count"] == 0
+
+    preview_items = {
+        item["current_relative_path"]: item for item in preview_payload["items"]
+    }
+    assert preview_items["2.png"]["proposed_relative_path"] == "2.png"
+    assert preview_items["1.png"]["proposed_relative_path"] == "1.png"
+
+    apply_response = await client.post(
+        f"/api/projects/{project_id}/dataset/rename-apply"
+    )
+    assert apply_response.status_code == 200
+    apply_payload = apply_response.json()
+    assert apply_payload["renamed_images"] == 0
+
+    refreshed = await client.get(f"/api/projects/{project_id}/images")
+    assert refreshed.status_code == 200
+    refreshed_paths = {item["relative_path"] for item in refreshed.json()}
+    assert refreshed_paths == {"1.png", "2.png"}
+
+
+@pytest.mark.asyncio
+async def test_project_dataset_rename_preserves_existing_numbers_and_fills_gaps(
+    client: AsyncClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+
+    created = await client.post(
+        "/api/projects",
+        json={
+            "folder_name": "rename-fill-gaps-project",
+            "trigger_tag": "my_trigger",
+            "class_tag": "my_class",
+        },
+    )
+    assert created.status_code == 201
+    project_id = created.json()["project"]["id"]
+
+    uploaded = await client.post(
+        f"/api/projects/{project_id}/images",
+        files=[
+            ("files", ("1.png", io.BytesIO(make_png_bytes(10, 10)), "image/png")),
+            ("files", ("3.png", io.BytesIO(make_png_bytes(12, 12)), "image/png")),
+            (
+                "files",
+                ("wolf.png", io.BytesIO(make_png_bytes(14, 14)), "image/png"),
+            ),
+        ],
+    )
+    assert uploaded.status_code == 200
+
+    preview = await client.post(f"/api/projects/{project_id}/dataset/rename-preview")
+    assert preview.status_code == 200
+    preview_payload = preview.json()
+
+    preview_items = {
+        item["current_relative_path"]: item for item in preview_payload["items"]
+    }
+    assert preview_items["1.png"]["proposed_relative_path"] == "1.png"
+    assert preview_items["3.png"]["proposed_relative_path"] == "3.png"
+    assert preview_items["wolf.png"]["proposed_relative_path"] == "2.png"
+
+    apply_response = await client.post(
+        f"/api/projects/{project_id}/dataset/rename-apply"
+    )
+    assert apply_response.status_code == 200
+    apply_payload = apply_response.json()
+    assert apply_payload["renamed_images"] == 1
+
+    refreshed = await client.get(f"/api/projects/{project_id}/images")
+    assert refreshed.status_code == 200
+    refreshed_paths = {item["relative_path"] for item in refreshed.json()}
+    assert refreshed_paths == {"1.png", "2.png", "3.png"}
+
+
+@pytest.mark.asyncio
+async def test_project_dataset_rename_apply_ignores_stale_missing_tracked_files(
+    client: AsyncClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+
+    created = await client.post(
+        "/api/projects",
+        json={
+            "folder_name": "rename-stale-missing-project",
+            "trigger_tag": "my_trigger",
+            "class_tag": "my_class",
+        },
+    )
+    assert created.status_code == 201
+    project_id = created.json()["project"]["id"]
+
+    uploaded = await client.post(
+        f"/api/projects/{project_id}/images",
+        files=[
+            (
+                "files",
+                ("pablo_door_3.png", io.BytesIO(make_png_bytes(10, 10)), "image/png"),
+            ),
+            ("files", ("lion.png", io.BytesIO(make_png_bytes(12, 12)), "image/png")),
+        ],
+    )
+    assert uploaded.status_code == 200
+
+    dataset_dir = tmp_path / "rename-stale-missing-project" / "dataset"
+    (dataset_dir / "pablo_door_3.png").unlink()
+
+    apply_response = await client.post(
+        f"/api/projects/{project_id}/dataset/rename-apply"
+    )
+    assert apply_response.status_code == 200
+    apply_payload = apply_response.json()
+    assert apply_payload["total_images"] == 1
+
+    refreshed = await client.get(f"/api/projects/{project_id}/images")
+    assert refreshed.status_code == 200
+    refreshed_items = refreshed.json()
+    assert len(refreshed_items) == 1
+    assert refreshed_items[0]["relative_path"] == "1.png"

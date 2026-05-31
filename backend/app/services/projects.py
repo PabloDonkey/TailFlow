@@ -763,6 +763,28 @@ def _temporary_rename_path(dataset_path: Path, suffix: str) -> Path:
     return dataset_path / f".tailflow-renaming-{uuid.uuid4().hex}{suffix}"
 
 
+def _temporary_db_relative_path(proposed_relative_path: str) -> str:
+    suffix = Path(proposed_relative_path).suffix.lower()
+    return f".tailflow-renaming-db-{uuid.uuid4().hex}{suffix}"
+
+
+def _preserved_numeric_index(relative_path: str) -> int | None:
+    path = Path(relative_path)
+    if path.parent != Path("."):
+        return None
+
+    stem = path.stem
+    if not stem.isdigit():
+        return None
+    if stem.startswith("0") and stem != "0":
+        return None
+
+    index = int(stem)
+    if index < 1:
+        return None
+    return index
+
+
 async def _build_dataset_rename_plan(
     session: AsyncSession,
     project: Project,
@@ -778,8 +800,29 @@ async def _build_dataset_rename_plan(
     )
     images = list(result.scalars().all())
 
+    reserved_indexes: set[int] = set()
+    assigned_indexes: dict[uuid.UUID, int] = {}
+    unassigned_images: list[DatasetImage] = []
+
+    for image in images:
+        preserved_index = _preserved_numeric_index(image.relative_path)
+        if preserved_index is not None and preserved_index not in reserved_indexes:
+            reserved_indexes.add(preserved_index)
+            assigned_indexes[image.id] = preserved_index
+            continue
+        unassigned_images.append(image)
+
+    next_index = 1
+    for image in unassigned_images:
+        while next_index in reserved_indexes:
+            next_index += 1
+        assigned_indexes[image.id] = next_index
+        reserved_indexes.add(next_index)
+        next_index += 1
+
     plan_rows: list[_DatasetRenamePlanRow] = []
-    for index, image in enumerate(images, start=1):
+    for image in images:
+        index = assigned_indexes[image.id]
         extension = Path(image.filename).suffix.lower()
         proposed_relative_path = f"{index}{extension}"
 
@@ -820,6 +863,10 @@ async def preview_project_dataset_rename(
             status_code=status.HTTP_409_CONFLICT,
             detail="Project dataset folder is missing.",
         )
+
+    # Reconcile tracked dataset images with filesystem before planning.
+    # This avoids preview/apply mismatches when files were removed externally.
+    await sync_project(session, project)
 
     plan_rows = await _build_dataset_rename_plan(session, project)
     rename_count = sum(
@@ -864,8 +911,17 @@ async def apply_project_dataset_rename(
             detail="Project dataset folder is missing.",
         )
 
+    # Reconcile tracked dataset images with filesystem before planning.
+    # This avoids apply failures when stale tracked rows reference missing files.
+    await sync_project(session, project)
+
     plan_rows = await _build_dataset_rename_plan(session, project)
     temp_paths: dict[uuid.UUID, Path] = {}
+    rows_needing_rename = [
+        row
+        for row in plan_rows
+        if row.current_relative_path != row.proposed_relative_path
+    ]
 
     for row in plan_rows:
         current_path = dataset_path / row.current_relative_path
@@ -916,12 +972,27 @@ async def apply_project_dataset_rename(
             sidecars_updated += 1
 
         stat = target_path.stat()
-        row.image.relative_path = row.proposed_relative_path
-        row.image.filename = target_path.name
         row.image.file_mtime_ns = stat.st_mtime_ns
         row.image.file_size_bytes = stat.st_size
         row.image.removed_at = None
 
+    # Avoid transient unique-key collisions when many relative_path values
+    # are updated in one flush. Move renamed rows to temporary DB-only paths
+    # first, flush, then apply final relative paths.
+    for row in rows_needing_rename:
+        temporary_relative_path = _temporary_db_relative_path(
+            row.proposed_relative_path
+        )
+        row.image.relative_path = temporary_relative_path
+        row.image.filename = Path(temporary_relative_path).name
+
+    if rows_needing_rename:
+        await session.flush()
+
+    for row in plan_rows:
+        target_path = dataset_path / row.proposed_relative_path
+        row.image.relative_path = row.proposed_relative_path
+        row.image.filename = target_path.name
         if row.current_relative_path != row.proposed_relative_path:
             renamed_images += 1
 
