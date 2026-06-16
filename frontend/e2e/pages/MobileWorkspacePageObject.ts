@@ -60,9 +60,14 @@ export class MobileWorkspacePageObject extends BaseWorkspacePageObject {
   }
 
   async deleteCurrentImage(): Promise<void> {
-    const trashButton = this.page.getByRole('button', { name: 'Delete current image' })
+    const canvasActionsButton = this.page.getByRole('button', { name: 'Open canvas image actions menu' })
+    await expect(canvasActionsButton).toBeVisible()
+    await canvasActionsButton.click()
+
+    const trashButton = this.page.getByRole('button', { name: 'Delete current image', exact: true })
     await expect(trashButton).toBeEnabled()
     await trashButton.click()
+
     const dialog = this.page.getByRole('alertdialog')
     await expect(dialog).toBeVisible()
     await dialog.getByRole('button', { name: 'Delete' }).click()
