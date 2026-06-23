@@ -4,10 +4,12 @@ withDefaults(defineProps<{
   closable?: boolean
   draggable?: boolean
   dropTarget?: boolean
+  rounded?: boolean
 }>(), {
   closable: true,
   draggable: true,
   dropTarget: false,
+  rounded: true,
 })
 
 const emit = defineEmits<{
@@ -21,8 +23,11 @@ const emit = defineEmits<{
 
 <template>
   <section
-    class="h-full min-h-0 rounded-[var(--tf-radius-lg)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)]"
-    :class="dropTarget ? 'ring-2 ring-[var(--tf-color-accent)]' : ''"
+    class="h-full min-h-0 border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)]"
+    :class="[
+      rounded ? 'rounded-[var(--tf-radius-lg)]' : 'rounded-none',
+      dropTarget ? 'ring-2 ring-[var(--tf-color-accent)]' : '',
+    ]"
     @dragover="(event) => emit('dragover', event)"
     @drop="(event) => emit('drop', event)"
   >

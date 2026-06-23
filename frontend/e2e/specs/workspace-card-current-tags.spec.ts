@@ -9,7 +9,7 @@ test.describe('Workspace Current Tags card', () => {
     const currentTagsCard = new CurrentTagsCardPageObject(page)
 
     await currentTagsCard.goto()
-    await currentTagsCard.openCardWithImage('Sample Project', 'sample.png')
+    await currentTagsCard.openCardWithImage('Sample Project', 'sample-1.png')
 
     await currentTagsCard.expectTagChipVisible('safe')
     await currentTagsCard.filterCurrentTags('safe')

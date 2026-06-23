@@ -1,6 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { describe, expect, it, vi } from 'vitest'
-import TagAutocompleteInput from '../design-system/TagAutocompleteInput.vue'
+import TagAutocompleteInput from '../design-system/reka/TagAutocompleteInput.vue'
 
 async function flushUi(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 25))

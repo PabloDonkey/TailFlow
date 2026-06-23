@@ -44,7 +44,7 @@ run:
 		echo "Warning: neither 'ss' nor 'lsof' is available; skipping preflight port check for 8000."; \
 	fi; \
 	echo "Applying backend migrations..."; \
-	( cd backend && ./.venv/bin/alembic upgrade head ); \
+	( cd backend && ./.venv/bin/python ./.venv/bin/alembic upgrade head ); \
 	backend_pid=''; \
 	trap 'if [ -n "$$backend_pid" ]; then kill "$$backend_pid"; wait "$$backend_pid" 2>/dev/null || true; fi' EXIT INT TERM; \
 	( cd backend && exec ./.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload ) & \

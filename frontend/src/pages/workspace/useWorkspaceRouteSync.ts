@@ -1,14 +1,17 @@
 import { watch, type Ref } from 'vue'
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
-import type { MobileWorkspaceTab } from '../../components/layout/WorkspaceMobileViewsTabs.vue'
 import type { ToggleCardId } from './side-card-service'
 import type { useImageStore } from '../../stores/images'
 import type { useProjectStore } from '../../stores/projects'
 
+type MobileWorkspaceStage = 'project-browser' | 'image-browser' | 'workspace'
+type MobileWorkspaceBottomPanel = 'current-tags' | 'ai-proposed-tags' | 'project-details' | 'image-info'
+
 type UseWorkspaceRouteSyncOptions = {
   route: RouteLocationNormalizedLoaded
   setViewOpen: (view: ToggleCardId, isOpen: boolean) => void
-  activeMobileTab: Ref<MobileWorkspaceTab>
+  mobileStage: Ref<MobileWorkspaceStage>
+  activeMobileBottomPanel: Ref<MobileWorkspaceBottomPanel>
   projectStore: ReturnType<typeof useProjectStore>
   imageStore: ReturnType<typeof useImageStore>
   selectImage: (imageId: string) => Promise<void>
@@ -18,7 +21,8 @@ export function useWorkspaceRouteSync(options: UseWorkspaceRouteSyncOptions) {
   const {
     route,
     setViewOpen,
-    activeMobileTab,
+    mobileStage,
+    activeMobileBottomPanel,
     projectStore,
     imageStore,
     selectImage,
@@ -33,21 +37,18 @@ export function useWorkspaceRouteSync(options: UseWorkspaceRouteSyncOptions) {
     () => queryValue('panel'),
     (panel) => {
       if (panel === 'tags') {
-        setViewOpen('tags-library', true)
-        activeMobileTab.value = 'tags-library'
+        mobileStage.value = 'workspace'
+        activeMobileBottomPanel.value = 'current-tags'
         return
       }
 
       if (panel === 'projects') {
-        setViewOpen('canvas', false)
-        setViewOpen('project-details', false)
-        activeMobileTab.value = 'project-browser'
+        mobileStage.value = 'project-browser'
         return
       }
 
       if (panel === 'browser') {
-        setViewOpen('image-browser', true)
-        activeMobileTab.value = 'image-browser'
+        mobileStage.value = 'image-browser'
         return
       }
 

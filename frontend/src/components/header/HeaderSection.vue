@@ -9,6 +9,7 @@ defineProps<{
   showActionsMenu: boolean
   openViews: {
     imageBrowser: boolean
+    imageInfo: boolean
     canvas: boolean
     currentTags: boolean
     aiProposedTags: boolean
@@ -18,6 +19,7 @@ defineProps<{
   projects: Project[]
   selectedProjectId: string | null
   loading: boolean
+  workspaceLoading?: boolean
   error: string | null
 }>()
 
@@ -29,7 +31,14 @@ const emit = defineEmits<{
   selectProject: [projectId: string]
   closeActionsMenu: []
   toggleView: [
-    view: 'image-browser' | 'canvas' | 'current-tags' | 'ai-proposed-tags' | 'tags-library' | 'project-details',
+    view:
+      | 'image-browser'
+      | 'image-info'
+      | 'canvas'
+      | 'current-tags'
+      | 'ai-proposed-tags'
+      | 'tags-library'
+      | 'project-details',
   ]
 }>()
 </script>
@@ -41,6 +50,7 @@ const emit = defineEmits<{
     :selected-project-id="selectedProjectId"
     :open-views="openViews"
     :loading="loading"
+    :workspace-loading="workspaceLoading"
     :project-picker-open="showProjectPicker"
     :overflow-open="showActionsMenu"
     @open-project-picker="emit('openProjectPicker')"

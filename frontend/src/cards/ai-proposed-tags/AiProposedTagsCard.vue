@@ -2,9 +2,9 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { classifyProjectImage } from '../../api'
 import type { ProjectTag, TaggingMode } from '../../api'
-import AppNumberField from '../../design-system/AppNumberField.vue'
-import AppSelectField from '../../design-system/AppSelectField.vue'
-import AppSwitchField from '../../design-system/AppSwitchField.vue'
+import AppNumberField from '../../design-system/reka/AppNumberField.vue'
+import AppSelectField from '../../design-system/reka/AppSelectField.vue'
+import AppSwitchField from '../../design-system/reka/AppSwitchField.vue'
 import AppText from '../../components/ui/AppText.vue'
 import { useTagListFilter } from '../../composables/useTagListFilter'
 import TagListFilterInput from '../shared/TagListFilterInput.vue'
@@ -23,11 +23,31 @@ const props = withDefaults(defineProps<{
   imageId: string | null
   mode: TaggingMode
   currentTags: ProjectTag[]
+  scanRequestNonce?: number
+  selectedToggleRequestNonce?: number
   disabled?: boolean
   framed?: boolean
+  showTopBar?: boolean
+  showFilter?: boolean
+  showScanControls?: boolean
+  showAdvancedControls?: boolean
+  showTagsList?: boolean
+  showControlsToggle?: boolean
+  showSelectedToggle?: boolean
+  showInlineScanButton?: boolean
 }>(), {
   disabled: false,
   framed: true,
+  scanRequestNonce: 0,
+  selectedToggleRequestNonce: 0,
+  showTopBar: true,
+  showFilter: true,
+  showScanControls: true,
+  showAdvancedControls: true,
+  showTagsList: true,
+  showControlsToggle: true,
+  showSelectedToggle: true,
+  showInlineScanButton: true,
 })
 
 const emit = defineEmits<{
@@ -108,6 +128,31 @@ const autoScanHelpText = computed(() => {
     return 'Keeps proposals in sync while browsing images.'
   }
   return 'Auto-scan is disabled. Use Scan now to refresh proposals.'
+})
+
+const showExpandedControls = computed(() => {
+  if (!props.showAdvancedControls) {
+    return false
+  }
+
+  if (!props.showControlsToggle) {
+    return true
+  }
+
+  // If top bar is hidden (advanced-only mobile mode), keep controls visible.
+  if (!props.showTopBar) {
+    return true
+  }
+
+  return !controlsCollapsed.value
+})
+
+const listAriaDescribedBy = computed(() => {
+  if (!props.showAdvancedControls) {
+    return undefined
+  }
+
+  return aiControlsId
 })
 
 async function runScan(): Promise<void> {
@@ -213,6 +258,20 @@ watch(autoScan, (enabled) => {
   }
 })
 
+watch(
+  () => props.scanRequestNonce,
+  () => {
+    void runScan()
+  },
+)
+
+watch(
+  () => props.selectedToggleRequestNonce,
+  () => {
+    toggleSelectedMode()
+  },
+)
+
 watch(controlsCollapsed, (collapsed) => {
   if (typeof window === 'undefined') {
     return
@@ -234,173 +293,189 @@ onBeforeUnmount(() => {
     role="region"
     :aria-labelledby="aiHeadingId"
   >
-    <div class="mt-3 flex flex-wrap items-center gap-2 text-xs text-[var(--tf-color-text-muted)]">
-      <span>Threshold: {{ Math.round(confidenceThreshold * 100) }}%</span>
-      <span>•</span>
-      <button
-        type="button"
-        class="cursor-pointer rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-3 py-2 text-xs font-medium text-[var(--tf-color-text-default)] transition hover:bg-[var(--tf-color-surface-alt)]"
-        :class="proposedFilterMode === 'selected' ? 'bg-[var(--tf-color-surface-alt)]' : ''"
-        aria-label="Toggle selected proposed tags filter"
-        @click="toggleSelectedMode"
-      >
-        Selected: {{ selectedProposedTags.length }}/{{ visibleProposedTags.length }}
-      </button>
-
-      <button
-        type="button"
-        class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-3 py-2 text-xs font-medium text-[var(--tf-color-text-default)] transition hover:bg-[var(--tf-color-surface-alt)]"
-        :aria-controls="aiControlsId"
-        :aria-expanded="!controlsCollapsed"
-        @click="toggleControls"
-      >
-        {{ controlsCollapsed ? 'Show controls' : 'Hide controls' }}
-      </button>
-
-      <button
-        type="button"
-        class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-3 py-2 text-xs font-medium text-[var(--tf-color-text-default)] transition hover:bg-[var(--tf-color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-60"
-        :disabled="!imageId || disabled || isScanning"
-        @click="runScan"
-      >
-        {{ isScanning ? 'Scanning…' : 'Scan now' }}
-      </button>
-
-      <template v-if="!modelAvailable">
-        <span>•</span>
-        <span>Download progress: {{ downloadProgressPercent }}%</span>
-      </template>
-    </div>
-
     <div
-      v-show="!controlsCollapsed"
-      :id="aiControlsId"
-      class="mt-3 grid gap-3 md:grid-cols-2"
-      role="group"
-      aria-label="AI proposed tags controls"
+      class="flex min-h-0 flex-1 flex-col"
+      :class="props.framed ? 'gap-3 pt-3' : 'gap-2'"
     >
-      <label class="flex flex-col gap-1">
-        <span class="text-xs font-medium uppercase tracking-[0.08em] text-[var(--tf-color-text-muted)]">Model</span>
-        <AppSelectField
-          :model-value="selectedModel"
-          :options="modelOptions"
-          aria-label="Model"
-          placeholder="Choose model"
-          :disabled="disabled"
-          @update:model-value="(value) => selectedModel = value"
-        />
-      </label>
+      <div
+        v-if="props.showTopBar"
+        class="flex flex-wrap items-center gap-2 text-xs text-[var(--tf-color-text-muted)]"
+      >
+        <button
+          v-if="props.showSelectedToggle"
+          type="button"
+          class="cursor-pointer rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-3 py-2 text-xs font-medium text-[var(--tf-color-text-default)] transition hover:bg-[var(--tf-color-surface-alt)]"
+          :class="proposedFilterMode === 'selected' ? 'bg-[var(--tf-color-surface-alt)]' : ''"
+          aria-label="Toggle selected proposed tags filter"
+          @click="toggleSelectedMode"
+        >
+          Selected: {{ selectedProposedTags.length }}/{{ visibleProposedTags.length }}
+        </button>
 
-      <label class="flex flex-col gap-1">
-        <span class="text-xs font-medium uppercase tracking-[0.08em] text-[var(--tf-color-text-muted)]">Confidence</span>
-        <AppNumberField
-          :model-value="confidenceThreshold"
-          aria-label="Confidence threshold"
-          :min="0"
-          :max="1"
-          :step="0.05"
-          :disabled="disabled"
-          @update:model-value="(value) => confidenceThreshold = value"
-        />
-      </label>
+        <span v-if="props.showAdvancedControls">
+          Threshold: {{ Math.round(confidenceThreshold * 100) }}%
+        </span>
 
-      <div class="md:col-span-2 flex items-center justify-between rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface-alt)] px-3 py-2">
-        <div>
-          <p class="text-sm font-medium text-[var(--tf-color-text-default)]">
-            Auto-scan on image change
-          </p>
-          <p class="text-xs text-[var(--tf-color-text-muted)]">
-            {{ autoScanHelpText }}
-          </p>
+        <button
+          v-if="props.showScanControls && props.showInlineScanButton"
+          type="button"
+          class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-3 py-2 text-xs font-medium text-[var(--tf-color-text-default)] transition hover:bg-[var(--tf-color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-60"
+          :disabled="!imageId || disabled || isScanning"
+          @click="runScan"
+        >
+          {{ isScanning ? 'Scanning…' : 'Scan now' }}
+        </button>
+
+        <button
+          v-if="props.showAdvancedControls && props.showControlsToggle"
+          type="button"
+          class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-3 py-2 text-xs font-medium text-[var(--tf-color-text-default)] transition hover:bg-[var(--tf-color-surface-alt)]"
+          :aria-controls="aiControlsId"
+          :aria-expanded="!controlsCollapsed"
+          @click="toggleControls"
+        >
+          {{ controlsCollapsed ? 'Show controls' : 'Hide controls' }}
+        </button>
+
+        <template v-if="props.showScanControls && !modelAvailable">
+          <span>Download progress: {{ downloadProgressPercent }}%</span>
+        </template>
+      </div>
+
+      <div
+        v-show="showExpandedControls"
+        :id="aiControlsId"
+        class="grid gap-3 md:grid-cols-2"
+        role="group"
+        aria-label="AI proposed tags controls"
+      >
+        <label class="flex flex-col gap-1">
+          <span class="text-xs font-medium uppercase tracking-[0.08em] text-[var(--tf-color-text-muted)]">Model</span>
+          <AppSelectField
+            :model-value="selectedModel"
+            :options="modelOptions"
+            aria-label="Model"
+            placeholder="Choose model"
+            :disabled="disabled"
+            @update:model-value="(value) => selectedModel = value"
+          />
+        </label>
+
+        <label class="flex flex-col gap-1">
+          <span class="text-xs font-medium uppercase tracking-[0.08em] text-[var(--tf-color-text-muted)]">Confidence</span>
+          <AppNumberField
+            :model-value="confidenceThreshold"
+            aria-label="Confidence threshold"
+            :min="0"
+            :max="1"
+            :step="0.05"
+            :disabled="disabled"
+            @update:model-value="(value) => confidenceThreshold = value"
+          />
+        </label>
+
+        <div class="md:col-span-2 flex items-center justify-between rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface-alt)] px-3 py-2">
+          <div>
+            <p class="text-sm font-medium text-[var(--tf-color-text-default)]">
+              Auto-scan on image change
+            </p>
+            <p class="text-xs text-[var(--tf-color-text-muted)]">
+              {{ autoScanHelpText }}
+            </p>
+          </div>
+
+          <AppSwitchField
+            :model-value="autoScan"
+            aria-label="Toggle auto scan"
+            :disabled="disabled"
+            @update:model-value="(value) => autoScan = value"
+          />
+        </div>
+      </div>
+
+      <div
+        v-if="!modelAvailable"
+        class="rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface-alt)] px-3 py-2 text-xs text-[var(--tf-color-text-default)]"
+      >
+        <p class="font-medium">
+          Selected model is not installed.
+        </p>
+        <p
+          v-if="downloadMessage"
+          class="mt-1"
+        >
+          {{ downloadMessage }}
+        </p>
+        <p
+          v-if="downloadProposalUrl"
+          class="mt-1 break-all"
+        >
+          Download source: <a
+            :href="downloadProposalUrl"
+            target="_blank"
+            rel="noreferrer"
+          >{{ downloadProposalUrl }}</a>
+        </p>
+      </div>
+
+      <div
+        v-if="props.showTagsList"
+        :id="aiListId"
+        class="min-h-0 flex flex-1 flex-col"
+        role="group"
+        aria-label="AI proposed tags list"
+        :aria-describedby="listAriaDescribedBy"
+      >
+        <div
+          v-if="props.showFilter"
+          class="mb-2 grid grid-cols-1"
+        >
+          <TagListFilterInput
+            v-model="proposedFilterQuery"
+            placeholder="Filter proposed tags"
+            aria-label="Filter proposed tags"
+          />
         </div>
 
-        <AppSwitchField
-          :model-value="autoScan"
-          aria-label="Toggle auto scan"
+        <AppText
+          v-if="scanError"
+          tone="muted"
+          class="text-[var(--tf-color-danger)]"
+        >
+          {{ scanError }}
+        </AppText>
+
+        <AppText
+          v-else-if="!imageId"
+          tone="muted"
+        >
+          Select an image to generate proposals.
+        </AppText>
+
+        <AppText
+          v-else-if="isScanning"
+          tone="muted"
+        >
+          Running AI scan…
+        </AppText>
+
+        <AppText
+          v-else-if="!filteredProposedTags.length"
+          tone="muted"
+        >
+          {{ visibleProposedTags.length ? 'No proposals match the current filter.' : 'No proposals above the selected threshold.' }}
+        </AppText>
+
+        <TagsTextareaField
+          v-else
+          class="min-h-0 flex-1"
+          :items="displayProposedTags"
+          placeholder="AI proposed tags..."
           :disabled="disabled"
-          @update:model-value="(value) => autoScan = value"
+          click-to-action
+          @action="toggleProposedTag"
         />
       </div>
-    </div>
-
-    <div
-      v-if="!modelAvailable"
-      class="mt-2 rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface-alt)] px-3 py-2 text-xs text-[var(--tf-color-text-default)]"
-    >
-      <p class="font-medium">
-        Selected model is not installed.
-      </p>
-      <p
-        v-if="downloadMessage"
-        class="mt-1"
-      >
-        {{ downloadMessage }}
-      </p>
-      <p
-        v-if="downloadProposalUrl"
-        class="mt-1 break-all"
-      >
-        Download source: <a
-          :href="downloadProposalUrl"
-          target="_blank"
-          rel="noreferrer"
-        >{{ downloadProposalUrl }}</a>
-      </p>
-    </div>
-
-    <div
-      :id="aiListId"
-      class="mt-3 min-h-0 flex flex-1 flex-col"
-      role="group"
-      aria-label="AI proposed tags list"
-      :aria-describedby="aiControlsId"
-    >
-      <div class="mb-2 grid grid-cols-1">
-        <TagListFilterInput
-          v-model="proposedFilterQuery"
-          placeholder="Filter proposed tags"
-          aria-label="Filter proposed tags"
-        />
-      </div>
-
-      <AppText
-        v-if="scanError"
-        tone="muted"
-        class="text-[var(--tf-color-danger)]"
-      >
-        {{ scanError }}
-      </AppText>
-
-      <AppText
-        v-else-if="!imageId"
-        tone="muted"
-      >
-        Select an image to generate proposals.
-      </AppText>
-
-      <AppText
-        v-else-if="isScanning"
-        tone="muted"
-      >
-        Running AI scan…
-      </AppText>
-
-      <AppText
-        v-else-if="!filteredProposedTags.length"
-        tone="muted"
-      >
-        {{ visibleProposedTags.length ? 'No proposals match the current filter.' : 'No proposals above the selected threshold.' }}
-      </AppText>
-
-      <TagsTextareaField
-        v-else
-        class="min-h-0 flex-1"
-        :items="displayProposedTags"
-        placeholder="AI proposed tags..."
-        :disabled="disabled"
-        click-to-action
-        @action="toggleProposedTag"
-      />
     </div>
   </section>
 </template>

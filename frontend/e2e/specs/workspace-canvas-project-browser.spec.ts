@@ -3,7 +3,7 @@ import { installApiMocks } from '../fixtures/mockApi'
 import { WorkspaceCanvasProjectBrowserPageObject } from '../pages/WorkspaceCanvasProjectBrowserPageObject'
 
 test.describe('Workspace canvas and project browser transitions', () => {
-  test('selecting a project in Project Browser hides Project Browser and shows Canvas', async ({ page }) => {
+  test('selecting a project in Project Browser hides Project Browser and shows Canvas @desktop', async ({ page }) => {
     await installApiMocks(page)
     const workspace = new WorkspaceCanvasProjectBrowserPageObject(page)
 
@@ -14,7 +14,7 @@ test.describe('Workspace canvas and project browser transitions', () => {
     await workspace.expectProjectBrowserHidden()
   })
 
-  test('closing Canvas shows Project Browser and hides all other cards', async ({ page }) => {
+  test('closing Canvas shows Project Browser and hides all other cards @desktop', async ({ page }) => {
     await installApiMocks(page)
     const workspace = new WorkspaceCanvasProjectBrowserPageObject(page)
 

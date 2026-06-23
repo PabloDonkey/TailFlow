@@ -77,6 +77,20 @@ function createTestImageStore(currentImageId = 'a'): TestImageStore {
 
   return {
     get images() {
+      if (storeState.currentImage?.id === 'ghost') {
+        return [
+          ...storeState.images,
+          {
+            id: 'ghost',
+            filename: 'ghost.png',
+            relative_path: 'ghost.png',
+            project_id: '11111111-1111-1111-1111-111111111111',
+            discovered_at: new Date().toISOString(),
+            tag_count: 0,
+            content_hash: null,
+          },
+        ]
+      }
       return storeState.images
     },
     set images(value: TestImageSummary[]) {

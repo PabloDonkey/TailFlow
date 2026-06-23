@@ -10,6 +10,8 @@ type OnboardingStatus = {
 
 type MockOptions = {
   onboardingStatus?: OnboardingStatus
+  /** Number of default images to seed for Sample Project (1–3, default 3). */
+  imageCount?: number
 }
 
 type ProjectRecord = {
@@ -72,6 +74,7 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
   let nextProjectCounter = 1
   let nextImageCounter = 1
   let nextTagCounter = 1
+  const imageCount = options.imageCount ?? 3
 
   const projects: ProjectRecord[] = [
     {
@@ -95,8 +98,8 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
         {
           id: defaultImageId,
           project_id: defaultProjectId,
-          relative_path: 'images/sample.png',
-          filename: 'sample.png',
+          relative_path: 'images/sample-1.png',
+          filename: 'sample-1.png',
           discovered_at: isoNow,
           tag_count: 3,
         },
@@ -126,8 +129,8 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
       {
         id: defaultImageId,
         project_id: defaultProjectId,
-        relative_path: 'images/sample.png',
-        filename: 'sample.png',
+        relative_path: 'images/sample-1.png',
+        filename: 'sample-1.png',
         discovered_at: isoNow,
         removed_at: null,
         tag_count: 3,
@@ -236,6 +239,14 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
       },
     ],
   ])
+
+  if (imageCount < 3) {
+    const allImages = imagesByProject.get(defaultProjectId) ?? []
+    imagesByProject.set(defaultProjectId, allImages.slice(0, imageCount))
+    for (const img of allImages.slice(imageCount)) {
+      imageDetails.delete(`${defaultProjectId}:${img.id}`)
+    }
+  }
 
   function upsertProtectedTag(detail: ImageReadRecord, position: number, name: string): void {
     const existing = detail.tags.find((tag) => tag.position === position && tag.is_protected)
@@ -500,7 +511,22 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
       return
     }
 
-    const detail = imageDetails.get(`${routeInfo.projectId}:${routeInfo.imageId}`)
+    const detailKey = `${routeInfo.projectId}:${routeInfo.imageId}`
+
+    if (route.request().method() === 'DELETE') {
+      const projectImages = imagesByProject.get(routeInfo.projectId)
+      if (projectImages) {
+        imagesByProject.set(
+          routeInfo.projectId,
+          projectImages.filter((image) => image.id !== routeInfo.imageId),
+        )
+      }
+      imageDetails.delete(detailKey)
+      await route.fulfill({ status: 204 })
+      return
+    }
+
+    const detail = imageDetails.get(detailKey)
     if (!detail) {
       await route.fulfill({
         status: 404,

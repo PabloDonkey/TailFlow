@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import AppTagsInputInput from '../../design-system/AppTagsInputInput.vue'
-import AppTagsInputItem from '../../design-system/AppTagsInputItem.vue'
-import AppTagsInputItemText from '../../design-system/AppTagsInputItemText.vue'
-import AppTagsInputRoot from '../../design-system/AppTagsInputRoot.vue'
+import AppTagsInputInput from '../../design-system/reka/AppTagsInputInput.vue'
+import AppTagsInputItem from '../../design-system/reka/AppTagsInputItem.vue'
+import AppTagsInputItemText from '../../design-system/reka/AppTagsInputItemText.vue'
+import AppTagsInputRoot from '../../design-system/reka/AppTagsInputRoot.vue'
 import { computed } from 'vue'
 
 interface TagsTextareaFieldItem {

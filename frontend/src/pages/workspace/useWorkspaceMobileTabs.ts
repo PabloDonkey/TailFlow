@@ -36,6 +36,9 @@ export function useWorkspaceMobileTabs(params: UseWorkspaceMobileTabsParams) {
     if (isCardVisible('image-browser')) {
       tabs.push({ id: 'image-browser', label: cardTitle('image-browser') })
     }
+    if (isCardVisible('image-info')) {
+      tabs.push({ id: 'image-info', label: cardTitle('image-info') })
+    }
     if (isCardVisible('canvas')) {
       tabs.push({ id: 'canvas', label: cardTitle('canvas') })
     }
@@ -59,6 +62,7 @@ export function useWorkspaceMobileTabs(params: UseWorkspaceMobileTabsParams) {
   const activeMobileSideViewId = computed<SideViewId | null>(() => {
     if (
       activeMobileTab.value === 'image-browser'
+      || activeMobileTab.value === 'image-info'
       || activeMobileTab.value === 'current-tags'
       || activeMobileTab.value === 'ai-proposed-tags'
       || activeMobileTab.value === 'tags-library'

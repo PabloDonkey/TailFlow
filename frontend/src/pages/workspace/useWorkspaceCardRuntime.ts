@@ -28,6 +28,8 @@ type UseWorkspaceCardRuntimeOptions = {
   nextImage: () => Promise<void>
   jumpToImage: (index: number) => Promise<void>
   deleteCurrentImage: () => Promise<void>
+  uploadImagesToCurrentProject: (files: File[]) => Promise<void>
+  replaceCurrentImage: (file: File) => Promise<void>
 }
 
 export function useWorkspaceCardRuntime(options: UseWorkspaceCardRuntimeOptions) {
@@ -49,6 +51,8 @@ export function useWorkspaceCardRuntime(options: UseWorkspaceCardRuntimeOptions)
     nextImage,
     jumpToImage,
     deleteCurrentImage,
+    uploadImagesToCurrentProject,
+    replaceCurrentImage,
   } = options
 
   function workspaceCardState(framed: boolean) {
@@ -61,7 +65,7 @@ export function useWorkspaceCardRuntime(options: UseWorkspaceCardRuntimeOptions)
       currentImage: imageStore.currentImage,
       orderedImages: orderedImages.value,
       currentImageIndex: currentImageIndex.value,
-      loading: projectStore.loading || imageStore.imageLoading,
+      loading: projectStore.loading || projectStore.uploading || imageStore.imageLoading,
       error: projectStore.error || imageStore.error,
       projects: projectStore.projects,
     }
@@ -95,6 +99,12 @@ export function useWorkspaceCardRuntime(options: UseWorkspaceCardRuntimeOptions)
       },
       deleteCurrentImage: () => {
         void deleteCurrentImage()
+      },
+      uploadImagesToCurrentProject: (files: File[]) => {
+        void uploadImagesToCurrentProject(files)
+      },
+      replaceCurrentImage: (file: File) => {
+        void replaceCurrentImage(file)
       },
     }
   }

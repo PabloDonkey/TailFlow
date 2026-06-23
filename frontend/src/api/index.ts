@@ -120,6 +120,28 @@ export const ProjectImageUploadResponseSchema = z.object({
   restored_records: z.number().int(),
 })
 
+export const ProjectDatasetRenamePlanItemSchema = z.object({
+  image_id: z.string().uuid(),
+  current_relative_path: z.string(),
+  proposed_relative_path: z.string(),
+  sidecar_content: z.string(),
+})
+
+export const ProjectDatasetRenamePreviewResponseSchema = z.object({
+  project_id: z.string().uuid(),
+  total_images: z.number().int(),
+  rename_count: z.number().int(),
+  sidecar_update_count: z.number().int(),
+  items: z.array(ProjectDatasetRenamePlanItemSchema),
+})
+
+export const ProjectDatasetRenameApplyResponseSchema = z.object({
+  project_id: z.string().uuid(),
+  total_images: z.number().int(),
+  renamed_images: z.number().int(),
+  sidecars_updated: z.number().int(),
+})
+
 export const ProjectOnboardingStatusSchema = z.object({
   configured: z.boolean(),
   projects_root_path: z.string().nullable(),
@@ -144,6 +166,9 @@ export type ProjectSyncResponse = z.infer<typeof ProjectSyncResponseSchema>
 export type ProjectCreatePayload = z.infer<typeof ProjectCreatePayloadSchema>
 export type ProjectCreateResponse = z.infer<typeof ProjectCreateResponseSchema>
 export type ProjectImageUploadResponse = z.infer<typeof ProjectImageUploadResponseSchema>
+export type ProjectDatasetRenamePlanItem = z.infer<typeof ProjectDatasetRenamePlanItemSchema>
+export type ProjectDatasetRenamePreviewResponse = z.infer<typeof ProjectDatasetRenamePreviewResponseSchema>
+export type ProjectDatasetRenameApplyResponse = z.infer<typeof ProjectDatasetRenameApplyResponseSchema>
 export type ProjectTag = z.infer<typeof ProjectTagSchema>
 export type ProjectImageSummary = z.infer<typeof ProjectImageSummarySchema>
 export type ProjectImageRead = z.infer<typeof ProjectImageReadSchema>
@@ -247,6 +272,18 @@ export async function uploadProjectImages(
   })
 }
 
+export async function previewProjectDatasetRename(projectId: string): Promise<ProjectDatasetRenamePreviewResponse> {
+  return fetchJSON(ProjectDatasetRenamePreviewResponseSchema, `${BASE}/projects/${projectId}/dataset/rename-preview`, {
+    method: 'POST',
+  })
+}
+
+export async function applyProjectDatasetRename(projectId: string): Promise<ProjectDatasetRenameApplyResponse> {
+  return fetchJSON(ProjectDatasetRenameApplyResponseSchema, `${BASE}/projects/${projectId}/dataset/rename-apply`, {
+    method: 'POST',
+  })
+}
+
 export async function updateProject(
   projectId: string,
   payload: ProjectUpdatePayload,
@@ -272,8 +309,31 @@ export async function deleteProjectImage(projectId: string, imageId: string): Pr
   })
 }
 
-export function getProjectImageFileUrl(projectId: string, imageId: string): string {
-  return `${BASE}/projects/${projectId}/images/${imageId}/file`
+export async function replaceProjectImage(
+  projectId: string,
+  imageId: string,
+  file: File,
+): Promise<ProjectImageRead> {
+  const form = new FormData()
+  form.append('file', file)
+
+  return fetchJSON(ProjectImageReadSchema, `${BASE}/projects/${projectId}/images/${imageId}/replace`, {
+    method: 'POST',
+    body: form,
+  })
+}
+
+export function getProjectImageFileUrl(
+  projectId: string,
+  imageId: string,
+  cacheBuster?: string | number | null,
+): string {
+  const url = `${BASE}/projects/${projectId}/images/${imageId}/file`
+  if (cacheBuster === undefined || cacheBuster === null || cacheBuster === '') {
+    return url
+  }
+
+  return `${url}?v=${encodeURIComponent(String(cacheBuster))}`
 }
 
 export async function updateProjectImageTags(

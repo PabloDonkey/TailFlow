@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue'
-import type { Project, TaggingMode } from '../../../api'
+import {
+  applyProjectDatasetRename,
+  previewProjectDatasetRename,
+  type Project,
+  type ProjectDatasetRenamePreviewResponse,
+  type TaggingMode,
+} from '../../../api'
+import { getActivePinia } from 'pinia'
+import { useImageStore } from '../../../stores/images'
 import { useProjectStore } from '../../../stores/projects'
 
 const props = defineProps<{
@@ -9,12 +17,21 @@ const props = defineProps<{
 
 const projectStore = useProjectStore()
 
+function activeImageStore() {
+  return getActivePinia() ? useImageStore() : null
+}
+
 const uploadFormError = ref<string | null>(null)
 const selectedUploadFiles = ref<File[]>([])
 const editTriggerTag = ref('')
 const editClassTag = ref('')
 const editTaggingMode = ref<TaggingMode>('e621')
 const editFormError = ref<string | null>(null)
+const renamePreview = ref<ProjectDatasetRenamePreviewResponse | null>(null)
+const renameStatus = ref<string | null>(null)
+const renameError = ref<string | null>(null)
+const renamePreviewLoading = ref(false)
+const renameApplyLoading = ref(false)
 
 watch(
   () => props.selectedProject,
@@ -71,6 +88,9 @@ function startEditingSelectedProject() {
   editTriggerTag.value = props.selectedProject.trigger_tag
   editClassTag.value = props.selectedProject.class_tag
   editTaggingMode.value = props.selectedProject.tagging_mode
+  renamePreview.value = null
+  renameStatus.value = null
+  renameError.value = null
 }
 
 async function saveProjectMetadata() {
@@ -94,6 +114,63 @@ async function saveProjectMetadata() {
   })
   if (!updated && projectStore.error) {
     editFormError.value = projectStore.error
+  }
+}
+
+async function previewDatasetRenamePlan() {
+  renameError.value = null
+  renameStatus.value = null
+  if (!props.selectedProject) {
+    renameError.value = 'Select a project first.'
+    return
+  }
+
+  renamePreviewLoading.value = true
+  try {
+    renamePreview.value = await previewProjectDatasetRename(props.selectedProject.id)
+  } catch (error) {
+    renameError.value = String(error)
+  } finally {
+    renamePreviewLoading.value = false
+  }
+}
+
+async function applyDatasetRenamePlan() {
+  renameError.value = null
+  renameStatus.value = null
+  if (!props.selectedProject) {
+    renameError.value = 'Select a project first.'
+    return
+  }
+
+  if (!renamePreview.value) {
+    renameError.value = 'Run dry-run preview first.'
+    return
+  }
+
+  renameApplyLoading.value = true
+  try {
+    const result = await applyProjectDatasetRename(props.selectedProject.id)
+    renameStatus.value = `Applied: ${result.renamed_images} image(s) renamed, ${result.sidecars_updated} sidecar file(s) updated.`
+    renamePreview.value = await previewProjectDatasetRename(props.selectedProject.id)
+
+    await projectStore.fetchProjects()
+    if (projectStore.selectedProjectId) {
+      const imageStore = activeImageStore()
+      if (!imageStore) {
+        return
+      }
+
+      await imageStore.fetchImages(projectStore.selectedProjectId)
+      const currentImageId = imageStore.currentImage?.id
+      if (currentImageId) {
+        await imageStore.fetchImage(projectStore.selectedProjectId, currentImageId)
+      }
+    }
+  } catch (error) {
+    renameError.value = String(error)
+  } finally {
+    renameApplyLoading.value = false
   }
 }
 </script>
@@ -230,6 +307,73 @@ async function saveProjectMetadata() {
         {{ projectStore.lastUpload.restored_records }} restored.
       </p>
     </div>
+
+    <div
+      class="upload-box"
+      :class="{ disabled: selectedProject.missing_at !== null }"
+    >
+      <h3>Rename Dataset + Update Sidecars</h3>
+      <p class="field-help">
+        Dry-run previews stable numeric names (1, 2, 3...) preserving each file extension, then apply renames in-place and write matching .txt sidecars.
+      </p>
+
+      <div class="actions-row">
+        <button
+          class="btn btn-secondary"
+          :disabled="renamePreviewLoading || renameApplyLoading || selectedProject.missing_at !== null"
+          @click="previewDatasetRenamePlan"
+        >
+          {{ renamePreviewLoading ? 'Previewing…' : 'Dry-run Preview' }}
+        </button>
+
+        <button
+          class="btn btn-primary"
+          :disabled="renameApplyLoading || renamePreviewLoading || selectedProject.missing_at !== null || !renamePreview"
+          @click="applyDatasetRenamePlan"
+        >
+          {{ renameApplyLoading ? 'Applying…' : 'Apply Rename + Sidecars' }}
+        </button>
+      </div>
+
+      <p
+        v-if="selectedProject.missing_at"
+        class="error"
+      >
+        Rename disabled because this project's folder is missing.
+      </p>
+
+      <p
+        v-else-if="renameError"
+        class="error"
+      >
+        {{ renameError }}
+      </p>
+
+      <p
+        v-if="renameStatus"
+        class="status success"
+      >
+        {{ renameStatus }}
+      </p>
+
+      <div
+        v-if="renamePreview"
+        class="rename-preview"
+      >
+        <p class="status">
+          Preview: {{ renamePreview.total_images }} image(s), {{ renamePreview.rename_count }} rename(s), {{ renamePreview.sidecar_update_count }} sidecar update(s).
+        </p>
+
+        <ul class="preview-list">
+          <li
+            v-for="item in renamePreview.items"
+            :key="item.image_id"
+          >
+            <strong>{{ item.current_relative_path }}</strong> → {{ item.proposed_relative_path }}
+          </li>
+        </ul>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -303,6 +447,25 @@ h2 {
 
 .upload-box.disabled {
   opacity: 0.85;
+}
+
+.actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.rename-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.preview-list {
+  margin: 0;
+  padding-left: 1rem;
+  max-height: 12rem;
+  overflow: auto;
 }
 
 dl {

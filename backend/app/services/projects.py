@@ -2,6 +2,7 @@ import hashlib
 import logging
 import shutil
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -18,6 +19,9 @@ from app.models.project import Project
 from app.models.tag import Tag
 from app.schemas.project import (
     ProjectCreate,
+    ProjectDatasetRenameApplyResponse,
+    ProjectDatasetRenamePlanItem,
+    ProjectDatasetRenamePreviewResponse,
     ProjectDiscoverResponse,
     ProjectImageUploadResponse,
     ProjectSyncResponse,
@@ -28,6 +32,15 @@ from app.services.tagging import get_or_create_tag
 ALLOWED_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".gif", ".webp"}
 ALLOWED_CONTENT_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class _DatasetRenamePlanRow:
+    image: DatasetImage
+    current_relative_path: str
+    proposed_relative_path: str
+    sidecar_content: str
+    sidecar_needs_update: bool
 
 
 def _resolve_available_path(path: Path) -> Path:
@@ -428,6 +441,58 @@ async def upload_images_to_project(
     )
 
 
+async def replace_project_image_file(
+    session: AsyncSession,
+    project: Project,
+    image: DatasetImage,
+    file: UploadFile,
+) -> None:
+    dataset_path = Path(project.dataset_path)
+    if not dataset_path.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Project dataset folder is missing.",
+        )
+
+    if file.content_type not in ALLOWED_CONTENT_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"Unsupported file type: {file.content_type}",
+        )
+
+    source_name = file.filename or image.filename
+    source_suffix = Path(source_name).suffix.lower()
+    if source_suffix not in ALLOWED_IMAGE_SUFFIXES:
+        raise HTTPException(
+            status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
+            detail=f"Unsupported file extension: {source_suffix or '(none)'}",
+        )
+
+    max_bytes = settings.max_upload_size_mb * 1024 * 1024
+    contents = await file.read()
+    if len(contents) > max_bytes:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=(
+                f"File exceeds maximum size of {settings.max_upload_size_mb} MB."
+            ),
+        )
+
+    destination = dataset_path / image.relative_path
+    destination.parent.mkdir(parents=True, exist_ok=True)
+
+    async with aiofiles.open(destination, "wb") as output:
+        await output.write(contents)
+
+    stat = destination.stat()
+    image.content_hash = hashlib.sha256(contents).hexdigest()
+    image.file_mtime_ns = stat.st_mtime_ns
+    image.file_size_bytes = stat.st_size
+    image.removed_at = None
+
+    await session.commit()
+
+
 async def delete_project_image(
     session: AsyncSession,
     project: Project,
@@ -683,4 +748,260 @@ async def sync_project(session: AsyncSession, project: Project) -> ProjectSyncRe
         restored_images=restored_images,
         missing=False,
         synced_at=now,
+    )
+
+
+def _normalize_sidecar_content(value: str) -> str:
+    return value.strip()
+
+
+def _build_sidecar_content(tag_names: list[str]) -> str:
+    return ", ".join(tag_names)
+
+
+def _temporary_rename_path(dataset_path: Path, suffix: str) -> Path:
+    return dataset_path / f".tailflow-renaming-{uuid.uuid4().hex}{suffix}"
+
+
+def _temporary_db_relative_path(proposed_relative_path: str) -> str:
+    suffix = Path(proposed_relative_path).suffix.lower()
+    return f".tailflow-renaming-db-{uuid.uuid4().hex}{suffix}"
+
+
+def _preserved_numeric_index(relative_path: str) -> int | None:
+    path = Path(relative_path)
+    if path.parent != Path("."):
+        return None
+
+    stem = path.stem
+    if not stem.isdigit():
+        return None
+    if stem.startswith("0") and stem != "0":
+        return None
+
+    index = int(stem)
+    if index < 1:
+        return None
+    return index
+
+
+async def _build_dataset_rename_plan(
+    session: AsyncSession,
+    project: Project,
+) -> list[_DatasetRenamePlanRow]:
+    dataset_path = Path(project.dataset_path)
+    result = await session.execute(
+        select(DatasetImage)
+        .where(
+            DatasetImage.project_id == project.id,
+            DatasetImage.removed_at.is_(None),
+        )
+        .order_by(DatasetImage.discovered_at.asc(), DatasetImage.id.asc())
+    )
+    images = list(result.scalars().all())
+
+    reserved_indexes: set[int] = set()
+    assigned_indexes: dict[uuid.UUID, int] = {}
+    unassigned_images: list[DatasetImage] = []
+
+    for image in images:
+        preserved_index = _preserved_numeric_index(image.relative_path)
+        if preserved_index is not None and preserved_index not in reserved_indexes:
+            reserved_indexes.add(preserved_index)
+            assigned_indexes[image.id] = preserved_index
+            continue
+        unassigned_images.append(image)
+
+    next_index = 1
+    for image in unassigned_images:
+        while next_index in reserved_indexes:
+            next_index += 1
+        assigned_indexes[image.id] = next_index
+        reserved_indexes.add(next_index)
+        next_index += 1
+
+    plan_rows: list[_DatasetRenamePlanRow] = []
+    for image in images:
+        index = assigned_indexes[image.id]
+        extension = Path(image.filename).suffix.lower()
+        proposed_relative_path = f"{index}{extension}"
+
+        links = await _load_image_tag_links(session, project.id, image.id)
+        tag_names = [link.tag.name for link in links]
+        sidecar_content = _build_sidecar_content(tag_names)
+
+        sidecar_path = _sidecar_path_for_image(dataset_path, proposed_relative_path)
+        existing_sidecar = ""
+        if sidecar_path.is_file():
+            existing_sidecar = sidecar_path.read_text(encoding="utf-8")
+
+        sidecar_needs_update = (
+            _normalize_sidecar_content(existing_sidecar)
+            != _normalize_sidecar_content(sidecar_content)
+        )
+
+        plan_rows.append(
+            _DatasetRenamePlanRow(
+                image=image,
+                current_relative_path=image.relative_path,
+                proposed_relative_path=proposed_relative_path,
+                sidecar_content=sidecar_content,
+                sidecar_needs_update=sidecar_needs_update,
+            )
+        )
+
+    return plan_rows
+
+
+async def preview_project_dataset_rename(
+    session: AsyncSession,
+    project: Project,
+) -> ProjectDatasetRenamePreviewResponse:
+    dataset_path = Path(project.dataset_path)
+    if not dataset_path.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Project dataset folder is missing.",
+        )
+
+    # Reconcile tracked dataset images with filesystem before planning.
+    # This avoids preview/apply mismatches when files were removed externally.
+    await sync_project(session, project)
+
+    plan_rows = await _build_dataset_rename_plan(session, project)
+    rename_count = sum(
+        1
+        for row in plan_rows
+        if row.current_relative_path != row.proposed_relative_path
+    )
+    sidecar_update_count = sum(
+        1
+        for row in plan_rows
+        if (
+            row.sidecar_needs_update
+            or row.current_relative_path != row.proposed_relative_path
+        )
+    )
+
+    return ProjectDatasetRenamePreviewResponse(
+        project_id=project.id,
+        total_images=len(plan_rows),
+        rename_count=rename_count,
+        sidecar_update_count=sidecar_update_count,
+        items=[
+            ProjectDatasetRenamePlanItem(
+                image_id=row.image.id,
+                current_relative_path=row.current_relative_path,
+                proposed_relative_path=row.proposed_relative_path,
+                sidecar_content=row.sidecar_content,
+            )
+            for row in plan_rows
+        ],
+    )
+
+
+async def apply_project_dataset_rename(
+    session: AsyncSession,
+    project: Project,
+) -> ProjectDatasetRenameApplyResponse:
+    dataset_path = Path(project.dataset_path)
+    if not dataset_path.is_dir():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Project dataset folder is missing.",
+        )
+
+    # Reconcile tracked dataset images with filesystem before planning.
+    # This avoids apply failures when stale tracked rows reference missing files.
+    await sync_project(session, project)
+
+    plan_rows = await _build_dataset_rename_plan(session, project)
+    temp_paths: dict[uuid.UUID, Path] = {}
+    rows_needing_rename = [
+        row
+        for row in plan_rows
+        if row.current_relative_path != row.proposed_relative_path
+    ]
+
+    for row in plan_rows:
+        current_path = dataset_path / row.current_relative_path
+        if not current_path.is_file():
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail=(
+                    "Cannot rename dataset images because at least one tracked "
+                    f"file is missing: {row.current_relative_path}"
+                ),
+            )
+
+    renamed_images = 0
+    sidecars_updated = 0
+
+    for row in plan_rows:
+        current_path = dataset_path / row.current_relative_path
+        temporary_path = _temporary_rename_path(
+            dataset_path, current_path.suffix.lower()
+        )
+        shutil.move(str(current_path), str(temporary_path))
+        temp_paths[row.image.id] = temporary_path
+
+    for row in plan_rows:
+        temporary_path = temp_paths[row.image.id]
+        target_path = dataset_path / row.proposed_relative_path
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.move(str(temporary_path), str(target_path))
+
+        old_sidecar_path = _sidecar_path_for_image(
+            dataset_path, row.current_relative_path
+        )
+        if (
+            old_sidecar_path.exists()
+            and old_sidecar_path != target_path.with_suffix(".txt")
+        ):
+            old_sidecar_path.unlink()
+
+        sidecar_path = target_path.with_suffix(".txt")
+        normalized_current = ""
+        if sidecar_path.is_file():
+            normalized_current = _normalize_sidecar_content(
+                sidecar_path.read_text(encoding="utf-8")
+            )
+        normalized_next = _normalize_sidecar_content(row.sidecar_content)
+        if normalized_current != normalized_next:
+            sidecar_path.write_text(row.sidecar_content, encoding="utf-8")
+            sidecars_updated += 1
+
+        stat = target_path.stat()
+        row.image.file_mtime_ns = stat.st_mtime_ns
+        row.image.file_size_bytes = stat.st_size
+        row.image.removed_at = None
+
+    # Avoid transient unique-key collisions when many relative_path values
+    # are updated in one flush. Move renamed rows to temporary DB-only paths
+    # first, flush, then apply final relative paths.
+    for row in rows_needing_rename:
+        temporary_relative_path = _temporary_db_relative_path(
+            row.proposed_relative_path
+        )
+        row.image.relative_path = temporary_relative_path
+        row.image.filename = Path(temporary_relative_path).name
+
+    if rows_needing_rename:
+        await session.flush()
+
+    for row in plan_rows:
+        target_path = dataset_path / row.proposed_relative_path
+        row.image.relative_path = row.proposed_relative_path
+        row.image.filename = target_path.name
+        if row.current_relative_path != row.proposed_relative_path:
+            renamed_images += 1
+
+    project.last_synced_at = datetime.now(UTC)
+    await session.commit()
+
+    return ProjectDatasetRenameApplyResponse(
+        project_id=project.id,
+        total_images=len(plan_rows),
+        renamed_images=renamed_images,
+        sidecars_updated=sidecars_updated,
     )
