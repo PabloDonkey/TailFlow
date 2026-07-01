@@ -1,222 +1,249 @@
 # TailFlow Agent Guide
 
-## Repository overview
+## Purpose
 
-TailFlow is a mobile-friendly image tagging application with a FastAPI backend and a Vue 3 frontend.
-The repository is split into `backend/` for the API and persistence layer, and `frontend/` for the browser UI.
+This document defines how AI agents should collaborate on TailFlow.
 
-## Repo AI context
+Before implementing features, prioritize preserving the project's long-term architecture over completing the current task. The goal is to build a maintainable, extensible workstation that can evolve for years without architectural drift.
 
-Persistent AI directives for this repository live under `.ai/`:
+---
 
-- `.ai/rule.md` - directive or instructional project rules
+# Session Bootstrap
 
-Active development context for this repository lives under `.project/`:
+Before planning or implementing any work, read the following documents in order:
 
-- `.project/dev-loop.md` - current development loop state
-- `.project/tasks.md` - current task board
+1. `ARCHITECTURE.md`
+2. `DECISIONS.md`
+3. `ROADMAP.md`
+4. `.ai/rule.md`
+5. `.project/dev-loop.md`
+6. `.project/tasks.md`
 
-Bootstrap expectation for future sessions:
+When a task touches a documented feature, also read the relevant document under `docs/`.
 
-1. Read `.ai/rule.md` on startup before planning or implementation work.
-2. Read `.project/dev-loop.md`.
-3. Check `.project/tasks.md`.
-4. Add new directive or instructional guidance to `.ai/rule.md`.
+When working on frontend UI, read:
 
-## Feature documentation
+- `.github/ui-contract.md`
 
-Feature documentation lives under `docs/`.
-When a task touches a documented feature, read the relevant file in `docs/` before planning or implementation if it will help clarify product behavior or data modeling.
+---
 
-Current documented features:
+# Development Priorities
 
-- `docs/project-dataset-workflow.md` - filesystem-backed project discovery, dataset handling, metadata persistence, sync behavior, and class diagram
+When several implementations are possible, always prefer the solution that:
 
-## UI contract
+- Preserves Single Responsibility Principle (SRP)
+- Preserves the Open/Closed Principle (OCP)
+- Keeps workflow modules independent
+- Avoids unnecessary coupling
+- Produces explicit, persistent artifacts
+- Uses domain concepts instead of technical abstractions
+- Is simple to understand (KISS)
+- Avoids premature abstraction (YAGNI)
+- Eliminates duplication only when it improves maintainability (DRY)
 
-Frontend UI implementation and planning guidance lives in `.github/ui-contract.md`.
-When a task involves frontend UI planning or implementation, read `.github/ui-contract.md` before planning or coding.
+The architecture always takes priority over the shortest implementation.
 
-## Development Workflow
+---
 
-This repository uses a **Development Loop system** stored in `.project/dev-loop.md`.
+# Architectural Review Before Implementation
 
-Reusable Copilot skills for this workflow:
+Before introducing:
 
-- `.copilot/skills/start-dev-session.md` (trigger: `start-dev-sess`)
-- `.copilot/skills/update-dev-loop.md` (trigger: `update-dev-loop`)
-- `.copilot/skills/ui-contract-review.md` (trigger: `ui-contract-review`)
+- new workflow modules
+- new persistent data
+- new services
+- new abstractions
+- new cross-cutting behavior
 
-Before starting development work:
+stop and evaluate whether the change aligns with `ARCHITECTURE.md`.
 
-1. Read `.project/dev-loop.md`
-2. Check `.project/tasks.md`
-3. Keep task folder names in `.project/tasks/` in `N_task-slug[status]` format.
-3. Create or update a short implementation plan with small, verifiable steps before writing code.
-4. For each step, run the smallest relevant validation first (error check, focused test, or targeted command) before moving to the next step.
-5. Follow UI rules in `.github/ui-contract.md` if present.
-6. When a Decision Trigger occurs, create a new entry in `DECISIONS.md` before implementing the change.
+Prefer extending the architecture over introducing special cases.
 
-During implementation:
+If a feature feels difficult to integrate cleanly, identify the architectural problem instead of forcing an implementation.
 
-1. Keep tasks chunked into small iterations that can be completed and validated independently.
-2. Prefer targeted tests during each iteration, then run broader suites at the end.
-3. After each iteration, update `.project/dev-loop.md` and `.project/tasks.md` when scope/status changes.
-4. Before any commit or push, run `make test` and `make test-e2e` from the repository root.
+---
 
-### Test authority and E2E standards
+# Domain-Driven Development
 
-Tests are the source of truth for application behavior.
+Prefer names that describe the domain rather than the implementation.
 
-1. Agents must fix implementation to satisfy tests before considering test changes.
-2. Agents cannot modify any existing test file in `backend/tests/`, `frontend/src/__tests__/`, or `frontend/e2e/` without explicit user authorization in the current session.
-3. Playwright E2E tests must use Page Object Model:
-  - Spec files: high-level user flows and assertions.
-  - Page objects: selectors and low-level interactions (`click`, `fill`, waits, navigation helpers).
-4. Selector policy for Playwright page objects:
-  - Prefer accessibility-first locators (`getByRole`, `getByLabel`, and accessible names).
-  - Use `data-testid` only when no stable accessible locator exists, and document the exception in review notes.
-  - Avoid CSS selectors for normal E2E interactions.
+Good examples:
 
-When finishing a work session:
+- Dataset
+- TrainingExperiment
+- DatasetExport
+- Checkpoint
+- Evaluation
 
-* update `.project/dev-loop.md`
-* update `.project/tasks.md`
+Avoid generic names such as:
 
-The goal is to maintain enough context so development can resume quickly after interruptions.
+- Manager
+- Helper
+- Utility
+- CommonService
+- Misc
 
-## Tech stack
+When naming new classes or modules, ask:
 
-### Backend
+> "Would this name make sense to someone who understands LoRA training but not this codebase?"
 
-- Python 3.11+ for local development
-- FastAPI for the HTTP API
-- SQLAlchemy 2.x async ORM
-- Alembic for database migrations
-- Pydantic v2 and `pydantic-settings` for schemas and environment-based configuration
-- Psycopg 3 async driver for PostgreSQL
-- `python-dotenv` for `.env` loading
-- `python-multipart` for upload handling
-- Pillow and `aiofiles` for image processing and file I/O
+---
 
-### Frontend
+# Workflow Module Principles
 
-- Node.js 20+ for local development
-- Vue 3 as the UI framework
-- Vite 7 for dev server and build tooling
-- TypeScript 5 for static typing
-- Pinia for client-side state management
-- Vue Router 4 for navigation
-- Zod for runtime API validation
+TailFlow is built around independent workflow modules.
 
-### Quality and test tooling
+Each module should:
 
-- Backend: `pytest`, `pytest-asyncio`, `httpx`, `aiosqlite`, `ruff`, `mypy`
-- Frontend: `vitest`, `@vue/test-utils`, `happy-dom`, `eslint`, `vue-tsc`
-- Frontend E2E: `@playwright/test`
-- CI: GitHub Actions in `.github/workflows/ci.yml`
+- own a single responsibility
+- own a single artifact type
+- expose a well-defined interface
+- avoid knowledge of other workflow modules
 
-## Project infrastructure
+Modules communicate through shared project state and project artifacts rather than directly invoking one another.
 
-### Repository layout
+Favor creating a new module over extending an unrelated one.
 
-- `backend/app/` - FastAPI application code
-  - `api/` - API routers and dependency wiring
-  - `core/` - configuration
-  - `db/` - SQLAlchemy base and database setup
-  - `models/` - ORM models
-  - `schemas/` - Pydantic schemas
-  - `services/` - domain services
-- `backend/alembic/` - migration environment and revisions
-- `backend/tests/` - backend test suite
-- `backend/storage/` - local image storage
-- `frontend/src/` - Vue application source
-  - `api/` - API client layer
-  - `components/` - reusable UI components
-  - `pages/` - route-level views
-  - `router/` - Vue Router configuration
-  - `stores/` - Pinia stores
-- `.github/workflows/ci.yml` - CI pipeline definition
-- `Makefile` - root development shortcuts
-- `docs/` - feature documentation and design notes
+---
 
-### Runtime configuration
+# Filesystem First
 
-Backend configuration is loaded from `backend/.env` via `pydantic-settings`.
-The example environment file defines split database settings plus runtime paths:
+The filesystem is the source of truth.
 
-- `DATABASE_HOST`
-- `DATABASE_PORT`
-- `DATABASE_NAME`
-- `DATABASE_USER`
-- `DATABASE_PASSWORD`
-- `PROJECTS_ROOT_PATH`
-- `MAX_UPLOAD_SIZE_MB`
-- `CLASSIFIER_ENABLED`
+The database exists only to index, cache, and accelerate access to project artifacts.
 
-`PROJECTS_ROOT_PATH` is the configured root whose direct child folders are treated as projects for the project/dataset workflow.
+Whenever possible:
 
-### Data and API infrastructure
+- derive state from the filesystem
+- avoid storing information that can be reconstructed
+- prefer explicit files over hidden database state
 
-- Local development uses PostgreSQL through `psycopg`
-- Alembic reads the database URL from app settings and applies migrations from `backend/alembic/`
-- Backend tests use in-memory SQLite with `aiosqlite`
-- The FastAPI app exposes `/health` and mounts application routes under `/api`
-- CORS is currently configured permissively in `backend/app/main.py`
+The application should be capable of rebuilding its internal state from the project directory.
 
-### Frontend development infrastructure
+---
 
-- The Vite dev server runs on port `5173` by default
-- `/api` requests are proxied to `http://localhost:8000`
-- Defined routes include gallery, upload, image detail, and tag management pages
+# Avoid God Objects
 
-### Local development workflow
+Large classes, services, composables, or Vue components should not continuously accumulate responsibilities.
 
-Use the root `Makefile` for the standard setup:
+If a file begins handling multiple concerns, split it before adding additional functionality.
 
-```bash
-make install
-make run
-make test
-```
+Large workflow modules should be decomposed into focused UI cards and backend services.
 
-Important commands by area:
+---
 
-```bash
-# Backend
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-python3 -m pip install -e ".[dev]"
-alembic upgrade head
-uvicorn app.main:app --reload
-pytest
-ruff check .
-mypy .
+# Development Workflow
 
-# Frontend
-cd frontend
-npm install
-npm run dev
-npm run test
-npm run lint
-npm run typecheck
-npm run build
+This repository uses the Development Loop system stored in:
 
-# Root shortcuts
-make test
-make test-backend
-make test-frontend
-```
+- `.project/dev-loop.md`
 
-### Continuous integration
+Current work items are tracked in:
 
-GitHub Actions runs two jobs on pushes and pull requests:
+- `.project/tasks.md`
 
-- Backend job: Python 3.12, install `backend` dev dependencies, run `pytest` and `ruff check .`
-- Frontend job: Node 22, run `npm ci`, `npm run test`, and `npm run build`
+Before writing code:
 
-## Infrastructure notes
+1. Read the current development loop.
+2. Review the active tasks.
+3. Create a short implementation plan.
+4. Break work into small, independently verifiable steps.
+5. Validate each step before moving forward.
+6. When a Decision Trigger occurs, document it in `DECISIONS.md` before implementation.
 
-- There are no Docker or Compose files in the repository at this time
-- Local orchestration is centered on `make`, Python virtual environments, npm, and GitHub Actions
+During development:
+
+- Keep iterations small.
+- Prefer focused validation before broad testing.
+- Update development state whenever scope changes.
+
+At the end of a work session:
+
+- update `.project/dev-loop.md`
+- update `.project/tasks.md`
+
+The goal is that another session can resume work immediately.
+
+---
+
+# Testing Authority
+
+Tests define expected behavior.
+
+Agents must:
+
+- fix implementation before considering test changes
+- avoid modifying existing tests without explicit user approval
+- add new tests whenever new behavior is introduced
+
+Do not weaken tests simply to satisfy an implementation.
+
+---
+
+# Playwright Standards
+
+Playwright tests must use the Page Object Model.
+
+Responsibilities:
+
+Spec files:
+
+- describe user behavior
+- contain assertions
+
+Page Objects:
+
+- contain selectors
+- perform interactions
+- encapsulate waits
+- expose reusable operations
+
+Selector preference:
+
+1. Accessibility locators (`getByRole`, `getByLabel`, etc.)
+2. `data-testid` when accessibility is insufficient
+3. CSS selectors only as a last resort
+
+---
+
+# Documentation
+
+Architectural decisions belong in:
+
+- `DECISIONS.md`
+
+Feature behavior belongs in:
+
+- `docs/`
+
+Long-term architectural vision belongs in:
+
+- `ARCHITECTURE.md`
+
+Development progress belongs in:
+
+- `.project/dev-loop.md`
+- `.project/tasks.md`
+
+Keep documentation synchronized with implementation whenever behavior changes.
+
+---
+
+# Agent Mindset
+
+Do not optimize only for the current task.
+
+Optimize for the next year of development.
+
+Every implementation should make the project easier—not harder—to extend.
+
+When uncertain, choose the solution that:
+
+- reduces coupling
+- increases clarity
+- preserves module independence
+- improves long-term maintainability
+
+TailFlow is intended to become a modular LoRA training workstation.
+
+Every change should move the project closer to that vision.
