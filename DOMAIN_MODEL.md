@@ -165,6 +165,8 @@ AI only produces **Tag Proposals**.
 
 The user remains the final authority on what is included.
 
+> AI suggestions are only a UI convenience and have no persistence or lifecycle tracking.
+
 ## Owns
 
 - Ordered tags selected by the user
@@ -182,26 +184,46 @@ The user remains the final authority on what is included.
 
 ## Definition
 
-A Tag Proposal is a suggestion produced by AI classification systems.
+A Tag Proposal is a **transient AI-generated suggestion list** produced during image tagging.
 
-It includes:
+It exists only as a response artifact from the AI classification process and is never persisted as domain state.
+
+It is used to assist the user in selecting tags for a Dataset Image.
+
+## Important Behavioral Rules
+
+- Tag Proposals are ephemeral (request/UI lifetime only)
+- Tag Proposals are NOT stored in the database
+- Tag Proposals do NOT track acceptance or rejection history
+- Tag Proposals do NOT affect Dataset Images unless explicitly selected by the user
+
+## Contents
+
+A Tag Proposal includes:
 
 - tag reference (from Tag Catalog)
 - confidence score
-- optional reasoning or metadata
+- optional metadata from the AI model
 
-A Tag Proposal has no effect on the dataset until a user accepts it into a Tag Set.
+## Relationship to Tag Set
+
+Tag Proposals are a **suggestion source only** for Tag Sets.
+
+They do not modify Tag Sets directly.
+
+User selection is the only mechanism that affects a Tag Set.
 
 ## Owns
 
-- Proposed tag reference
-- Confidence score
-- Optional model metadata
+- Suggested tags (temporary)
+- Confidence scores
+- Optional inference metadata
 
 ## Does NOT Own
 
-- Tag Set modification
-- Tag persistence
+- Tag Set
+- Dataset Image
+- Any persistent state
 
 ---
 
@@ -426,6 +448,8 @@ Examples:
 
 Avoid responsibilities shared across multiple domain concepts.
 
+* Tag Proposals are NOT domain-owned artifacts.
+  They are transient computation results and must not be treated as persistent entities.
 ---
 
 # Ubiquitous Language
