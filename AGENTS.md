@@ -13,11 +13,12 @@ Before implementing features, prioritize preserving the project's long-term arch
 Before planning or implementing any work, read the following documents in order:
 
 1. `ARCHITECTURE.md`
-2. `DECISIONS.md`
-3. `ROADMAP.md`
-4. `.ai/rule.md`
-5. `.project/dev-loop.md`
-6. `.project/tasks.md`
+2. `DOMAIN_MODEL.md`
+3. `DECISIONS.md`
+4. `ROADMAP.md`
+5. `.ai/rule.md`
+6. `.project/dev-loop.md`
+7. `.project/tasks.md`
 
 When a task touches a documented feature, also read the relevant document under `docs/`.
 
