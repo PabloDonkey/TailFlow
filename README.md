@@ -1,6 +1,6 @@
 # TailFlow
 
-TailFlow is a mobile-friendly image tagging app with a FastAPI backend and a Vue 3 frontend.
+TailFlow is a mobile-friendly image tagging app with a FastAPI backend and a Vue 3 frontend. Inspired by TailTagger Project https://github.com/renfald/tail-tagger
 
 ## Project structure
 
