@@ -27,6 +27,11 @@ export const imageBrowserSideCardFactory: SideCardFactory = {
             actions.selectImage(imageId)
           }
         },
+        uploadImages: (files: unknown) => {
+          if (Array.isArray(files) && files.every((file) => file instanceof File)) {
+            actions.uploadImagesToCurrentProject(files)
+          }
+        },
       },
     }
   },

@@ -651,6 +651,7 @@ const imageBrowserMemoKey = computed(() => {
           <ImageBrowserCard
             :selected-project-id="projectStore.selectedProjectId"
             @select-image="handleSelectImage"
+            @upload-images="handleUploadImagesToCurrentProject"
           />
         </div>
       </WorkspacePanelCard>
