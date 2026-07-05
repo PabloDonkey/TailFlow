@@ -150,4 +150,94 @@ describe('useWorkspacePersistence startup project fetch retry', () => {
     expect(projectStore.fetchProjects).toHaveBeenCalledTimes(1)
     expect(composableApi.isWorkspaceRestorePending.value).toBe(false)
   })
+
+  it('preserves explicit persisted null selectedProjectId after startup project fetch', async () => {
+    const storageKey = 'workspace-persistence-explicit-null-project'
+    window.localStorage.setItem(storageKey, JSON.stringify({
+      selectedProjectId: null,
+      selectedImageId: null,
+      mobileStage: 'project-browser',
+    }))
+
+    const projectStore = reactive({
+      projects: [] as Array<{ id: string }>,
+      selectedProjectId: null as string | null,
+      error: null as string | null,
+      fetchProjects: vi.fn(),
+      selectProject: vi.fn((projectId: string) => {
+        projectStore.selectedProjectId = projectId
+      }),
+    })
+
+    const imageStore = reactive({
+      images: [] as Array<{ id: string }>,
+      currentImage: null as { id: string } | null,
+      fetchImages: vi.fn().mockResolvedValue(undefined),
+    })
+
+    projectStore.fetchProjects.mockImplementation(async () => {
+      projectStore.error = null
+      projectStore.projects = [{ id: 'project-1' }]
+      // Mirrors store auto-select behavior when no selection exists.
+      projectStore.selectedProjectId = 'project-1'
+    })
+
+    const { composableApi } = mountPersistenceHarness({
+      storageKey,
+      projectStore,
+      imageStore,
+    })
+
+    await flushPromises()
+
+    expect(projectStore.selectedProjectId).toBeNull()
+    expect(projectStore.selectProject).not.toHaveBeenCalled()
+    expect(imageStore.fetchImages).not.toHaveBeenCalled()
+    expect(composableApi.isWorkspaceRestorePending.value).toBe(false)
+  })
+
+  it('restores persisted selectedProjectId over startup auto-selection', async () => {
+    const storageKey = 'workspace-persistence-selected-project-restore'
+    window.localStorage.setItem(storageKey, JSON.stringify({
+      selectedProjectId: 'project-2',
+      selectedImageId: null,
+      mobileStage: 'workspace',
+    }))
+
+    const projectStore = reactive({
+      projects: [] as Array<{ id: string }>,
+      selectedProjectId: null as string | null,
+      error: null as string | null,
+      fetchProjects: vi.fn(),
+      selectProject: vi.fn((projectId: string) => {
+        projectStore.selectedProjectId = projectId
+      }),
+    })
+
+    const imageStore = reactive({
+      images: [] as Array<{ id: string }>,
+      currentImage: null as { id: string } | null,
+      fetchImages: vi.fn().mockResolvedValue(undefined),
+    })
+
+    projectStore.fetchProjects.mockImplementation(async () => {
+      projectStore.error = null
+      projectStore.projects = [{ id: 'project-1' }, { id: 'project-2' }]
+      // Mirrors store auto-select behavior when no selection exists.
+      projectStore.selectedProjectId = 'project-1'
+    })
+
+    const { composableApi } = mountPersistenceHarness({
+      storageKey,
+      projectStore,
+      imageStore,
+    })
+
+    await flushPromises()
+
+    expect(projectStore.selectedProjectId).toBe('project-2')
+    expect(projectStore.selectProject).toHaveBeenCalledWith('project-2')
+    expect(imageStore.fetchImages).toHaveBeenCalledWith('project-2')
+    expect(composableApi.isWorkspaceRestorePending.value).toBe(false)
+  })
 })

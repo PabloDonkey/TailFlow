@@ -26,6 +26,12 @@ type UseWorkspacePersistenceOptions = {
   queryValue: (key: string) => string | null
 }
 
+type PersistedSelectionSnapshot = {
+  hasSelectedProjectId: boolean
+  selectedProjectId: string | null
+  selectedImageId: string | null
+}
+
 const STARTUP_PROJECT_FETCH_MAX_ATTEMPTS = 6
 const STARTUP_PROJECT_FETCH_INITIAL_DELAY_MS = 250
 const STARTUP_PROJECT_FETCH_TRANSIENT_MARKERS = [
@@ -165,7 +171,7 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
     return { left, right }
   }
 
-  function applyParsedWorkspaceCardState(raw: string) {
+  function applyParsedWorkspaceCardState(raw: string): PersistedSelectionSnapshot | undefined {
     try {
       const parsed = JSON.parse(raw) as {
         openState?: Partial<Record<ToggleCardId, boolean>>
@@ -224,10 +230,12 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
         mobileWorkspaceSplitPercent.value = Math.max(0, Math.min(100, parsed.mobileWorkspaceSplitPercent))
       }
 
+      const hasSelectedProjectId = Object.prototype.hasOwnProperty.call(parsed, 'selectedProjectId')
       const parsedSelectedProjectId = typeof parsed.selectedProjectId === 'string' ? parsed.selectedProjectId : null
       const parsedSelectedImageId = typeof parsed.selectedImageId === 'string' ? parsed.selectedImageId : null
 
       return {
+        hasSelectedProjectId,
         selectedProjectId: parsedSelectedProjectId,
         selectedImageId: parsedSelectedImageId,
       }
@@ -323,7 +331,10 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
     }
     
     const queryProjectId = queryValue('project')
-    let resolvedProjectId = queryProjectId || snapshot?.selectedProjectId
+    const hasSnapshotProjectSelection = snapshot?.hasSelectedProjectId === true
+    const snapshotProjectId = snapshot?.selectedProjectId ?? null
+
+    let resolvedProjectId = queryProjectId || (hasSnapshotProjectSelection ? snapshotProjectId : null)
 
     if (resolvedProjectId) {
       const exists = projectStore.projects.some(p => p.id === resolvedProjectId)
@@ -332,6 +343,9 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
       } else {
         resolvedProjectId = null
       }
+    } else if (!queryProjectId && hasSnapshotProjectSelection && snapshotProjectId === null) {
+      // Preserve explicit "project browser" state across startup fetches.
+      projectStore.selectedProjectId = null
     }
 
     // 3. load images and resolve selected image
