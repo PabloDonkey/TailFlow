@@ -49,7 +49,26 @@ run:
 	trap 'if [ -n "$$backend_pid" ]; then kill "$$backend_pid"; wait "$$backend_pid" 2>/dev/null || true; fi' EXIT INT TERM; \
 	( cd backend && exec ./.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload ) & \
 	backend_pid=$$!; \
-	echo "Backend running at http://0.0.0.0:8000 (PID $$backend_pid)"; \
+	echo "Backend process started (PID $$backend_pid), waiting for readiness..."; \
+	backend_health_url='http://127.0.0.1:8000/health'; \
+	backend_ready=0; \
+	for attempt in $$(seq 1 60); do \
+		if ! kill -0 "$$backend_pid" >/dev/null 2>&1; then \
+			echo "Backend process exited before becoming ready."; \
+			wait "$$backend_pid" 2>/dev/null || true; \
+			exit 1; \
+		fi; \
+		if backend/.venv/bin/python -c "import sys, urllib.request; response = urllib.request.urlopen(sys.argv[1], timeout=1); sys.exit(0 if response.status == 200 else 1)" "$$backend_health_url" >/dev/null 2>&1; then \
+			backend_ready=1; \
+			break; \
+		fi; \
+		sleep 0.5; \
+	done; \
+	if [ "$$backend_ready" -ne 1 ]; then \
+		echo "Backend did not become ready within 30 seconds at $$backend_health_url."; \
+		exit 1; \
+	fi; \
+	echo "Backend ready at http://0.0.0.0:8000"; \
 	echo "Starting frontend at http://0.0.0.0:5173"; \
 	cd frontend && npm run dev
 

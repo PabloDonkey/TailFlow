@@ -26,6 +26,17 @@ type UseWorkspacePersistenceOptions = {
   queryValue: (key: string) => string | null
 }
 
+const STARTUP_PROJECT_FETCH_MAX_ATTEMPTS = 6
+const STARTUP_PROJECT_FETCH_INITIAL_DELAY_MS = 250
+const STARTUP_PROJECT_FETCH_TRANSIENT_MARKERS = [
+  'failed to fetch',
+  'fetch failed',
+  'networkerror',
+  'econnrefused',
+  'err_connection_refused',
+  'bad gateway',
+]
+
 export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions) {
   const {
     storageKey,
@@ -56,6 +67,46 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
   const validMobileCurrentTagsViewModes: MobileCurrentTagsViewMode[] = ['tags-only', 'filter-only', 'search-only']
   const validMobileAiProposedTagsViewModes: MobileAiProposedTagsViewMode[] = ['essentials', 'advanced']
   const isWorkspaceRestorePending = ref(true)
+
+  function wait(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeout(resolve, ms)
+    })
+  }
+
+  function isTransientStartupProjectFetchError(errorMessage: string | null): boolean {
+    if (!errorMessage) {
+      return false
+    }
+
+    const normalized = errorMessage.toLowerCase()
+    if (/api\s(502|503|504)\b/.test(normalized)) {
+      return true
+    }
+
+    return STARTUP_PROJECT_FETCH_TRANSIENT_MARKERS.some((marker) => normalized.includes(marker))
+  }
+
+  async function fetchProjectsForStartup(): Promise<void> {
+    for (let attempt = 1; attempt <= STARTUP_PROJECT_FETCH_MAX_ATTEMPTS; attempt += 1) {
+      await projectStore.fetchProjects()
+
+      if (!projectStore.error) {
+        return
+      }
+
+      if (!isTransientStartupProjectFetchError(projectStore.error)) {
+        return
+      }
+
+      if (attempt === STARTUP_PROJECT_FETCH_MAX_ATTEMPTS) {
+        return
+      }
+
+      const delayMs = STARTUP_PROJECT_FETCH_INITIAL_DELAY_MS * 2 ** (attempt - 1)
+      await wait(delayMs)
+    }
+  }
 
   function sanitizeSideOrder(candidate: unknown): SideViewId[] {
     if (!Array.isArray(candidate)) {
@@ -268,7 +319,7 @@ export function useWorkspacePersistence(options: UseWorkspacePersistenceOptions)
     
     // 2. load projects and resolve selected project
     if (!projectStore.projects.length) {
-      await projectStore.fetchProjects()
+      await fetchProjectsForStartup()
     }
     
     const queryProjectId = queryValue('project')
