@@ -31,6 +31,7 @@ from app.schemas.project import (
     ProjectImageClassifyRequest,
     ProjectImageClassifyResponse,
     ProjectImageClassifySuggestion,
+    ProjectImagePreviewRead,
     ProjectImageRead,
     ProjectImageSummary,
     ProjectImageTagUpdate,
@@ -51,6 +52,7 @@ from app.services.projects import (
     discover_projects,
     preview_project_dataset_rename,
     replace_project_image_file,
+    set_project_featured_image,
     sync_project,
     update_project_image_tags,
     update_project_metadata,
@@ -104,6 +106,85 @@ async def _read_project_image_tag_counts(
         .group_by(DatasetImageTag.image_id)
     )
     return {image_id: tag_count for image_id, tag_count in result.all()}
+
+
+async def _read_project_preview_images(
+    session: AsyncSession,
+    projects: list[Project],
+) -> dict[uuid.UUID, DatasetImage | None]:
+    project_ids = [project.id for project in projects]
+    if not project_ids:
+        return {}
+
+    images_result = await session.execute(
+        select(DatasetImage)
+        .where(
+            DatasetImage.project_id.in_(project_ids),
+            DatasetImage.removed_at.is_(None),
+        )
+        .order_by(
+            DatasetImage.project_id.asc(),
+            DatasetImage.discovered_at.desc(),
+            DatasetImage.id.asc(),
+        )
+    )
+    images = list(images_result.scalars().all())
+
+    first_image_by_project: dict[uuid.UUID, DatasetImage] = {}
+    image_by_id: dict[uuid.UUID, DatasetImage] = {}
+    for image in images:
+        first_image_by_project.setdefault(image.project_id, image)
+        image_by_id[image.id] = image
+
+    preview_by_project: dict[uuid.UUID, DatasetImage | None] = {}
+    for project in projects:
+        featured = (
+            image_by_id.get(project.featured_image_id)
+            if project.featured_image_id is not None
+            else None
+        )
+        preview_by_project[project.id] = (
+            featured or first_image_by_project.get(project.id)
+        )
+
+    return preview_by_project
+
+
+def _project_preview_from_image(
+    image: DatasetImage,
+) -> ProjectImagePreviewRead:
+    return ProjectImagePreviewRead(
+        id=image.id,
+        relative_path=image.relative_path,
+        filename=image.filename,
+        content_hash=image.content_hash,
+        discovered_at=image.discovered_at,
+    )
+
+
+async def _build_project_reads(
+    session: AsyncSession,
+    projects: list[Project],
+) -> list[ProjectRead]:
+    preview_by_project = await _read_project_preview_images(session, projects)
+    project_reads: list[ProjectRead] = []
+
+    for project in projects:
+        project_read = ProjectRead.model_validate(project)
+        preview_image = preview_by_project.get(project.id)
+        project_reads.append(
+            project_read.model_copy(
+                update={
+                    "preview_image": (
+                        _project_preview_from_image(preview_image)
+                        if preview_image is not None
+                        else None
+                    )
+                }
+            )
+        )
+
+    return project_reads
 
 
 @router.get("/onboarding/status", response_model=ProjectOnboardingStatus)
@@ -207,7 +288,35 @@ async def list_projects(
     """List all tracked projects."""
     result = await session.execute(select(Project).order_by(Project.name))
     projects = result.scalars().all()
-    return [ProjectRead.model_validate(project) for project in projects]
+    return await _build_project_reads(session, list(projects))
+
+
+@router.post(
+    "/{project_id}/featured-image/{image_id}",
+    response_model=ProjectRead,
+)
+async def set_project_featured_image_route(
+    project_id: uuid.UUID,
+    image_id: uuid.UUID,
+    session: AsyncSession = Depends(db_session),
+) -> ProjectRead:
+    project = await session.get(Project, project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
+
+    image = await session.get(DatasetImage, image_id)
+    if image is None or image.project_id != project.id or image.removed_at is not None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project image not found.",
+        )
+
+    updated_project = await set_project_featured_image(session, project, image)
+    project_reads = await _build_project_reads(session, [updated_project])
+    return project_reads[0]
 
 
 @router.patch("/{project_id}", response_model=ProjectRead)

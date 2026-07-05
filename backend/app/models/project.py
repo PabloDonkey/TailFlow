@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, Enum, String, Uuid
+from sqlalchemy import DateTime, Enum, ForeignKey, String, Uuid
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.enums import TaggingMode
@@ -36,6 +36,11 @@ class Project(Base):
         nullable=False,
         default=TaggingMode.E621,
     )
+    featured_image_id: Mapped[uuid.UUID | None] = mapped_column(
+        Uuid,
+        ForeignKey("dataset_images.id"),
+        nullable=True,
+    )
     last_synced_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
@@ -55,6 +60,7 @@ class Project(Base):
     dataset_images: Mapped[list["DatasetImage"]] = relationship(
         "DatasetImage",
         back_populates="project",
+        foreign_keys="DatasetImage.project_id",
         cascade="all, delete-orphan",
         lazy="selectin",
     )

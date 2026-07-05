@@ -23,6 +23,7 @@ const props = defineProps<{
   showPanelScanButton?: boolean
   showPanelSelectedToggleButton?: boolean
   currentImageExists: boolean
+  currentImageIsFeatured: boolean
   currentImageFilename?: string
   canGoToPrevious: boolean
   canGoToNext: boolean
@@ -41,6 +42,7 @@ const emit = defineEmits<{
   'toggle-panel-selected-filter': []
   'replace-image': [file: File]
   'upload-images': [files: File[]]
+  'set-featured': []
 }>()
 
 const showDeleteConfirm = ref(false)
@@ -64,6 +66,14 @@ function openReplacePicker(): void {
 function openUploadPicker(): void {
   showCanvasActionsMenu.value = false
   uploadInputRef.value?.click()
+}
+
+function setFeaturedImage(): void {
+  showCanvasActionsMenu.value = false
+  if (!props.currentImageExists || props.currentImageIsFeatured) {
+    return
+  }
+  emit('set-featured')
 }
 
 function onReplaceFileChange(event: Event): void {
@@ -157,6 +167,21 @@ function onUploadFilesChange(event: Event): void {
               v-if="showCanvasActionsMenu"
               class="absolute right-0 top-[calc(100%+0.25rem)] z-20 flex min-w-44 flex-col gap-1 rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface)] p-1 shadow-md"
             >
+              <button
+                type="button"
+                class="flex items-center justify-between rounded-[var(--tf-radius-sm)] px-2 py-1 text-left text-xs text-[var(--tf-color-text-default)] hover:bg-[var(--tf-color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="!currentImageExists || props.currentImageIsFeatured"
+                @click="setFeaturedImage"
+              >
+                <span>Set as featured image</span>
+                <span
+                  v-if="props.currentImageIsFeatured"
+                  aria-label="Current image is featured"
+                  class="text-[var(--tf-color-success)]"
+                >
+                  [x]
+                </span>
+              </button>
               <button
                 type="button"
                 class="rounded-[var(--tf-radius-sm)] px-2 py-1 text-left text-xs text-[var(--tf-color-text-default)] hover:bg-[var(--tf-color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-60"

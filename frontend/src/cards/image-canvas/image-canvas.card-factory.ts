@@ -41,9 +41,17 @@ export const imageCanvasCardFactory: WorkspaceCardFactory = {
         component: ImageCanvasHeaderActions,
         props: {
           currentImageExists: Boolean(state.currentImage),
+          currentImageIsFeatured: Boolean(
+            state.currentImage
+            && state.selectedProject
+            && state.selectedProject.featured_image_id === state.currentImage.id,
+          ),
           loading: state.loading,
         },
         listeners: {
+          setFeaturedImage: () => {
+            actions.setCurrentImageAsFeatured()
+          },
           uploadImages: (files: unknown) => {
             if (Array.isArray(files) && files.every((file) => file instanceof File)) {
               actions.uploadImagesToCurrentProject(files)

@@ -17,6 +17,16 @@ class ProjectTagRead(BaseModel):
     model_config = {"extra": "ignore"}
 
 
+class ProjectImagePreviewRead(BaseModel):
+    id: uuid.UUID
+    relative_path: str
+    filename: str
+    content_hash: str | None = None
+    discovered_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class ProjectRead(BaseModel):
     id: uuid.UUID
     name: str
@@ -26,6 +36,8 @@ class ProjectRead(BaseModel):
     trigger_tag: str
     class_tag: str
     tagging_mode: TaggingMode
+    featured_image_id: uuid.UUID | None = None
+    preview_image: ProjectImagePreviewRead | None = None
     last_synced_at: datetime | None = None
     missing_at: datetime | None = None
 

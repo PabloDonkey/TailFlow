@@ -4,19 +4,15 @@ import { nextTick } from 'vue'
 import ProjectBrowserCard from '../cards/project-browser/ProjectBrowserCard.vue'
 
 const mocks = vi.hoisted(() => ({
-  listProjectImages: vi.fn().mockResolvedValue([]),
   getProjectImageFileUrl: vi.fn().mockReturnValue('/api/projects/preview.png'),
 }))
 
 vi.mock('../api', () => ({
-  listProjectImages: mocks.listProjectImages,
   getProjectImageFileUrl: mocks.getProjectImageFileUrl,
 }))
 
 describe('ProjectBrowserCard', () => {
   it('renders project cards sorted by name and opens tagging flow on card click', async () => {
-    mocks.listProjectImages.mockResolvedValue([{ id: 'img-1' }])
-
     const wrapper = mount(ProjectBrowserCard, {
       props: {
         projects: [
@@ -29,6 +25,8 @@ describe('ProjectBrowserCard', () => {
             trigger_tag: 'zeta',
             class_tag: 'zeta-class',
             tagging_mode: 'e621',
+            featured_image_id: null,
+            preview_image: null,
             last_synced_at: null,
             missing_at: null,
           },
@@ -41,6 +39,14 @@ describe('ProjectBrowserCard', () => {
             trigger_tag: 'alpha',
             class_tag: 'alpha-class',
             tagging_mode: 'booru',
+            featured_image_id: 'img-featured',
+            preview_image: {
+              id: 'img-featured',
+              relative_path: 'preview.png',
+              filename: 'preview.png',
+              content_hash: 'hash-1',
+              discovered_at: '2026-03-15T16:00:00+00:00',
+            },
             last_synced_at: null,
             missing_at: '2026-03-15T16:00:00+00:00',
           },
@@ -112,6 +118,8 @@ describe('ProjectBrowserCard', () => {
             trigger_tag: 'alpha',
             class_tag: 'alpha-class',
             tagging_mode: 'booru',
+            featured_image_id: null,
+            preview_image: null,
             last_synced_at: null,
             missing_at: null,
           },

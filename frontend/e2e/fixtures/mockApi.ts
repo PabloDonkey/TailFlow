@@ -14,6 +14,14 @@ type MockOptions = {
   imageCount?: number
 }
 
+type ProjectPreviewImageRecord = {
+  id: string
+  relative_path: string
+  filename: string
+  content_hash: string | null
+  discovered_at: string
+}
+
 type ProjectRecord = {
   id: string
   name: string
@@ -23,6 +31,8 @@ type ProjectRecord = {
   trigger_tag: string
   class_tag: string
   tagging_mode: 'e621' | 'booru'
+  featured_image_id: string | null
+  preview_image: ProjectPreviewImageRecord | null
   last_synced_at: string | null
   missing_at: string | null
 }
@@ -86,6 +96,14 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
       trigger_tag: 'sample_project',
       class_tag: 'character',
       tagging_mode: 'e621',
+      featured_image_id: defaultImageId,
+      preview_image: {
+        id: defaultImageId,
+        relative_path: 'images/sample-1.png',
+        filename: 'sample-1.png',
+        content_hash: null,
+        discovered_at: isoNow,
+      },
       last_synced_at: isoNow,
       missing_at: null,
     },
@@ -248,6 +266,53 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
     }
   }
 
+  function toProjectPreview(image: ImageSummaryRecord): ProjectPreviewImageRecord {
+    return {
+      id: image.id,
+      relative_path: image.relative_path,
+      filename: image.filename,
+      content_hash: null,
+      discovered_at: image.discovered_at,
+    }
+  }
+
+  function refreshProjectPreview(projectId: string): void {
+    const projectIndex = projects.findIndex((project) => project.id === projectId)
+    if (projectIndex < 0) {
+      return
+    }
+
+    const currentProject = projects[projectIndex]
+    if (!currentProject) {
+      return
+    }
+
+    const images = imagesByProject.get(projectId) ?? []
+    if (images.length === 0) {
+      projects[projectIndex] = {
+        ...currentProject,
+        featured_image_id: null,
+        preview_image: null,
+      }
+      return
+    }
+
+    const featured = currentProject.featured_image_id
+      ? images.find((image) => image.id === currentProject.featured_image_id)
+      : undefined
+    const resolvedFeatured = featured ?? images[0]
+
+    projects[projectIndex] = {
+      ...currentProject,
+      featured_image_id: resolvedFeatured ? resolvedFeatured.id : null,
+      preview_image: resolvedFeatured ? toProjectPreview(resolvedFeatured) : null,
+    }
+  }
+
+  for (const project of projects) {
+    refreshProjectPreview(project.id)
+  }
+
   function upsertProtectedTag(detail: ImageReadRecord, position: number, name: string): void {
     const existing = detail.tags.find((tag) => tag.position === position && tag.is_protected)
     if (existing) {
@@ -366,12 +431,15 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
         trigger_tag: triggerTag,
         class_tag: payload.class_tag ?? 'character',
         tagging_mode: payload.tagging_mode ?? 'e621',
+        featured_image_id: null,
+        preview_image: null,
         last_synced_at: isoNow,
         missing_at: null,
       }
 
       projects.push(project)
       imagesByProject.set(projectId, [])
+      refreshProjectPreview(projectId)
 
       await route.fulfill({
         status: 200,
@@ -446,6 +514,60 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
     })
   })
 
+  await page.route('**/api/projects/*/featured-image/*', async (route) => {
+    if (route.request().method() !== 'POST') {
+      await route.fallback()
+      return
+    }
+
+    const url = route.request().url()
+    const match = /\/api\/projects\/([^/]+)\/featured-image\/([^/]+)$/.exec(url)
+    const projectId = match?.[1]
+    const imageId = match?.[2]
+    if (!projectId || !imageId) {
+      await route.fallback()
+      return
+    }
+
+    const projectIndex = projects.findIndex((project) => project.id === projectId)
+    if (projectIndex === -1) {
+      await route.fulfill({
+        status: 404,
+        headers: jsonHeaders(),
+        body: JSON.stringify({ detail: 'Project not found' }),
+      })
+      return
+    }
+
+    const image = (imagesByProject.get(projectId) ?? []).find((candidate) => candidate.id === imageId)
+    if (!image) {
+      await route.fulfill({
+        status: 404,
+        headers: jsonHeaders(),
+        body: JSON.stringify({ detail: 'Project image not found' }),
+      })
+      return
+    }
+
+    const currentProject = projects[projectIndex]
+    if (!currentProject) {
+      await route.fallback()
+      return
+    }
+
+    projects[projectIndex] = {
+      ...currentProject,
+      featured_image_id: image.id,
+    }
+    refreshProjectPreview(projectId)
+
+    await route.fulfill({
+      status: 200,
+      headers: jsonHeaders(),
+      body: JSON.stringify(projects[projectIndex]),
+    })
+  })
+
   await page.route('**/api/projects/*/images', async (route) => {
     const method = route.request().method()
     const url = route.request().url()
@@ -487,6 +609,7 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
         removed_at: null,
         tags: [],
       })
+      refreshProjectPreview(projectId)
 
       await route.fulfill({
         status: 200,
@@ -522,6 +645,7 @@ export async function installApiMocks(page: Page, options: MockOptions = {}): Pr
         )
       }
       imageDetails.delete(detailKey)
+      refreshProjectPreview(routeInfo.projectId)
       await route.fulfill({ status: 204 })
       return
     }

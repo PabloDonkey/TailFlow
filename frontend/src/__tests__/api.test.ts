@@ -90,12 +90,22 @@ describe('API schemas', () => {
       trigger_tag: 'project-a',
       class_tag: 'character',
       tagging_mode: 'e621',
+      featured_image_id: '550e8400-e29b-41d4-a716-446655440099',
+      preview_image: {
+        id: '550e8400-e29b-41d4-a716-446655440099',
+        relative_path: 'dataset/featured.png',
+        filename: 'featured.png',
+        content_hash: 'abc123',
+        discovered_at: '2026-01-01T00:00:00Z',
+      },
       last_synced_at: '2026-01-01T00:00:00Z',
       missing_at: null,
     }
     const project = ProjectSchema.parse(raw)
     expect(project.folder_name).toBe('project-a')
     expect(project.tagging_mode).toBe('e621')
+    expect(project.featured_image_id).toBe('550e8400-e29b-41d4-a716-446655440099')
+    expect(project.preview_image?.filename).toBe('featured.png')
     expect(project.missing_at).toBeNull()
   })
 

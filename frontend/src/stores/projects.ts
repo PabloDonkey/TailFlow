@@ -29,6 +29,12 @@ export const useProjectStore = defineStore('projects', () => {
     projects.value.find((project) => project.id === selectedProjectId.value) ?? null,
   )
 
+  function applyProjectUpdate(updatedProject: Project) {
+    projects.value = projects.value.map((project) =>
+      project.id === updatedProject.id ? updatedProject : project,
+    )
+  }
+
   async function fetchProjects() {
     loading.value = true
     error.value = null
@@ -145,9 +151,26 @@ export const useProjectStore = defineStore('projects', () => {
     error.value = null
     try {
       const updated = await api.updateProject(selectedProjectId.value, payload)
-      projects.value = projects.value.map((project) =>
-        project.id === updated.id ? updated : project,
-      )
+      applyProjectUpdate(updated)
+      return updated
+    } catch (e) {
+      error.value = String(e)
+      return null
+    } finally {
+      updating.value = false
+    }
+  }
+
+  async function setFeaturedImage(projectId: string, imageId: string) {
+    if (!projectId || !imageId) {
+      return null
+    }
+
+    updating.value = true
+    error.value = null
+    try {
+      const updated = await api.setProjectFeaturedImage(projectId, imageId)
+      applyProjectUpdate(updated)
       return updated
     } catch (e) {
       error.value = String(e)
@@ -182,6 +205,7 @@ export const useProjectStore = defineStore('projects', () => {
     uploadImagesToProject,
     uploadImagesToSelectedProject,
     updateSelectedProjectMetadata,
+    setFeaturedImage,
     selectProject,
   }
 })
