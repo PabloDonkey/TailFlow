@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AppShell from '../components/layout/AppShell.vue'
 import HeaderSection from '../components/header/HeaderSection.vue'
@@ -446,9 +446,24 @@ const {
   queryValue,
 })
 
-if (projectStore.selectedProjectId && mobileStage.value === 'project-browser') {
-  mobileStage.value = 'image-browser'
-}
+watch(
+  () => projectStore.selectedProjectId,
+  (projectId) => {
+    if (!isMobileViewport()) {
+      return
+    }
+
+    if (!projectId) {
+      mobileStage.value = 'project-browser'
+      return
+    }
+
+    if (mobileStage.value === 'project-browser') {
+      mobileStage.value = 'image-browser'
+    }
+  },
+  { immediate: true },
+)
 
 function sidePanelDefaultSize(panelIndex: number, totalPanels: number): number {
   if (totalPanels <= 0) {

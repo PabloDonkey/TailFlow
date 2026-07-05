@@ -18,6 +18,7 @@ export const useProjectStore = defineStore('projects', () => {
   const syncing = ref(false)
   const creating = ref(false)
   const updating = ref(false)
+  const deleting = ref(false)
   const uploading = ref(false)
   const error = ref<string | null>(null)
   const lastDiscover = ref<ProjectDiscoverResponse | null>(null)
@@ -180,6 +181,36 @@ export const useProjectStore = defineStore('projects', () => {
     }
   }
 
+  async function deleteProject(projectId: string) {
+    if (!projectId) {
+      return false
+    }
+
+    deleting.value = true
+    error.value = null
+    try {
+      await api.deleteProject(projectId)
+      projects.value = projects.value.filter((project) => project.id !== projectId)
+      if (selectedProjectId.value === projectId) {
+        selectedProjectId.value = null
+      }
+      return true
+    } catch (e) {
+      error.value = String(e)
+      return false
+    } finally {
+      deleting.value = false
+    }
+  }
+
+  async function deleteSelectedProject() {
+    if (!selectedProjectId.value) {
+      return false
+    }
+
+    return deleteProject(selectedProjectId.value)
+  }
+
   function selectProject(projectId: string) {
     selectedProjectId.value = projectId
   }
@@ -192,6 +223,7 @@ export const useProjectStore = defineStore('projects', () => {
     syncing,
     creating,
     updating,
+    deleting,
     uploading,
     error,
     lastDiscover,
@@ -206,6 +238,8 @@ export const useProjectStore = defineStore('projects', () => {
     uploadImagesToSelectedProject,
     updateSelectedProjectMetadata,
     setFeaturedImage,
+    deleteProject,
+    deleteSelectedProject,
     selectProject,
   }
 })

@@ -394,6 +394,25 @@ async def create_project(
         raise
 
 
+async def delete_project(
+    session: AsyncSession,
+    project: Project,
+) -> None:
+    project_dir = Path(project.dataset_path).parent
+    if project_dir.exists():
+        try:
+            shutil.rmtree(project_dir)
+        except OSError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to delete project folder: {exc}",
+            ) from exc
+
+    project.featured_image_id = None
+    await session.delete(project)
+    await session.commit()
+
+
 async def upload_images_to_project(
     session: AsyncSession,
     project: Project,

@@ -306,6 +306,12 @@ export async function updateProject(
   })
 }
 
+export async function deleteProject(projectId: string): Promise<void> {
+  await fetchVoid(`${BASE}/projects/${projectId}`, {
+    method: 'DELETE',
+  })
+}
+
 export async function setProjectFeaturedImage(
   projectId: string,
   imageId: string,

@@ -48,6 +48,7 @@ from app.services.classifier import classify_project_image
 from app.services.projects import (
     apply_project_dataset_rename,
     create_project,
+    delete_project,
     delete_project_image,
     discover_projects,
     preview_project_dataset_rename,
@@ -289,6 +290,24 @@ async def list_projects(
     result = await session.execute(select(Project).order_by(Project.name))
     projects = result.scalars().all()
     return await _build_project_reads(session, list(projects))
+
+
+@router.delete(
+    "/{project_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_project_route(
+    project_id: uuid.UUID,
+    session: AsyncSession = Depends(db_session),
+) -> None:
+    project = await session.get(Project, project_id)
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found.",
+        )
+
+    await delete_project(session, project)
 
 
 @router.post(
