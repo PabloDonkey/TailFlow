@@ -117,36 +117,74 @@ async def _read_project_preview_images(
     if not project_ids:
         return {}
 
-    images_result = await session.execute(
-        select(DatasetImage)
+    preview_by_project: dict[uuid.UUID, DatasetImage | None] = {
+        project.id: None for project in projects
+    }
+
+    featured_image_ids = [
+        project.featured_image_id
+        for project in projects
+        if project.featured_image_id is not None
+    ]
+
+    featured_image_by_id: dict[uuid.UUID, DatasetImage] = {}
+    if featured_image_ids:
+        featured_images_result = await session.execute(
+            select(DatasetImage).where(
+                DatasetImage.id.in_(featured_image_ids),
+                DatasetImage.project_id.in_(project_ids),
+                DatasetImage.removed_at.is_(None),
+            )
+        )
+        featured_image_by_id = {
+            image.id: image for image in featured_images_result.scalars().all()
+        }
+
+    for project in projects:
+        if project.featured_image_id is None:
+            continue
+        featured_image = featured_image_by_id.get(project.featured_image_id)
+        if featured_image is None or featured_image.project_id != project.id:
+            continue
+        preview_by_project[project.id] = featured_image
+
+    unresolved_project_ids = [
+        project_id
+        for project_id, preview_image in preview_by_project.items()
+        if preview_image is None
+    ]
+    if not unresolved_project_ids:
+        return preview_by_project
+
+    ranked_images_subquery = (
+        select(
+            DatasetImage.id.label("image_id"),
+            DatasetImage.project_id.label("project_id"),
+            func.row_number()
+            .over(
+                partition_by=DatasetImage.project_id,
+                order_by=[DatasetImage.discovered_at.desc(), DatasetImage.id.asc()],
+            )
+            .label("rank"),
+        )
         .where(
-            DatasetImage.project_id.in_(project_ids),
+            DatasetImage.project_id.in_(unresolved_project_ids),
             DatasetImage.removed_at.is_(None),
         )
-        .order_by(
-            DatasetImage.project_id.asc(),
-            DatasetImage.discovered_at.desc(),
-            DatasetImage.id.asc(),
-        )
+        .subquery()
     )
-    images = list(images_result.scalars().all())
 
-    first_image_by_project: dict[uuid.UUID, DatasetImage] = {}
-    image_by_id: dict[uuid.UUID, DatasetImage] = {}
-    for image in images:
-        first_image_by_project.setdefault(image.project_id, image)
-        image_by_id[image.id] = image
+    fallback_images_result = await session.execute(
+        select(DatasetImage)
+        .join(
+            ranked_images_subquery,
+            DatasetImage.id == ranked_images_subquery.c.image_id,
+        )
+        .where(ranked_images_subquery.c.rank == 1)
+    )
 
-    preview_by_project: dict[uuid.UUID, DatasetImage | None] = {}
-    for project in projects:
-        featured = (
-            image_by_id.get(project.featured_image_id)
-            if project.featured_image_id is not None
-            else None
-        )
-        preview_by_project[project.id] = (
-            featured or first_image_by_project.get(project.id)
-        )
+    for image in fallback_images_result.scalars().all():
+        preview_by_project[image.project_id] = image
 
     return preview_by_project
 

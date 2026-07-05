@@ -170,7 +170,7 @@ function onUploadFilesChange(event: Event): void {
               <button
                 type="button"
                 class="flex items-center justify-between rounded-[var(--tf-radius-sm)] px-2 py-1 text-left text-xs text-[var(--tf-color-text-default)] hover:bg-[var(--tf-color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-60"
-                :disabled="!currentImageExists || props.currentImageIsFeatured"
+                :disabled="!props.currentImageExists || props.currentImageIsFeatured"
                 @click="setFeaturedImage"
               >
                 <span>Set as featured image</span>
@@ -185,7 +185,7 @@ function onUploadFilesChange(event: Event): void {
               <button
                 type="button"
                 class="rounded-[var(--tf-radius-sm)] px-2 py-1 text-left text-xs text-[var(--tf-color-text-default)] hover:bg-[var(--tf-color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-60"
-                :disabled="!currentImageExists"
+                :disabled="!props.currentImageExists"
                 @click="openReplacePicker"
               >
                 Replace image
@@ -200,7 +200,7 @@ function onUploadFilesChange(event: Event): void {
               <button
                 type="button"
                 class="rounded-[var(--tf-radius-sm)] px-2 py-1 text-left text-xs text-[var(--tf-color-danger)] hover:bg-[var(--tf-color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-60"
-                :disabled="!currentImageExists"
+                :disabled="!props.currentImageExists"
                 @click="showDeleteConfirm = true"
               >
                 Delete current image

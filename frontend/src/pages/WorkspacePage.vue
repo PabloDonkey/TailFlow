@@ -455,11 +455,6 @@ watch(
 
     if (!projectId) {
       mobileStage.value = 'project-browser'
-      return
-    }
-
-    if (mobileStage.value === 'project-browser') {
-      mobileStage.value = 'image-browser'
     }
   },
   { immediate: true },

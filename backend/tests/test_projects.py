@@ -495,6 +495,70 @@ async def test_set_project_featured_image_updates_list_preview(
 
 
 @pytest.mark.asyncio
+async def test_list_projects_resolves_featured_and_fallback_previews_per_project(
+    client: AsyncClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+
+    alpha_created = await client.post(
+        "/api/projects",
+        json={"folder_name": "alpha-preview", "class_tag": "subject"},
+    )
+    beta_created = await client.post(
+        "/api/projects",
+        json={"folder_name": "beta-preview", "class_tag": "subject"},
+    )
+    assert alpha_created.status_code == 201
+    assert beta_created.status_code == 201
+
+    alpha_project_id = alpha_created.json()["project"]["id"]
+    beta_project_id = beta_created.json()["project"]["id"]
+
+    alpha_uploaded = await client.post(
+        f"/api/projects/{alpha_project_id}/images",
+        files=[
+            ("files", ("alpha-1.png", io.BytesIO(make_png_bytes(8, 8)), "image/png")),
+            ("files", ("alpha-2.png", io.BytesIO(make_png_bytes(9, 9)), "image/png")),
+        ],
+    )
+    beta_uploaded = await client.post(
+        f"/api/projects/{beta_project_id}/images",
+        files=[
+            ("files", ("beta-1.png", io.BytesIO(make_png_bytes(10, 10)), "image/png")),
+        ],
+    )
+    assert alpha_uploaded.status_code == 200
+    assert beta_uploaded.status_code == 200
+
+    alpha_images = (await client.get(f"/api/projects/{alpha_project_id}/images")).json()
+    beta_images = (await client.get(f"/api/projects/{beta_project_id}/images")).json()
+    assert len(alpha_images) == 2
+    assert len(beta_images) == 1
+
+    alpha_featured_image_id = alpha_images[1]["id"]
+    set_alpha_featured = await client.post(
+        f"/api/projects/{alpha_project_id}/featured-image/{alpha_featured_image_id}"
+    )
+    assert set_alpha_featured.status_code == 200
+
+    listed_projects = (await client.get("/api/projects")).json()
+    projects_by_folder = {
+        project["folder_name"]: project for project in listed_projects
+    }
+
+    assert (
+        projects_by_folder["alpha-preview"]["preview_image"]["id"]
+        == alpha_featured_image_id
+    )
+    assert (
+        projects_by_folder["beta-preview"]["preview_image"]["id"]
+        == beta_images[0]["id"]
+    )
+
+
+@pytest.mark.asyncio
 async def test_delete_featured_image_reassigns_to_next_available_image(
     client: AsyncClient,
     tmp_path: Path,
