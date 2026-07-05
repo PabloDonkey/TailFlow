@@ -450,6 +450,162 @@ async def test_delete_project_image_soft_deletes_record_and_unlinks_file(
 
 
 @pytest.mark.asyncio
+async def test_set_project_featured_image_updates_list_preview(
+    client: AsyncClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+    created = await client.post(
+        "/api/projects",
+        json={"folder_name": "featured-project", "class_tag": "subject"},
+    )
+    assert created.status_code == 201
+    project_id = created.json()["project"]["id"]
+
+    first = make_png_bytes(8, 8)
+    second = make_png_bytes(9, 9)
+    uploaded = await client.post(
+        f"/api/projects/{project_id}/images",
+        files=[
+            ("files", ("one.png", io.BytesIO(first), "image/png")),
+            ("files", ("two.png", io.BytesIO(second), "image/png")),
+        ],
+    )
+    assert uploaded.status_code == 200
+
+    listed_images = await client.get(f"/api/projects/{project_id}/images")
+    assert listed_images.status_code == 200
+    images = listed_images.json()
+    assert len(images) == 2
+
+    chosen_featured_image_id = images[1]["id"]
+
+    set_featured = await client.post(
+        f"/api/projects/{project_id}/featured-image/{chosen_featured_image_id}"
+    )
+    assert set_featured.status_code == 200
+    payload = set_featured.json()
+    assert payload["featured_image_id"] == chosen_featured_image_id
+    assert payload["preview_image"]["id"] == chosen_featured_image_id
+
+    projects = (await client.get("/api/projects")).json()
+    assert projects[0]["featured_image_id"] == chosen_featured_image_id
+    assert projects[0]["preview_image"]["id"] == chosen_featured_image_id
+
+
+@pytest.mark.asyncio
+async def test_list_projects_resolves_featured_and_fallback_previews_per_project(
+    client: AsyncClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+
+    alpha_created = await client.post(
+        "/api/projects",
+        json={"folder_name": "alpha-preview", "class_tag": "subject"},
+    )
+    beta_created = await client.post(
+        "/api/projects",
+        json={"folder_name": "beta-preview", "class_tag": "subject"},
+    )
+    assert alpha_created.status_code == 201
+    assert beta_created.status_code == 201
+
+    alpha_project_id = alpha_created.json()["project"]["id"]
+    beta_project_id = beta_created.json()["project"]["id"]
+
+    alpha_uploaded = await client.post(
+        f"/api/projects/{alpha_project_id}/images",
+        files=[
+            ("files", ("alpha-1.png", io.BytesIO(make_png_bytes(8, 8)), "image/png")),
+            ("files", ("alpha-2.png", io.BytesIO(make_png_bytes(9, 9)), "image/png")),
+        ],
+    )
+    beta_uploaded = await client.post(
+        f"/api/projects/{beta_project_id}/images",
+        files=[
+            ("files", ("beta-1.png", io.BytesIO(make_png_bytes(10, 10)), "image/png")),
+        ],
+    )
+    assert alpha_uploaded.status_code == 200
+    assert beta_uploaded.status_code == 200
+
+    alpha_images = (await client.get(f"/api/projects/{alpha_project_id}/images")).json()
+    beta_images = (await client.get(f"/api/projects/{beta_project_id}/images")).json()
+    assert len(alpha_images) == 2
+    assert len(beta_images) == 1
+
+    alpha_featured_image_id = alpha_images[1]["id"]
+    set_alpha_featured = await client.post(
+        f"/api/projects/{alpha_project_id}/featured-image/{alpha_featured_image_id}"
+    )
+    assert set_alpha_featured.status_code == 200
+
+    listed_projects = (await client.get("/api/projects")).json()
+    projects_by_folder = {
+        project["folder_name"]: project for project in listed_projects
+    }
+
+    assert (
+        projects_by_folder["alpha-preview"]["preview_image"]["id"]
+        == alpha_featured_image_id
+    )
+    assert (
+        projects_by_folder["beta-preview"]["preview_image"]["id"]
+        == beta_images[0]["id"]
+    )
+
+
+@pytest.mark.asyncio
+async def test_delete_featured_image_reassigns_to_next_available_image(
+    client: AsyncClient,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("app.core.config.settings.projects_root_path", tmp_path)
+    created = await client.post(
+        "/api/projects",
+        json={"folder_name": "featured-delete", "class_tag": "subject"},
+    )
+    assert created.status_code == 201
+    project_id = created.json()["project"]["id"]
+
+    upload_response = await client.post(
+        f"/api/projects/{project_id}/images",
+        files=[
+            ("files", ("first.png", io.BytesIO(make_png_bytes(10, 10)), "image/png")),
+            ("files", ("second.png", io.BytesIO(make_png_bytes(11, 11)), "image/png")),
+        ],
+    )
+    assert upload_response.status_code == 200
+
+    listed_images = await client.get(f"/api/projects/{project_id}/images")
+    assert listed_images.status_code == 200
+    images = listed_images.json()
+    assert len(images) == 2
+
+    fallback_image_id = images[0]["id"]
+    featured_image_id = images[1]["id"]
+
+    set_featured = await client.post(
+        f"/api/projects/{project_id}/featured-image/{featured_image_id}"
+    )
+    assert set_featured.status_code == 200
+    assert set_featured.json()["featured_image_id"] == featured_image_id
+
+    delete_featured = await client.delete(
+        f"/api/projects/{project_id}/images/{featured_image_id}"
+    )
+    assert delete_featured.status_code == 204
+
+    projects = (await client.get("/api/projects")).json()
+    assert projects[0]["featured_image_id"] == fallback_image_id
+    assert projects[0]["preview_image"]["id"] == fallback_image_id
+
+
+@pytest.mark.asyncio
 async def test_update_project_tags_metadata(
     client: AsyncClient,
     tmp_path: Path,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { getProjectImageFileUrl, listProjectImages, type Project } from '../../api'
+import { computed } from 'vue'
+import { getProjectImageFileUrl, type Project } from '../../api'
 
 const props = withDefaults(defineProps<{
   projects: Project[]
@@ -23,38 +23,22 @@ const orderedProjects = computed(() =>
   [...props.projects].sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })),
 )
 
-const projectPreviewUrls = ref<Record<string, string | null>>({})
+function projectPreviewUrl(project: Project): string | null {
+  if (project.missing_at) {
+    return null
+  }
 
-async function loadProjectPreviews(projects: Project[]): Promise<void> {
-  const nextPreviewEntries = await Promise.all(
-    projects.map(async (project) => {
-      if (project.missing_at) {
-        return [project.id, null] as const
-      }
+  const preview = project.preview_image
+  if (!preview) {
+    return null
+  }
 
-      try {
-        const images = await listProjectImages(project.id)
-        const firstImage = images[0]
-        if (!firstImage) {
-          return [project.id, null] as const
-        }
-        return [project.id, getProjectImageFileUrl(project.id, firstImage.id, firstImage.content_hash ?? firstImage.discovered_at)] as const
-      } catch {
-        return [project.id, null] as const
-      }
-    }),
+  return getProjectImageFileUrl(
+    project.id,
+    preview.id,
+    preview.content_hash ?? preview.discovered_at,
   )
-
-  projectPreviewUrls.value = Object.fromEntries(nextPreviewEntries)
 }
-
-watch(
-  () => orderedProjects.value,
-  async (projects) => {
-    await loadProjectPreviews(projects)
-  },
-  { immediate: true },
-)
 
 function projectStatusLabel(project: Project): string {
   return project.missing_at ? 'Missing' : 'Active'
@@ -107,8 +91,8 @@ function projectStatusLabel(project: Project): string {
     >
       <span class="grid h-32 w-full overflow-hidden rounded-[var(--tf-radius-sm)] border border-[var(--tf-color-surface-border)] bg-[var(--tf-color-surface-muted)] text-xs text-[var(--tf-color-text-muted)] lg:h-40">
         <img
-          v-if="projectPreviewUrls[project.id]"
-          :src="projectPreviewUrls[project.id] ?? ''"
+          v-if="projectPreviewUrl(project)"
+          :src="projectPreviewUrl(project) ?? ''"
           :alt="`${project.name} preview`"
           class="h-full w-full object-cover"
         >

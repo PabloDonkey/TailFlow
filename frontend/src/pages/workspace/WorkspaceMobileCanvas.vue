@@ -23,6 +23,7 @@ const props = defineProps<{
   showPanelScanButton?: boolean
   showPanelSelectedToggleButton?: boolean
   currentImageExists: boolean
+  currentImageIsFeatured: boolean
   currentImageFilename?: string
   canGoToPrevious: boolean
   canGoToNext: boolean
@@ -41,6 +42,7 @@ const emit = defineEmits<{
   'toggle-panel-selected-filter': []
   'replace-image': [file: File]
   'upload-images': [files: File[]]
+  'set-featured': []
 }>()
 
 const showDeleteConfirm = ref(false)
@@ -64,6 +66,14 @@ function openReplacePicker(): void {
 function openUploadPicker(): void {
   showCanvasActionsMenu.value = false
   uploadInputRef.value?.click()
+}
+
+function setFeaturedImage(): void {
+  showCanvasActionsMenu.value = false
+  if (!props.currentImageExists || props.currentImageIsFeatured) {
+    return
+  }
+  emit('set-featured')
 }
 
 function onReplaceFileChange(event: Event): void {
@@ -159,8 +169,23 @@ function onUploadFilesChange(event: Event): void {
             >
               <button
                 type="button"
+                class="flex items-center justify-between rounded-[var(--tf-radius-sm)] px-2 py-1 text-left text-xs text-[var(--tf-color-text-default)] hover:bg-[var(--tf-color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-60"
+                :disabled="!props.currentImageExists || props.currentImageIsFeatured"
+                @click="setFeaturedImage"
+              >
+                <span>Set as featured image</span>
+                <span
+                  v-if="props.currentImageIsFeatured"
+                  aria-label="Current image is featured"
+                  class="text-[var(--tf-color-success)]"
+                >
+                  [x]
+                </span>
+              </button>
+              <button
+                type="button"
                 class="rounded-[var(--tf-radius-sm)] px-2 py-1 text-left text-xs text-[var(--tf-color-text-default)] hover:bg-[var(--tf-color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-60"
-                :disabled="!currentImageExists"
+                :disabled="!props.currentImageExists"
                 @click="openReplacePicker"
               >
                 Replace image
@@ -175,7 +200,7 @@ function onUploadFilesChange(event: Event): void {
               <button
                 type="button"
                 class="rounded-[var(--tf-radius-sm)] px-2 py-1 text-left text-xs text-[var(--tf-color-danger)] hover:bg-[var(--tf-color-surface-alt)] disabled:cursor-not-allowed disabled:opacity-60"
-                :disabled="!currentImageExists"
+                :disabled="!props.currentImageExists"
                 @click="showDeleteConfirm = true"
               >
                 Delete current image

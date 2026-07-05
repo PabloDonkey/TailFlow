@@ -10,6 +10,7 @@ import {
 import { getActivePinia } from 'pinia'
 import { useImageStore } from '../../../stores/images'
 import { useProjectStore } from '../../../stores/projects'
+import AppAlertDialog from '../../../design-system/reka/AppAlertDialog.vue'
 
 const props = defineProps<{
   selectedProject: Project | null
@@ -32,6 +33,8 @@ const renameStatus = ref<string | null>(null)
 const renameError = ref<string | null>(null)
 const renamePreviewLoading = ref(false)
 const renameApplyLoading = ref(false)
+const showDeleteProjectConfirm = ref(false)
+const deleteProjectError = ref<string | null>(null)
 
 watch(
   () => props.selectedProject,
@@ -82,6 +85,8 @@ function startEditingSelectedProject() {
     editTriggerTag.value = ''
     editClassTag.value = ''
     editTaggingMode.value = 'e621'
+    showDeleteProjectConfirm.value = false
+    deleteProjectError.value = null
     return
   }
 
@@ -91,6 +96,8 @@ function startEditingSelectedProject() {
   renamePreview.value = null
   renameStatus.value = null
   renameError.value = null
+  showDeleteProjectConfirm.value = false
+  deleteProjectError.value = null
 }
 
 async function saveProjectMetadata() {
@@ -171,6 +178,25 @@ async function applyDatasetRenamePlan() {
     renameError.value = String(error)
   } finally {
     renameApplyLoading.value = false
+  }
+}
+
+function requestDeleteProject() {
+  deleteProjectError.value = null
+  showDeleteProjectConfirm.value = true
+}
+
+async function confirmDeleteProject() {
+  showDeleteProjectConfirm.value = false
+  deleteProjectError.value = null
+  if (!props.selectedProject) {
+    deleteProjectError.value = 'Select a project first.'
+    return
+  }
+
+  const deleted = await projectStore.deleteProject(props.selectedProject.id)
+  if (!deleted) {
+    deleteProjectError.value = projectStore.error ?? 'Failed to delete project.'
   }
 }
 </script>
@@ -374,6 +400,36 @@ async function applyDatasetRenamePlan() {
         </ul>
       </div>
     </div>
+
+    <div class="danger-zone">
+      <h3>Delete Project</h3>
+      <p class="field-help">
+        This action cannot be undone.
+      </p>
+      <button
+        class="btn btn-danger"
+        :disabled="projectStore.deleting"
+        @click="requestDeleteProject"
+      >
+        {{ projectStore.deleting ? 'Deleting…' : 'Delete Project' }}
+      </button>
+      <p
+        v-if="deleteProjectError"
+        class="error"
+      >
+        {{ deleteProjectError }}
+      </p>
+    </div>
+
+    <AppAlertDialog
+      :open="showDeleteProjectConfirm"
+      title="Delete project?"
+      :description="selectedProject ? `This action cannot be undone. Delete ${selectedProject.name} and all project files.` : 'This action cannot be undone.'"
+      confirm-label="Delete Project"
+      cancel-label="Cancel"
+      @update:open="(open) => (showDeleteProjectConfirm = open)"
+      @confirm="confirmDeleteProject"
+    />
   </div>
 </template>
 
@@ -437,8 +493,25 @@ h2 {
   color: #222;
 }
 
+.btn-danger {
+  background: #c62828;
+  color: #fff;
+}
+
+.btn-danger:disabled {
+  opacity: 0.6;
+}
+
 .upload-box {
   border-top: 1px solid #eceff5;
+  padding-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.danger-zone {
+  border-top: 1px solid #f2d0d0;
   padding-top: 0.75rem;
   display: flex;
   flex-direction: column;

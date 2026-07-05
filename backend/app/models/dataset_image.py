@@ -46,7 +46,10 @@ class DatasetImage(Base):
     )
 
     project: Mapped["Project"] = relationship(
-        "Project", back_populates="dataset_images", lazy="selectin"
+        "Project",
+        back_populates="dataset_images",
+        foreign_keys=[project_id],
+        lazy="selectin",
     )
     image_tag_links: Mapped[list["DatasetImageTag"]] = relationship(
         "DatasetImageTag",
