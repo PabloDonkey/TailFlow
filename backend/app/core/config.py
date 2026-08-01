@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     )
 
     database_host: str = "localhost"
-    database_port: int = 5432
+    database_port: int = 5433
     database_name: str = "tailflow_db"
     database_user: str = "tailflow"
     database_password: str = "password"

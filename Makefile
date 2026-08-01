@@ -1,6 +1,6 @@
 SHELL := /bin/bash
 
-.PHONY: install run stop test test-backend test-frontend test-e2e test-assets
+.PHONY: install run stop test test-backend test-frontend test-e2e test-assets db-up db-down
 
 install:
 	@set -euo pipefail; \
@@ -14,7 +14,7 @@ install:
 	echo "Installing frontend dependencies..."; \
 	cd frontend && npm install
 
-run:
+run: db-up
 	@set -euo pipefail; \
 	if [ ! -x backend/.venv/bin/python ]; then \
 		echo "Missing backend virtualenv at backend/.venv."; \
@@ -43,6 +43,11 @@ run:
 	else \
 		echo "Warning: neither 'ss' nor 'lsof' is available; skipping preflight port check for 8000."; \
 	fi; \
+	echo "Waiting for Postgres..."; \
+	for attempt in $$(seq 1 30); do \
+		scripts/compose.sh exec -T postgres pg_isready >/dev/null 2>&1 && break; \
+		sleep 1; \
+	done; \
 	echo "Applying backend migrations..."; \
 	( cd backend && ./.venv/bin/python ./.venv/bin/alembic upgrade head ); \
 	backend_pid=''; \
@@ -132,3 +137,9 @@ test-e2e:
 test-assets:
 	@set -euo pipefail; \
 	python3 scripts/validate_assets_checksums.py
+
+db-up:
+	scripts/db_services.sh up
+
+db-down:
+	scripts/db_services.sh down

@@ -11,7 +11,7 @@ TailFlow is a mobile-friendly image tagging app with a FastAPI backend and a Vue
 
 - Python 3.11+
 - Node.js 20+
-- PostgreSQL
+- Docker + Docker Compose
 
 ## Quick start from the repository root
 
@@ -31,6 +31,8 @@ make run
 
 `make install` creates `backend/.venv`, installs backend development dependencies, bootstraps `backend/.env` from `backend/.env.example` when needed, auto-generates a random `DATABASE_PASSWORD` when empty, and runs `npm install` in `frontend/`. `PROJECTS_ROOT_PATH` is configured through the web onboarding flow.
 `make install` also enables repository-managed git hooks (`core.hooksPath=.githooks`), including a `pre-push` hook that blocks direct pushes to `main`.
+
+`make run` automatically starts TailFlow's PostgreSQL container (on host port 5433) via Docker Compose before applying migrations and launching the backend and frontend dev servers. To manually manage the database container, use `make db-up` to start it and `make db-down` to stop it.
 
 ### Windows (PowerShell)
 
@@ -77,12 +79,11 @@ The PowerShell script mirrors the Linux command surface with additional commands
    cp .env.example .env
    ```
 
-4. Update `backend/.env` so it points to an existing PostgreSQL database.
-   The default example uses split database settings:
+4. The `.env` file is pre-configured with Docker Compose environment variables. The default settings are:
 
    ```env
    DATABASE_HOST=localhost
-   DATABASE_PORT=5432
+   DATABASE_PORT=5433
    DATABASE_NAME=tailflow_db
    DATABASE_USER=tailflow
    DATABASE_PASSWORD=generated-or-custom-password
@@ -97,10 +98,10 @@ The PowerShell script mirrors the Linux command surface with additional commands
 
    `PROJECTS_ROOT_PATH` can stay empty initially; the frontend onboarding page will request and save it.
 
-   If you have PostgreSQL running locally, one possible setup is:
+   Start TailFlow's PostgreSQL container:
 
    ```bash
-   createdb tailflow
+   make db-up
    ```
 
 5. Run the database migrations:
@@ -193,7 +194,7 @@ npm run typecheck
 npm run build
 ```
 
-### Root shortcut
+### Root shortcuts
 
 Linux:
 
@@ -203,6 +204,8 @@ make run
 make test
 make test-backend
 make test-frontend
+make db-up
+make db-down
 ```
 
 Windows (PowerShell):
