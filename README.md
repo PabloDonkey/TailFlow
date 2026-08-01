@@ -241,5 +241,5 @@ pwsh -File scripts/dev.ps1 build
 
 - Alembic reads the database connection from `backend/.env`.
 - Dataset images live on disk under `PROJECTS_ROOT_PATH`, one `dataset/` directory per project. The database indexes them; the filesystem is the source of truth.
-- Tag catalogs are **not** seeded automatically. Run `python scripts/import_tags.py --source all` once after setup, or adding catalog tags will fail.
+- Tag catalogs are **not** seeded automatically. Run `cd backend && ./.venv/bin/python ../scripts/import_tags.py --source all` once after setup, or adding catalog tags will fail. It must be run from `backend/` — settings resolve `.env` relative to the working directory, so from the repo root it fails with a password error.
 - The frontend has two routes: `/onboarding` (first-run path configuration) and `/workspace` (everything else).

@@ -25,7 +25,7 @@ cd backend  && ./.venv/bin/python -m ruff check . && ./.venv/bin/python -m mypy 
 cd frontend && npm run lint && npm run typecheck
 cd frontend && npm run test:browser  # vitest browser mode; no Make target
 
-python scripts/import_tags.py --source all   # seed tag catalogs — MANUAL, nothing runs it for you
+cd backend && ./.venv/bin/python ../scripts/import_tags.py --source all   # seed tag catalogs
 scripts/db_services.sh reset                 # drop the Postgres volume and start clean
 ```
 
@@ -107,6 +107,8 @@ The frontend string-matches backend error text. **Two** files — `composables/u
 Real, currently true, and each one costs an hour to rediscover:
 
 - **Tag catalogs are not seeded automatically.** Neither `make install` nor `make run` invokes `scripts/import_tags.py`. Until it runs, adding any catalog tag returns 422 — even though the AI card will happily propose those tags, since suggestion filtering reads the CSVs directly rather than the database.
+- **`scripts/import_tags.py` only works when run from `backend/`.** `Settings` uses `env_file=".env"`, which resolves **relative to the working directory** — from the repo root no `.env` is found, so every setting silently falls back to its default and the script dies with `password authentication failed for user "tailflow"`. The same trap applies to any script importing `app.core.config`.
+- **`make stop` cannot find the backend it started.** It only kills listeners whose cmdline matches `tailflow/backend`, but `make run` launches uvicorn as `./.venv/bin/python` with `backend/` as CWD, so the absolute path never appears. A stale server survives `make stop` and keeps serving the old `.env`; kill it by PID.
 - **Backend tests run on SQLite in memory**, production on Postgres, and the schema in tests comes from `create_all` rather than the migration chain. Window functions, composite FK enforcement, and `JSON` semantics are never exercised by CI. A broken migration cannot fail the test suite.
 - **`discover_projects()` creates a `dataset/` subdirectory inside every child of `PROJECTS_ROOT_PATH`** as a side effect of scanning. Point it at the wrong directory and it litters the filesystem.
 - **Discovered projects get `trigger_tag == class_tag == folder_name`**, a state that `create_project` and `update_project` both reject with a 400. They cannot be `PATCH`ed until one of the two is changed.
