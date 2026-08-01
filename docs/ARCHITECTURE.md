@@ -1,5 +1,22 @@
 # Architecture Vision
 
+> **This document describes the target architecture, most of which is not built yet.** See the status table below before assuming a module exists. For how the code is actually structured today, read `CLAUDE.md` and the reference documents it links.
+
+## Implementation status
+
+| Workflow stage | Status |
+|---|---|
+| Dataset Collection | **Implemented** — project discovery, sync, upload, replace, delete, dataset rename |
+| AI Tagging | **Implemented** — shared tag catalogs, tagging modes, protected tags, JTP classifier proposals, `.txt` sidecars |
+| Dataset Sanitization | **Vision only** — no code exists |
+| Dataset Export | **Vision only** — no code exists |
+| Training | **Vision only** — no code exists. See `AQUA_TRAINING_HANDOFF.md` for the external handoff that stands in for it today |
+| Checkpoint Evaluation | **Vision only** — no code exists |
+
+The two implemented stages live in `backend/app/services/projects.py` and `backend/app/services/classifier.py`, surfaced through the workspace card system described in `WORKSPACE_CARDS.md`.
+
+The principles below apply to everything, built or not. The module list is aspirational.
+
 ## Mission
 
 This application is a modular, local workstation dedicated to creating high-quality furry SDXL LoRAs.

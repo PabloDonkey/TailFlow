@@ -45,6 +45,7 @@ ADR creation checklist:
 | ADR-007 | Concise AI Task Artifact Logging | Accepted | 2026-03-13 |
 | ADR-008 | UI Contract Review Planning Workflow | Accepted | 2026-03-13 |
 | ADR-009 | Test Authority and Accessibility-First E2E Policy | Accepted | 2026-04-25 |
+| ADR-010 | Claude-Native Documentation Structure | Accepted | 2026-08-01 |
 
 ---
 
@@ -296,3 +297,45 @@ Adopt Playwright E2E as a required UI regression signal and enforce test authori
 - Positive: encourages accessible UI semantics through ARIA-first locator practices.
 - Tradeoff: implementation may take longer when UI semantics must be improved to support robust accessible locators.
 - Tradeoff: stricter guardrails require explicit authorization when tests genuinely need updates.
+---
+
+## ADR-010: Claude-Native Documentation Structure
+
+**Status:** Accepted  
+**Date:** 2026-08-01
+
+### Context
+
+Project knowledge had accumulated across nine documents written for a Copilot-based workflow: `AGENTS.md`, `.ai/rule.md`, four skill files under `.copilot/skills/`, `.github/ui-contract.md`, and five documents at the repository root. Three problems had emerged.
+
+First, every one of those documents was **prescriptive** — SRP, filesystem-first, do not modify tests — and none was **descriptive**. There was no route reference, no schema reference, no explanation of the workspace card registry, and no classifier setup guide. A new contributor or agent had to read source to answer basic questions.
+
+Second, `ARCHITECTURE.md` and `DOMAIN_MODEL.md` describe a six-stage LoRA workflow, but only two stages exist in code. Nothing marked the difference, so both documents read as descriptions of a system that does not exist.
+
+Third, guidance was duplicated and drifting across `AGENTS.md`, `.ai/rule.md`, and the `.copilot/skills/` files, with no single entry point. Claude Code reads `CLAUDE.md` by convention, and the repository had none.
+
+### Options considered
+
+- Keep the existing structure and add a thin `CLAUDE.md` pointing at `AGENTS.md`.
+- Keep both agent formats in sync — `CLAUDE.md` and `AGENTS.md` maintained in parallel.
+- Consolidate into a single `CLAUDE.md` entry point plus a flat `docs/` of reference documents, and retire the Copilot-era files.
+
+### Decision
+
+Consolidate. Specifically:
+
+1. `CLAUDE.md` at the repository root is the single agent entry point. It absorbs `AGENTS.md` and `.ai/rule.md`, and covers commands, architecture as built, invariants, working agreements, gotchas, a documentation map, and dev-loop tracking.
+2. All reference documentation lives in a flat `docs/` directory using `SCREAMING_SNAKE_CASE.md` names, one file per concern. Root-level `ARCHITECTURE.md`, `DOMAIN_MODEL.md`, `DECISIONS.md`, `TESTING.md`, and `ROADMAP.md` moved there; `project-dataset-workflow.md` and `tag-import-plan.md` were renamed to match.
+3. Four descriptive references were written to close the gap: `API.md`, `DATABASE_MODEL.md`, `WORKSPACE_CARDS.md`, and `CLASSIFIER.md`.
+4. `ARCHITECTURE.md` and `DOMAIN_MODEL.md` gained implementation-status tables distinguishing built modules from vision. Superseded content is marked rather than deleted.
+5. `AGENTS.md`, `.ai/rule.md`, `.copilot/`, and `.github/ui-contract.md` are removed after their content was absorbed. `.github/ui-contract.md` became `docs/UI_CONTRACT.md`, folding in the review checklist from `.copilot/skills/ui-contract-review.md`; `list_changed_vue_files.sh` moved to `scripts/`.
+6. `.project/` remains gitignored local session tracking, unchanged, and is documented from `CLAUDE.md`.
+
+### Consequences
+
+- Positive: one entry point, so guidance cannot drift between agent formats.
+- Positive: descriptive documentation now exists for the API, schema, card system, and classifier — the areas that previously required reading source.
+- Positive: readers can tell implemented modules from planned ones.
+- Positive: documentation lives beside the code and is expected to be updated in the same commit as a behavior change.
+- Tradeoff: the repository is now specific to Claude Code. Reintroducing another agent tool means either a pointer file or duplicated guidance.
+- Tradeoff: descriptive documentation drifts as code changes. The status tables and gotcha lists in particular need review whenever the areas they describe are touched.

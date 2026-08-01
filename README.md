@@ -135,7 +135,7 @@ Logs are emitted to stdout by default; optional file logging can be enabled with
    ```
 
 The frontend usually starts at `http://localhost:5173`.
-During development, Vite proxies `/api` requests to `http://localhost:8000`, so the backend should be running on port `8000`.
+During development, Vite proxies `/api` requests to `http://localhost:8001`, so the backend should be running on port `8001`.
 
 ## Local development workflow
 
@@ -220,8 +220,26 @@ pwsh -File scripts/dev.ps1 typecheck
 pwsh -File scripts/dev.ps1 build
 ```
 
+## Documentation
+
+`CLAUDE.md` at the repository root is the entry point — commands, architecture, invariants, and known gotchas. Reference documentation lives in `docs/`:
+
+| Document | For |
+| -------- | --- |
+| `docs/ARCHITECTURE.md` | Vision, principles, and what is actually implemented today |
+| `docs/DOMAIN_MODEL.md` | Ubiquitous language |
+| `docs/API.md` | HTTP route reference |
+| `docs/DATABASE_MODEL.md` | Tables, constraints, migration chain |
+| `docs/WORKSPACE_CARDS.md` | The workspace card system and how to add a card |
+| `docs/CLASSIFIER.md` | Enabling AI tagging, model files, thresholds |
+| `docs/UI_CONTRACT.md` | Frontend structure, styling, and naming rules |
+| `docs/TESTING.md` | Test layers and Playwright conventions |
+| `docs/DECISIONS.md` | Architecture decision records |
+| `docs/ROADMAP.md` | Deferred work |
+
 ## Notes
 
 - Alembic reads the database connection from `backend/.env`.
-- Uploaded files are stored under `backend/storage/images` by default.
-- The frontend includes routes for gallery, upload, image details, and tag management.
+- Dataset images live on disk under `PROJECTS_ROOT_PATH`, one `dataset/` directory per project. The database indexes them; the filesystem is the source of truth.
+- Tag catalogs are **not** seeded automatically. Run `python scripts/import_tags.py --source all` once after setup, or adding catalog tags will fail.
+- The frontend has two routes: `/onboarding` (first-run path configuration) and `/workspace` (everything else).

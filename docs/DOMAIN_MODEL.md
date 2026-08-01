@@ -44,6 +44,26 @@ Project
 
 A Project is the root of every other domain concept.
 
+## Implementation status
+
+This document defines the full target vocabulary. Only part of it has code behind it today.
+
+| Concept | Status |
+|---|---|
+| Project | **Implemented** — `projects` table, `services/projects.py` |
+| Dataset | **Implemented** — the `dataset/` directory, reconciled by `sync_project()` |
+| Dataset Image | **Implemented** — `dataset_images` table |
+| Tag Catalog | **Implemented** — `tags` table, seeded from `assets/*.csv` |
+| Tag Set | **Implemented** — `dataset_image_tag`, plus `.txt` sidecars on disk |
+| Tag Proposal | **Implemented** — transient by design; see `CLASSIFIER.md` |
+| Sanitized Dataset / Sanitization | **Vision only** |
+| Dataset Export | **Vision only** |
+| Training Experiment / Configuration / Run | **Vision only** |
+| Checkpoint | **Vision only** |
+| Evaluation | **Vision only** |
+
+Vision-only sections below are still binding on naming: when those modules are built, they use these names and respect these ownership rules. They are not a description of existing code.
+
 ---
 
 # Project
