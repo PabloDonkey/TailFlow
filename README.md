@@ -32,7 +32,7 @@ make run
 `make install` creates `backend/.venv`, installs backend development dependencies, bootstraps `backend/.env` from `backend/.env.example` when needed, auto-generates a random `DATABASE_PASSWORD` when empty, and runs `npm install` in `frontend/`. `PROJECTS_ROOT_PATH` is configured through the web onboarding flow.
 `make install` also enables repository-managed git hooks (`core.hooksPath=.githooks`), including a `pre-push` hook that blocks direct pushes to `main`.
 
-`make run` automatically starts TailFlow's PostgreSQL container (on host port 5433) via Docker Compose before applying migrations and launching the backend and frontend dev servers. To manually manage the database container, use `make db-up` to start it and `make db-down` to stop it.
+`make run` automatically starts TailFlow's PostgreSQL container (on host port 5433) via Docker Compose before applying migrations and launching the backend and frontend dev servers on ports 8001 and 5173 respectively. To manually manage the database container, use `make db-up` to start it and `make db-down` to stop it. TailFlow uses port 8001 for the backend (instead of the common 8000) to avoid conflicts with other local development servers.
 
 ### Windows (PowerShell)
 
@@ -116,7 +116,7 @@ The PowerShell script mirrors the Linux command surface with additional commands
    uvicorn app.main:app --reload
    ```
 
-The backend will be available at `http://localhost:8000`, and a health check is exposed at `http://localhost:8000/health`.
+The backend will be available at `http://localhost:8001`, and a health check is exposed at `http://localhost:8001/health`.
 Logs are emitted to stdout by default; optional file logging can be enabled with `FILE_LOG_ENABLED`, and request logging can be controlled with `LOG_LEVEL`, `REQUEST_LOGGING_ENABLED`, and `FILE_LOG_PATH`.
 
 ## Run the frontend

@@ -1,5 +1,7 @@
 SHELL := /bin/bash
 
+APP_PORT := 8001
+
 .PHONY: install run stop test test-backend test-frontend test-e2e test-assets db-up db-down
 
 install:
@@ -14,7 +16,7 @@ install:
 	echo "Installing frontend dependencies..."; \
 	cd frontend && npm install
 
-run: db-up
+run: db-up stop
 	@set -euo pipefail; \
 	if [ ! -x backend/.venv/bin/python ]; then \
 		echo "Missing backend virtualenv at backend/.venv."; \
@@ -27,21 +29,53 @@ run: db-up
 		exit 1; \
 	fi; \
 	if command -v ss >/dev/null 2>&1; then \
-		if ss -ltn 'sport = :8000' | grep -q LISTEN; then \
-			echo "Port 8000 is already in use."; \
-			echo "Stop the existing backend process and retry, or change the backend port."; \
-			echo "Tip: run 'ss -ltnp \"sport = :8000\"' to find the process."; \
-			exit 1; \
-		fi; \
+		for attempt in $$(seq 1 5); do \
+			port_pids=$$(ss -ltnp 'sport = :$(APP_PORT)' 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u || true); \
+			if [ -z "$$port_pids" ]; then \
+				break; \
+			fi; \
+			is_tailflow=0; \
+			for pid in $$port_pids; do \
+				if ps -p $$pid -o cmd= | grep -q "tailflow/backend"; then \
+					is_tailflow=1; \
+					break; \
+				fi; \
+			done; \
+			if [ $$is_tailflow -eq 1 ]; then \
+				echo "TailFlow backend already running on port $(APP_PORT); stopping it..."; \
+				kill $$port_pids 2>/dev/null || true; \
+				sleep 1; \
+			else \
+				echo "Port 8000 is in use by another application (e.g., rp-engine)."; \
+				echo "Stop the other application first, or set RP_ENGINE_APP_PORT/DATABASE_PORT to different values."; \
+				exit 1; \
+			fi; \
+		done; \
 	elif command -v lsof >/dev/null 2>&1; then \
-		if lsof -nP -iTCP:8000 -sTCP:LISTEN >/dev/null 2>&1; then \
-			echo "Port 8000 is already in use."; \
-			echo "Stop the existing backend process and retry, or change the backend port."; \
-			echo "Tip: run 'lsof -nP -iTCP:8000 -sTCP:LISTEN' to find the process."; \
-			exit 1; \
-		fi; \
+		for attempt in $$(seq 1 5); do \
+			port_pids=$$(lsof -tiTCP:$(APP_PORT) -sTCP:LISTEN 2>/dev/null || true); \
+			if [ -z "$$port_pids" ]; then \
+				break; \
+			fi; \
+			is_tailflow=0; \
+			for pid in $$port_pids; do \
+				if ps -p $$pid -o cmd= | grep -q "tailflow/backend"; then \
+					is_tailflow=1; \
+					break; \
+				fi; \
+			done; \
+			if [ $$is_tailflow -eq 1 ]; then \
+				echo "TailFlow backend already running on port $(APP_PORT); stopping it..."; \
+				kill $$port_pids 2>/dev/null || true; \
+				sleep 1; \
+			else \
+				echo "Port 8000 is in use by another application (e.g., rp-engine)."; \
+				echo "Stop the other application first, or set RP_ENGINE_APP_PORT/DATABASE_PORT to different values."; \
+				exit 1; \
+			fi; \
+		done; \
 	else \
-		echo "Warning: neither 'ss' nor 'lsof' is available; skipping preflight port check for 8000."; \
+		echo "Warning: neither 'ss' nor 'lsof' is available; skipping preflight port check for $(APP_PORT)."; \
 	fi; \
 	echo "Waiting for Postgres..."; \
 	for attempt in $$(seq 1 30); do \
@@ -52,10 +86,10 @@ run: db-up
 	( cd backend && ./.venv/bin/python ./.venv/bin/alembic upgrade head ); \
 	backend_pid=''; \
 	trap 'if [ -n "$$backend_pid" ]; then kill "$$backend_pid"; wait "$$backend_pid" 2>/dev/null || true; fi' EXIT INT TERM; \
-	( cd backend && exec ./.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload ) & \
+	( cd backend && exec ./.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port $(APP_PORT) --reload ) & \
 	backend_pid=$$!; \
 	echo "Backend process started (PID $$backend_pid), waiting for readiness..."; \
-	backend_health_url='http://127.0.0.1:8000/health'; \
+	backend_health_url='http://127.0.0.1:$(APP_PORT)/health'; \
 	backend_ready=0; \
 	for attempt in $$(seq 1 60); do \
 		if ! kill -0 "$$backend_pid" >/dev/null 2>&1; then \
@@ -73,7 +107,7 @@ run: db-up
 		echo "Backend did not become ready within 30 seconds at $$backend_health_url."; \
 		exit 1; \
 	fi; \
-	echo "Backend ready at http://0.0.0.0:8000"; \
+	echo "Backend ready at http://0.0.0.0:$(APP_PORT)"; \
 	echo "Starting frontend at http://0.0.0.0:5173"; \
 	cd frontend && npm run dev
 
@@ -81,10 +115,10 @@ stop:
 	@set -euo pipefail; \
 	stopped=0; \
 	if command -v ss >/dev/null 2>&1; then \
-		backend_pids=$$(ss -ltnp 'sport = :8000' 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u || true); \
+		backend_pids=$$(ss -ltnp 'sport = :$(APP_PORT)' 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u || true); \
 		frontend_pids=$$(ss -ltnp '( sport = :5173 or sport = :5174 )' 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u || true); \
 	elif command -v lsof >/dev/null 2>&1; then \
-		backend_pids=$$(lsof -tiTCP:8000 -sTCP:LISTEN 2>/dev/null | sort -u || true); \
+		backend_pids=$$(lsof -tiTCP:$(APP_PORT) -sTCP:LISTEN 2>/dev/null | sort -u || true); \
 		frontend_pids=$$({ lsof -tiTCP:5173 -sTCP:LISTEN 2>/dev/null; lsof -tiTCP:5174 -sTCP:LISTEN 2>/dev/null; } | sort -u || true); \
 	else \
 		backend_pids=''; \
@@ -92,14 +126,22 @@ stop:
 		echo "Warning: neither 'ss' nor 'lsof' is available; cannot auto-detect running dev processes."; \
 	fi; \
 	if [ -n "$$backend_pids" ]; then \
-		kill $$backend_pids || true; \
-		echo "Stopped backend uvicorn process(es)."; \
-		stopped=1; \
+		for pid in $$backend_pids; do \
+			if ps -p $$pid -o cmd= | grep -q "tailflow/backend"; then \
+				kill $$pid 2>/dev/null || true; \
+				echo "Stopped TailFlow backend process (PID $$pid)."; \
+				stopped=1; \
+			fi; \
+		done; \
 	fi; \
 	if [ -n "$$frontend_pids" ]; then \
-		kill $$frontend_pids || true; \
-		echo "Stopped frontend vite process(es)."; \
-		stopped=1; \
+		for pid in $$frontend_pids; do \
+			if ps -p $$pid -o cmd= | grep -q "tailflow/frontend"; then \
+				kill $$pid 2>/dev/null || true; \
+				echo "Stopped TailFlow frontend process (PID $$pid)."; \
+				stopped=1; \
+			fi; \
+		done; \
 	fi; \
 	if [ "$$stopped" -eq 0 ]; then \
 		echo "No TailFlow dev processes found."; \
