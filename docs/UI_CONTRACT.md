@@ -75,7 +75,7 @@ Defined tokens today:
 
 `--tf-color-surface`, `--tf-color-surface-border`, `--tf-color-header-bg`, `--tf-color-header-action-bg`, `--tf-color-header-text`, `--tf-color-header-subtle`, `--tf-color-nav-text`, `--tf-color-text-title`, `--tf-color-text-default`, `--tf-color-text-muted`, `--tf-color-text-error`, `--tf-color-danger`, `--tf-color-success`, `--tf-space-2/3/4`, `--tf-radius-md/lg`.
 
-> **Known gap.** Roughly 17 components reference `--tf-color-accent`, `--tf-color-surface-alt`, and `--tf-radius-sm`, none of which are defined in `style.css`. Those declarations resolve to nothing — drag indicators, drop targets, and mobile tab highlights are currently invisible or unstyled. Defining the three tokens is the fix; do not work around it by hardcoding colors at the call site.
+> **Known gap.** 19 files reference `--tf-color-accent` (8), `--tf-color-surface-alt` (10), and `--tf-radius-sm` (9), none of which are defined in `style.css`. Those declarations resolve to nothing — drag indicators, drop targets, and mobile tab highlights are currently invisible or unstyled. Defining the three tokens is the fix; do not work around it by hardcoding colors at the call site.
 
 ## Layout
 

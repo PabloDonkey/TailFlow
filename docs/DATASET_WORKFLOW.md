@@ -1,5 +1,9 @@
 # Project Dataset Workflow
 
+> **Historical planning document — this design has been implemented.** Kept for the rationale behind filesystem-backed discovery and sync. For the schema as built read `DATABASE_MODEL.md`; the **Suggested implementation phases** below are all complete.
+>
+> Two ways the class diagram differs from what shipped: `SyncRun` was **never built** — sync results are returned in the `ProjectSyncResponse` and not persisted, so there is no sync history — and the diagram predates `Project.featured_image_id` (migration 0006) and `DatasetImage.file_mtime_ns` / `file_size_bytes`.
+
 ## Overview
 
 This feature centers on a filesystem-backed workflow while still preserving browser-driven image upload for remote use.

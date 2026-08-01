@@ -213,8 +213,10 @@ Use standardized Makefile-driven commands and maintain progress context in `.pro
 
 ## ADR-007: Concise AI Task Artifact Logging
 
-**Status:** Accepted  
+**Status:** Accepted — mechanism amended by ADR-010  
 **Date:** 2026-03-13
+
+> **Amendment (ADR-010, 2026-08-01):** the decision stands unchanged. Its delivery mechanism, `.copilot/skills/save-task-artifacts.md`, was removed; the rule now lives in the dev-loop tracking section of `CLAUDE.md`.
 
 ### Context
 
@@ -240,7 +242,7 @@ When persisting AI task artifacts, default to concise artifact logs only. Do not
 
 ## ADR-008: UI Contract Review Planning Workflow
 
-**Status:** Accepted  
+**Status:** Accepted — mechanism amended by ADR-010  
 **Date:** 2026-03-13
 
 ### Context
@@ -256,6 +258,8 @@ The frontend now has a written UI contract, but review requests need a repeatabl
 ### Decision
 
 Use a dedicated `ui-contract-review` skill for frontend UI audits. The workflow must identify contract violations, produce a remediation plan in plan mode, and ask the developer whether to apply fixes or continue planning.
+
+> **Amendment (ADR-010, 2026-08-01):** the workflow stands unchanged. It is no longer a separate skill file — `.copilot/skills/ui-contract-review.md` was folded into the **Review checklist** section of `docs/UI_CONTRACT.md`, alongside the contract it checks against.
 
 ### Consequences
 

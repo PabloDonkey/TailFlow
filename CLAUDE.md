@@ -111,8 +111,8 @@ Real, currently true, and each one costs an hour to rediscover:
 - **`discover_projects()` creates a `dataset/` subdirectory inside every child of `PROJECTS_ROOT_PATH`** as a side effect of scanning. Point it at the wrong directory and it litters the filesystem.
 - **Discovered projects get `trigger_tag == class_tag == folder_name`**, a state that `create_project` and `update_project` both reject with a 400. They cannot be `PATCH`ed until one of the two is changed.
 - **The classifier is off by default and fails silently by design.** Empty suggestions with a `download_message` is the normal signal for disabled / missing weights / unsupported model. Read that field first. See `docs/CLASSIFIER.md`.
-- **`--tf-color-accent`, `--tf-color-surface-alt`, and `--tf-radius-sm` are referenced by ~17 components but defined nowhere** in `src/style.css`. Drag indicators and drop targets currently render unstyled.
-- **Dead code that looks alive:** `ProjectsPage.vue` (339 lines, no route — only a test mounts it), `app/models/image.py` and most of `app/services/tagging.py` (legacy, kept alive by the `Tag.images` relationship), `app/schemas/__init__.py` (stale barrel missing ~10 schemas — import from `app.schemas.project` directly), `ProjectImageReplaceResponse` (declared, never used).
+- **`--tf-color-accent`, `--tf-color-surface-alt`, and `--tf-radius-sm` are referenced across 19 files but defined nowhere** in `src/style.css`. Drag indicators and drop targets currently render unstyled.
+- **Dead code that looks alive:** `ProjectsPage.vue` (339 lines, no route — only a test mounts it), `app/models/image.py` and most of `app/services/tagging.py` (legacy, kept alive by the `Tag.images` relationship), `app/schemas/__init__.py` (stale barrel — 11 of the 22 schemas in `project.py` are missing from it; import from `app.schemas.project` directly), `ProjectImageReplaceResponse` (declared, never used).
 - **`RP_ENGINE_APP_PORT`** appears in a Makefile error message but is never read by anything. Ignore it.
 
 ## Documentation map
