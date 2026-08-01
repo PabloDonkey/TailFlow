@@ -46,7 +46,7 @@ run: db-up stop
 				kill $$port_pids 2>/dev/null || true; \
 				sleep 1; \
 			else \
-				echo "Port 8000 is in use by another application (e.g., rp-engine)."; \
+				echo "Port $(APP_PORT) is in use by another application."; \
 				echo "Stop the other application first, or set RP_ENGINE_APP_PORT/DATABASE_PORT to different values."; \
 				exit 1; \
 			fi; \
@@ -69,7 +69,7 @@ run: db-up stop
 				kill $$port_pids 2>/dev/null || true; \
 				sleep 1; \
 			else \
-				echo "Port 8000 is in use by another application (e.g., rp-engine)."; \
+				echo "Port $(APP_PORT) is in use by another application."; \
 				echo "Stop the other application first, or set RP_ENGINE_APP_PORT/DATABASE_PORT to different values."; \
 				exit 1; \
 			fi; \
