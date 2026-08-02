@@ -17,6 +17,14 @@ export const ClassifyResponseSchema = z.object({
   suggested_tags: z.array(z.string()),
 })
 
+export const ProjectPreviewImageSchema = z.object({
+  id: z.string().uuid(),
+  relative_path: z.string(),
+  filename: z.string(),
+  content_hash: z.string().nullable().optional(),
+  discovered_at: z.string().datetime({ offset: true }),
+})
+
 export const ProjectSchema = z.object({
   id: z.string().uuid(),
   name: z.string(),
@@ -26,6 +34,8 @@ export const ProjectSchema = z.object({
   trigger_tag: z.string(),
   class_tag: z.string(),
   tagging_mode: TaggingModeSchema,
+  featured_image_id: z.string().uuid().nullable().optional(),
+  preview_image: ProjectPreviewImageSchema.nullable().optional(),
   last_synced_at: z.string().datetime({ offset: true }).nullable(),
   missing_at: z.string().datetime({ offset: true }).nullable(),
 })
@@ -160,6 +170,7 @@ export const ProjectOnboardingConfigureResponseSchema = z.object({
 export type Tag = z.infer<typeof TagSchema>
 export type TaggingMode = z.infer<typeof TaggingModeSchema>
 export type ClassifyResponse = z.infer<typeof ClassifyResponseSchema>
+export type ProjectPreviewImage = z.infer<typeof ProjectPreviewImageSchema>
 export type Project = z.infer<typeof ProjectSchema>
 export type ProjectDiscoverResponse = z.infer<typeof ProjectDiscoverResponseSchema>
 export type ProjectSyncResponse = z.infer<typeof ProjectSyncResponseSchema>
@@ -292,6 +303,21 @@ export async function updateProject(
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
+  })
+}
+
+export async function deleteProject(projectId: string): Promise<void> {
+  await fetchVoid(`${BASE}/projects/${projectId}`, {
+    method: 'DELETE',
+  })
+}
+
+export async function setProjectFeaturedImage(
+  projectId: string,
+  imageId: string,
+): Promise<Project> {
+  return fetchJSON(ProjectSchema, `${BASE}/projects/${projectId}/featured-image/${imageId}`, {
+    method: 'POST',
   })
 }
 

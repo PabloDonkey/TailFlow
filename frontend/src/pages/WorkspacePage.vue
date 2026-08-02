@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import AppShell from '../components/layout/AppShell.vue'
 import HeaderSection from '../components/header/HeaderSection.vue'
@@ -319,6 +319,21 @@ async function handleReplaceCurrentImage(file: File): Promise<void> {
   showToast(`Replaced image ${currentImage.filename}`)
 }
 
+async function handleSetCurrentImageAsFeatured(): Promise<void> {
+  const projectId = projectStore.selectedProjectId
+  const currentImage = imageStore.currentImage
+  if (!projectId || !currentImage) {
+    return
+  }
+
+  const updated = await projectStore.setFeaturedImage(projectId, currentImage.id)
+  if (!updated) {
+    return
+  }
+
+  showToast(`Featured image set to ${currentImage.filename}`)
+}
+
 function handleMobileAiScanRequest(): void {
   if (activeMobileBottomPanel.value !== 'ai-proposed-tags') {
     return
@@ -394,6 +409,7 @@ const {
   nextImage: goToNextImage,
   jumpToImage: goToImageByIndex,
   deleteCurrentImage,
+  setCurrentImageAsFeatured: handleSetCurrentImageAsFeatured,
   uploadImagesToCurrentProject: handleUploadImagesToCurrentProject,
   replaceCurrentImage: handleReplaceCurrentImage,
 })
@@ -430,9 +446,19 @@ const {
   queryValue,
 })
 
-if (projectStore.selectedProjectId && mobileStage.value === 'project-browser') {
-  mobileStage.value = 'image-browser'
-}
+watch(
+  () => projectStore.selectedProjectId,
+  (projectId) => {
+    if (!isMobileViewport()) {
+      return
+    }
+
+    if (!projectId) {
+      mobileStage.value = 'project-browser'
+    }
+  },
+  { immediate: true },
+)
 
 function sidePanelDefaultSize(panelIndex: number, totalPanels: number): number {
   if (totalPanels <= 0) {
@@ -635,6 +661,7 @@ const imageBrowserMemoKey = computed(() => {
           <ImageBrowserCard
             :selected-project-id="projectStore.selectedProjectId"
             @select-image="handleSelectImage"
+            @upload-images="handleUploadImagesToCurrentProject"
           />
         </div>
       </WorkspacePanelCard>
@@ -649,6 +676,10 @@ const imageBrowserMemoKey = computed(() => {
         :show-panel-scan-button="activeMobileBottomPanel === 'ai-proposed-tags' && mobileAiProposedTagsViewMode !== 'advanced'"
         :show-panel-selected-toggle-button="activeMobileBottomPanel === 'ai-proposed-tags' && mobileAiProposedTagsViewMode !== 'advanced'"
         :current-image-exists="!!imageStore.currentImage"
+        :current-image-is-featured="Boolean(
+          imageStore.currentImage
+          && selectedProject?.featured_image_id === imageStore.currentImage.id
+        )"
         :current-image-filename="imageStore.currentImage?.filename"
         :can-go-to-previous="currentImageIndex > 0"
         :can-go-to-next="currentImageIndex >= 0 && currentImageIndex < orderedImages.length - 1"
@@ -664,6 +695,7 @@ const imageBrowserMemoKey = computed(() => {
         @navigate-next="goToNextImage"
         @replace-image="handleReplaceCurrentImage"
         @upload-images="handleUploadImagesToCurrentProject"
+        @set-featured="handleSetCurrentImageAsFeatured"
       >
         <template #canvas>
           <component

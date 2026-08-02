@@ -4,6 +4,7 @@ from datetime import datetime
 from pydantic import BaseModel, Field, field_validator
 
 from app.core.enums import TaggingMode
+from app.core.tag_names import canonical_tag_name
 
 ALLOWED_CATALOGS = frozenset(mode.value for mode in TaggingMode)
 
@@ -32,7 +33,7 @@ class TagCreate(BaseModel):
     @field_validator("name")
     @classmethod
     def normalize_name(cls, value: str) -> str:
-        normalized = value.strip()
+        normalized = canonical_tag_name(value)
         if not normalized:
             raise ValueError("name must not be empty.")
         return normalized

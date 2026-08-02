@@ -1,5 +1,11 @@
 # Multi-source tag import and project tagging plan
 
+> **Historical planning document — this design has been implemented.** Kept for the rationale behind the shared catalog, tagging modes, and protected tags, not as a description of current behavior.
+>
+> The **Current state** section below describes the schema *before* implementation and is now false in every particular — tag source IDs, tagging mode, and protected assignments all exist today (migrations 0004 and 0005). For the schema as built read `DATABASE_MODEL.md`; for behavior read `CLAUDE.md` and `API.md`.
+>
+> One thing here was never built: the `TagSource` enum modelled as a first-class entity. Source is recorded as keys in `Tag.catalog_ids` instead.
+
 ## Objective
 
 Document the planned work for:

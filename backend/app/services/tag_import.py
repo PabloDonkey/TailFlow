@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.enums import TaggingMode
+from app.core.tag_names import canonical_tag_name
 from app.models.tag import Tag
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -109,7 +110,9 @@ def load_tag_import_rows(csv_path: Path) -> tuple[list[TagImportRow], int]:
                 rows.append(
                     TagImportRow(
                         external_id=_normalize_required_field(row.get("id"), "id"),
-                        name=_normalize_required_field(row.get("name"), "name"),
+                        name=canonical_tag_name(
+                            _normalize_required_field(row.get("name"), "name")
+                        ),
                         category=normalize_import_category(row.get("category")),
                     )
                 )

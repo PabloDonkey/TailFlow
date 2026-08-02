@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useImageStore, type ImageSortOption } from '../../stores/images'
 import { getProjectImageFileUrl } from '../../api'
 import { useDelayedLoading } from '../../composables/useDelayedLoading'
@@ -13,10 +13,12 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   selectImage: [imageId: string]
+  uploadImages: [files: File[]]
 }>()
 
 const imageStore = useImageStore()
 const showLoading = useDelayedLoading(computed(() => imageStore.imagesLoading), 200)
+const uploadInputRef = ref<HTMLInputElement | null>(null)
 
 const sortOptions: Array<{ value: ImageSortOption; label: string }> = [
   { value: 'name-asc', label: 'Name ↑' },
@@ -27,6 +29,21 @@ const sortOptions: Array<{ value: ImageSortOption; label: string }> = [
 
 function formatTagCount(tagCount: number): string {
   return `${tagCount} tag${tagCount === 1 ? '' : 's'}`
+}
+
+function openUploadPicker(): void {
+  uploadInputRef.value?.click()
+}
+
+function onUploadFilesChange(event: Event): void {
+  const input = event.target as HTMLInputElement
+  const files = Array.from(input.files ?? [])
+  if (files.length === 0) {
+    return
+  }
+
+  emit('uploadImages', files)
+  input.value = ''
 }
 </script>
 
@@ -80,9 +97,32 @@ function formatTagCount(tagCount: number): string {
         <AppErrorText v-else-if="imageStore.error">
           {{ imageStore.error }}
         </AppErrorText>
-        <AppText v-else-if="!imageStore.sortedImages.length">
-          No images found for this project.
-        </AppText>
+        <div
+          v-else-if="!imageStore.sortedImages.length"
+          class="flex flex-col items-start gap-3"
+        >
+          <AppText>
+            No images found for this project.
+          </AppText>
+
+          <input
+            ref="uploadInputRef"
+            type="file"
+            accept="image/*"
+            multiple
+            class="sr-only"
+            aria-label="Upload images to dataset"
+            @change="onUploadFilesChange"
+          >
+
+          <button
+            type="button"
+            class="btn btn-secondary rounded-[var(--tf-radius-md)] border border-[var(--tf-color-surface-border)] px-3 py-1.5"
+            @click="openUploadPicker"
+          >
+            Upload Image
+          </button>
+        </div>
 
         <div
           v-else

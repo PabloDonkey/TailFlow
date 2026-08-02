@@ -60,6 +60,7 @@ export type SideCardActions = {
   nextImage: () => void
   jumpToImage: (index: number) => void
   deleteCurrentImage: () => void
+  setCurrentImageAsFeatured: () => void
   uploadImagesToCurrentProject: (files: File[]) => void
   replaceCurrentImage: (file: File) => void
 }
