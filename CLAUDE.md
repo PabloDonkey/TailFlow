@@ -78,6 +78,14 @@ Corollary: services touch the filesystem and the database together, and roll bot
 
 The function shifts existing links to temporary positions ≥ 1000 and flushes before renumbering, because `uq_dataset_image_tag_position` would otherwise collide mid-update. That detour is load-bearing — do not "clean it up".
 
+### Tag identity is the canonical name
+
+`canonical_tag_name()` in `app/core/tag_names.py` — strip, lowercase, collapse whitespace runs to `_` — is the **single** rule, and every path that turns a string into a `Tag` applies it (ADR-011): `get_or_create_tag`, both `_resolve_*_project_tag` lookups, `_normalize_unique_tag_names`, `TagCreate`, the classifier, catalog import, and project trigger/class writes.
+
+`"simple background"`, `"Simple_Background"`, and `"simple_background"` are therefore one tag. **Do not add a tag lookup or insert that bypasses this** — that is exactly the bug ADR-011 fixed, and it silently produces duplicate tags with no catalog metadata rather than failing.
+
+Sidecar `.txt` files are never rewritten to match; canonicalization happens on read, so user datasets keep whatever spelling their author used.
+
 ### Tags are global, filtered per project by tagging mode
 
 There is one `tags` table shared across every project (migration 0005 folded the old per-project table into it). A project's `tagging_mode` (`e621` or `booru`) decides which catalog tags it may use, via `Tag.catalog_ids`. **An empty `catalog_ids` means user-defined and available everywhere**; a populated one restricts the tag to the catalogs it names.

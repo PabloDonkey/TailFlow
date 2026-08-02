@@ -28,6 +28,8 @@ Every request is logged by the `log_requests` middleware to the `tailflow.reques
 | GET | `/api/tags` | `list[TagRead]` | Ordered by name |
 | POST | `/api/tags` | `TagRead`, 201 | 409 when the name already exists |
 
+Names are canonicalized on the way in (ADR-011), so `POST /api/tags` with `"Bedroom Eyes"` creates `bedroom_eyes`, and posting a spelling variant of an existing tag returns 409 rather than creating a near-duplicate. The same applies to tag names in `ProjectImageTagUpdate.add` and to `trigger_tag`/`class_tag` on project create and update.
+
 ---
 
 # Projects

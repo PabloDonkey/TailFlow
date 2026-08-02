@@ -98,7 +98,7 @@ Global tag catalog. Tags are **shared across all projects** — there is no per-
 Fields:
 
 * `id` (`Uuid`) - primary key.
-* `name` (`String(255)`, unique) - normalized tag name, e.g. `canine`.
+* `name` (`String(255)`, unique) - the **canonical** tag name, e.g. `canine`, `simple_background`. Lowercase, with whitespace runs collapsed to `_` by `canonical_tag_name()` (ADR-011). Uniqueness on this column is what makes canonical name the tag's identity.
 * `catalog_ids` (`MutableDict` over `JSON`) - maps catalog key to that catalog's ID, e.g. `{"e621": "7115", "booru": "470575"}`.
 * `category` (`String(255) | None`) - catalog category, e.g. `species`, `artist`.
 * `created_at` (`datetime`).
@@ -132,6 +132,7 @@ Alembic, in `backend/alembic/versions/`. Revision IDs are plain sequential strin
 | 0004 | `projects.tagging_mode` (server default `'e621'`, then dropped), `tags.catalog_ids` |
 | 0005 | **Data migration** — folds `project_tags` into global `tags` by name, rebuilds `dataset_image_tag` with `position` and `is_protected`, copies links assigning sequential positions, drops the old tables. Has a real `downgrade()`. |
 | 0006 | `projects.featured_image_id` and its FK |
+| 0007 | **Data migration.** Canonicalizes `tags.name` and `projects.trigger_tag`/`class_tag`, merging tags that differed only by case or space-vs-underscore. Picks a catalog-backed survivor per group, collapses duplicate assignments per image keeping the protected link, and repoints the rest. `downgrade()` is a documented no-op — the merge is lossy (ADR-011). |
 
 `make run` applies `alembic upgrade head` automatically before starting uvicorn.
 

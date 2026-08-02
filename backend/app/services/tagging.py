@@ -6,13 +6,18 @@ Handles business logic for adding and removing tags from images.
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.tag_names import canonical_tag_name
 from app.models.image import Image
 from app.models.tag import Tag
 
 
 async def get_or_create_tag(session: AsyncSession, name: str) -> Tag:
-    """Return an existing Tag by name, or create a new one."""
-    normalized_name = name.strip()
+    """Return an existing Tag by canonical name, or create a new one.
+
+    This is the single choke point where a string becomes a `Tag`, so the
+    canonical form is applied here for both the lookup and the insert (ADR-011).
+    """
+    normalized_name = canonical_tag_name(name)
     result = await session.execute(select(Tag).where(Tag.name == normalized_name))
     tag = result.scalar_one_or_none()
     if tag is None:

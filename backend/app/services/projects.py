@@ -14,6 +14,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.config import settings
 from app.core.enums import TaggingMode
+from app.core.tag_names import canonical_tag_name
 from app.models.dataset_image import DatasetImage, DatasetImageTag
 from app.models.project import Project
 from app.models.tag import Tag
@@ -115,10 +116,17 @@ async def ensure_project_featured_image(
 
 
 def _normalize_unique_tag_names(names: list[str]) -> list[str]:
+    """Canonicalize, drop empties, and de-duplicate while preserving order.
+
+    Canonicalization is what makes `"simple background"` and `"Simple_Background"`
+    the same tag (ADR-011). Because trigger/class names, add lists, and remove
+    lists all pass through here, the protected-tag comparison in
+    `update_project_image_tags` stays consistent.
+    """
     normalized_names: list[str] = []
     seen_names: set[str] = set()
     for raw_name in names:
-        name = raw_name.strip()
+        name = canonical_tag_name(raw_name)
         if not name or name in seen_names:
             continue
         normalized_names.append(name)
@@ -153,6 +161,7 @@ async def _resolve_manual_project_tag(
     *,
     create_missing: bool,
 ) -> Tag:
+    name = canonical_tag_name(name)
     result = await session.execute(select(Tag).where(Tag.name == name))
     tag = result.scalar_one_or_none()
 
@@ -190,6 +199,7 @@ async def _resolve_sync_project_tag(
     project: Project,
     name: str,
 ) -> Tag | None:
+    name = canonical_tag_name(name)
     result = await session.execute(select(Tag).where(Tag.name == name))
     tag = result.scalar_one_or_none()
 
@@ -334,10 +344,14 @@ async def create_project(
 ) -> Project:
     root_path = settings.projects_root_path_resolved
     folder_name = payload.folder_name.strip()
-    trigger_tag = payload.trigger_tag.strip() if payload.trigger_tag else folder_name
+    trigger_tag = (
+        canonical_tag_name(payload.trigger_tag)
+        if payload.trigger_tag
+        else canonical_tag_name(folder_name)
+    )
     if not trigger_tag:
-        trigger_tag = folder_name
-    class_tag = payload.class_tag.strip()
+        trigger_tag = canonical_tag_name(folder_name)
+    class_tag = canonical_tag_name(payload.class_tag)
 
     if not folder_name:
         raise HTTPException(
@@ -596,12 +610,12 @@ async def update_project_metadata(
     payload: ProjectUpdate,
 ) -> Project:
     new_trigger_tag = (
-        payload.trigger_tag.strip()
+        canonical_tag_name(payload.trigger_tag)
         if payload.trigger_tag is not None
         else project.trigger_tag
     )
     new_class_tag = (
-        payload.class_tag.strip()
+        canonical_tag_name(payload.class_tag)
         if payload.class_tag is not None
         else project.class_tag
     )
@@ -726,8 +740,8 @@ async def discover_projects(session: AsyncSession) -> ProjectDiscoverResponse:
                 folder_name=folder_name,
                 root_path=str(root_path),
                 dataset_path=str(dataset_path),
-                trigger_tag=folder_name,
-                class_tag=folder_name,
+                trigger_tag=canonical_tag_name(folder_name),
+                class_tag=canonical_tag_name(folder_name),
                 tagging_mode=TaggingMode.E621,
                 missing_at=None,
             )
