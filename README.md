@@ -11,7 +11,7 @@ TailFlow is a mobile-friendly image tagging app with a FastAPI backend and a Vue
 
 - Python 3.11+
 - Node.js 20+
-- PostgreSQL
+- Docker + Docker Compose
 
 ## Quick start from the repository root
 
@@ -31,6 +31,8 @@ make run
 
 `make install` creates `backend/.venv`, installs backend development dependencies, bootstraps `backend/.env` from `backend/.env.example` when needed, auto-generates a random `DATABASE_PASSWORD` when empty, and runs `npm install` in `frontend/`. `PROJECTS_ROOT_PATH` is configured through the web onboarding flow.
 `make install` also enables repository-managed git hooks (`core.hooksPath=.githooks`), including a `pre-push` hook that blocks direct pushes to `main`.
+
+`make run` automatically starts TailFlow's PostgreSQL container (on host port 5433) via Docker Compose before applying migrations and launching the backend and frontend dev servers on ports 8001 and 5173 respectively. To manually manage the database container, use `make db-up` to start it and `make db-down` to stop it. TailFlow uses port 8001 for the backend (instead of the common 8000) to avoid conflicts with other local development servers.
 
 ### Windows (PowerShell)
 
@@ -77,12 +79,11 @@ The PowerShell script mirrors the Linux command surface with additional commands
    cp .env.example .env
    ```
 
-4. Update `backend/.env` so it points to an existing PostgreSQL database.
-   The default example uses split database settings:
+4. The `.env` file is pre-configured with Docker Compose environment variables. The default settings are:
 
    ```env
    DATABASE_HOST=localhost
-   DATABASE_PORT=5432
+   DATABASE_PORT=5433
    DATABASE_NAME=tailflow_db
    DATABASE_USER=tailflow
    DATABASE_PASSWORD=generated-or-custom-password
@@ -97,10 +98,10 @@ The PowerShell script mirrors the Linux command surface with additional commands
 
    `PROJECTS_ROOT_PATH` can stay empty initially; the frontend onboarding page will request and save it.
 
-   If you have PostgreSQL running locally, one possible setup is:
+   Start TailFlow's PostgreSQL container:
 
    ```bash
-   createdb tailflow
+   make db-up
    ```
 
 5. Run the database migrations:
@@ -115,7 +116,7 @@ The PowerShell script mirrors the Linux command surface with additional commands
    uvicorn app.main:app --reload
    ```
 
-The backend will be available at `http://localhost:8000`, and a health check is exposed at `http://localhost:8000/health`.
+The backend will be available at `http://localhost:8001`, and a health check is exposed at `http://localhost:8001/health`.
 Logs are emitted to stdout by default; optional file logging can be enabled with `FILE_LOG_ENABLED`, and request logging can be controlled with `LOG_LEVEL`, `REQUEST_LOGGING_ENABLED`, and `FILE_LOG_PATH`.
 
 ## Run the frontend
@@ -134,7 +135,7 @@ Logs are emitted to stdout by default; optional file logging can be enabled with
    ```
 
 The frontend usually starts at `http://localhost:5173`.
-During development, Vite proxies `/api` requests to `http://localhost:8000`, so the backend should be running on port `8000`.
+During development, Vite proxies `/api` requests to `http://localhost:8001`, so the backend should be running on port `8001`.
 
 ## Local development workflow
 
@@ -193,7 +194,7 @@ npm run typecheck
 npm run build
 ```
 
-### Root shortcut
+### Root shortcuts
 
 Linux:
 
@@ -203,6 +204,8 @@ make run
 make test
 make test-backend
 make test-frontend
+make db-up
+make db-down
 ```
 
 Windows (PowerShell):
@@ -217,8 +220,26 @@ pwsh -File scripts/dev.ps1 typecheck
 pwsh -File scripts/dev.ps1 build
 ```
 
+## Documentation
+
+`CLAUDE.md` at the repository root is the entry point — commands, architecture, invariants, and known gotchas. Reference documentation lives in `docs/`:
+
+| Document | For |
+| -------- | --- |
+| `docs/ARCHITECTURE.md` | Vision, principles, and what is actually implemented today |
+| `docs/DOMAIN_MODEL.md` | Ubiquitous language |
+| `docs/API.md` | HTTP route reference |
+| `docs/DATABASE_MODEL.md` | Tables, constraints, migration chain |
+| `docs/WORKSPACE_CARDS.md` | The workspace card system and how to add a card |
+| `docs/CLASSIFIER.md` | Enabling AI tagging, model files, thresholds |
+| `docs/UI_CONTRACT.md` | Frontend structure, styling, and naming rules |
+| `docs/TESTING.md` | Test layers and Playwright conventions |
+| `docs/DECISIONS.md` | Architecture decision records |
+| `docs/ROADMAP.md` | Deferred work |
+
 ## Notes
 
 - Alembic reads the database connection from `backend/.env`.
-- Uploaded files are stored under `backend/storage/images` by default.
-- The frontend includes routes for gallery, upload, image details, and tag management.
+- Dataset images live on disk under `PROJECTS_ROOT_PATH`, one `dataset/` directory per project. The database indexes them; the filesystem is the source of truth.
+- Tag catalogs are **not** seeded automatically. Run `cd backend && ./.venv/bin/python ../scripts/import_tags.py --source all` once after setup, or adding catalog tags will fail. It must be run from `backend/` — settings resolve `.env` relative to the working directory, so from the repo root it fails with a password error.
+- The frontend has two routes: `/onboarding` (first-run path configuration) and `/workspace` (everything else).

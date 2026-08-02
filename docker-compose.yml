@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: tailflow_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-tailflow_db}
+      POSTGRES_USER: ${DATABASE_USER:-tailflow}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD must be set in backend/.env}
+    ports:
+      - "${DATABASE_PORT:-5433}:5432"
+    volumes:
+      - tailflow_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+volumes:
+  tailflow_postgres_data:

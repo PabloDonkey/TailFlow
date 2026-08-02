@@ -15,6 +15,7 @@ from typing import Any, cast
 
 from app.core.config import default_model_storage_path, settings
 from app.core.enums import TaggingMode
+from app.core.tag_names import canonical_tag_name
 from app.services.tag_import import get_catalog_asset_path
 
 # Pre-bind optional torch.nn symbols so static analyzers see them as always defined.
@@ -368,8 +369,7 @@ def _collect_suggestions(
 
 def _normalize_tag_name_for_mode(name: str, tagging_mode: TaggingMode) -> str:
     del tagging_mode
-    normalized = "_".join(name.strip().lower().split())
-    return normalized
+    return canonical_tag_name(name)
 
 
 def _catalog_tag_names_for_mode(tagging_mode: TaggingMode) -> set[str]:
