@@ -36,7 +36,7 @@ run: db-up stop
 			fi; \
 			is_tailflow=0; \
 			for pid in $$port_pids; do \
-				if ps -p $$pid -o cmd= | grep -q "tailflow/backend"; then \
+				if ps -p $$pid -o cmd= | grep -q "uvicorn app.main:app"; then \
 					is_tailflow=1; \
 					break; \
 				fi; \
