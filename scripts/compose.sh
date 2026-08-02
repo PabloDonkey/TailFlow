@@ -18,7 +18,9 @@ if command -v docker-compose >/dev/null 2>&1; then
     echo "  sudo usermod -aG docker \"$USER\""
     exit 1
   }
-  export $(cat backend/.env | grep -v '^#' | xargs)
+  set -a
+  . backend/.env
+  set +a
   exec docker-compose "$@"
 fi
 
