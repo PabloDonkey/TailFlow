@@ -47,7 +47,7 @@ run: db-up stop
 				sleep 1; \
 			else \
 				echo "Port $(APP_PORT) is in use by another application."; \
-				echo "Stop the other application first, or set RP_ENGINE_APP_PORT/DATABASE_PORT to different values."; \
+				echo "Stop the other application first, or set APP_PORT/DATABASE_PORT to different values."; \
 				exit 1; \
 			fi; \
 		done; \
