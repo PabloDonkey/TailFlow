@@ -136,7 +136,7 @@ stop:
 	fi; \
 	if [ -n "$$frontend_pids" ]; then \
 		for pid in $$frontend_pids; do \
-			if ps -p $$pid -o cmd= | grep -q "tailflow/frontend"; then \
+			if ps -p $$pid -o cmd= | grep -q "vite"; then \
 				kill $$pid 2>/dev/null || true; \
 				echo "Stopped TailFlow frontend process (PID $$pid)."; \
 				stopped=1; \
