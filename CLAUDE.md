@@ -31,7 +31,7 @@ scripts/db_services.sh reset                 # drop the Postgres volume and star
 
 Before finishing a nontrivial change the bar is what `.githooks/pre-push` enforces: **`ruff check` clean, `mypy` clean (strict mode, on `backend/`), `npm run lint` clean**, plus `make test` green. Note that **CI runs no mypy** and triggers only on `pull_request` — pushing to a branch proves nothing about types.
 
-`ALLOW_MAIN_PUSH=1` skips the entire hook, quality checks included, not just the main-branch block.
+`SKIP_QUALITY_HOOKS=1` skips the entire hook. There is no main-branch push block — this is a single-developer repo.
 
 ### Ports
 
@@ -101,7 +101,7 @@ The frontend string-matches backend error text. **Two** files — `composables/u
 ## Working agreements
 
 - **Plan first.** Start new work in plan mode; propose the change and name the files before editing.
-- **Branch off `main`.** The pre-push hook blocks direct pushes to `main`. Branches use `feat/`, `fix/`, `chore/`, `docs/`; commits are conventional with scopes (`feat(projects):`).
+- **Branch off `main` for nontrivial work.** Nothing enforces it — pushing straight to `main` is allowed. Branches use `feat/`, `fix/`, `chore/`, `docs/`; commits are conventional with scopes (`feat(projects):`).
 - **Small, verifiable iterations.** Run the smallest relevant check after each step rather than one big validation at the end. Error-check modified files before moving on; run both suites before committing.
 - **Tests are the source of truth for behavior.** Fix the implementation before considering a test change. **Do not modify existing tests in `backend/tests/`, `frontend/src/__tests__/`, or `frontend/e2e/` without explicit authorization in the current session.** Add tests for new behavior. Never weaken a test to make an implementation pass.
 - **Interview before building.** For a new feature request, clarify behavior, constraints, and acceptance criteria first.

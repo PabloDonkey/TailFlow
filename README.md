@@ -30,7 +30,7 @@ make run
 ```
 
 `make install` creates `backend/.venv`, installs backend development dependencies, bootstraps `backend/.env` from `backend/.env.example` when needed, auto-generates a random `DATABASE_PASSWORD` when empty, and runs `npm install` in `frontend/`. `PROJECTS_ROOT_PATH` is configured through the web onboarding flow.
-`make install` also enables repository-managed git hooks (`core.hooksPath=.githooks`), including a `pre-push` hook that blocks direct pushes to `main`.
+`make install` also enables repository-managed git hooks (`core.hooksPath=.githooks`), including a `pre-push` hook that runs ruff, mypy, and eslint. Set `SKIP_QUALITY_HOOKS=1` to bypass it.
 
 `make run` automatically starts TailFlow's PostgreSQL container (on host port 5433) via Docker Compose before applying migrations and launching the backend and frontend dev servers on ports 8001 and 5173 respectively. To manually manage the database container, use `make db-up` to start it and `make db-down` to stop it. TailFlow uses port 8001 for the backend (instead of the common 8000) to avoid conflicts with other local development servers.
 
@@ -55,7 +55,7 @@ pwsh -File scripts/dev.ps1 stop
 ```
 
 The PowerShell script mirrors the Linux command surface with additional commands: `test`, `lint`, `typecheck`, and `build`.
-`pwsh -File scripts/dev.ps1 install` also enables repository-managed git hooks (`core.hooksPath=.githooks`), including a `pre-push` hook that blocks direct pushes to `main`.
+`pwsh -File scripts/dev.ps1 install` also enables repository-managed git hooks (`core.hooksPath=.githooks`), including a `pre-push` hook that runs ruff, mypy, and eslint. Set `SKIP_QUALITY_HOOKS=1` to bypass it.
 
 ## Run the backend
 
