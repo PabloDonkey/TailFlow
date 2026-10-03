@@ -36,7 +36,7 @@ run: db-up stop
 			fi; \
 			is_tailflow=0; \
 			for pid in $$port_pids; do \
-				if ps -p $$pid -o cmd= | grep -q "uvicorn app.main:app"; then \
+				if ps -p $$pid -o cmd= | grep -qF "$(CURDIR)/backend/"; then \
 					is_tailflow=1; \
 					break; \
 				fi; \
@@ -86,7 +86,7 @@ run: db-up stop
 	( cd backend && ./.venv/bin/python ./.venv/bin/alembic upgrade head ); \
 	backend_pid=''; \
 	trap 'if [ -n "$$backend_pid" ]; then kill "$$backend_pid"; wait "$$backend_pid" 2>/dev/null || true; fi' EXIT INT TERM; \
-	( cd backend && exec ./.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port $(APP_PORT) --reload ) & \
+	( cd backend && exec $(CURDIR)/backend/.venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port $(APP_PORT) --reload ) & \
 	backend_pid=$$!; \
 	echo "Backend process started (PID $$backend_pid), waiting for readiness..."; \
 	backend_health_url='http://127.0.0.1:$(APP_PORT)/health'; \
