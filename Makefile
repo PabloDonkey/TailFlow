@@ -59,7 +59,7 @@ run: db-up stop
 			fi; \
 			is_tailflow=0; \
 			for pid in $$port_pids; do \
-				if ps -p $$pid -o cmd= | grep -q "tailflow/backend"; then \
+				if ps -p $$pid -o cmd= | grep -qF "$(CURDIR)/backend/"; then \
 					is_tailflow=1; \
 					break; \
 				fi; \
@@ -127,7 +127,7 @@ stop:
 	fi; \
 	if [ -n "$$backend_pids" ]; then \
 		for pid in $$backend_pids; do \
-			if ps -p $$pid -o cmd= | grep -q "tailflow/backend"; then \
+			if ps -p $$pid -o cmd= | grep -qF "$(CURDIR)/backend/"; then \
 				kill $$pid 2>/dev/null || true; \
 				echo "Stopped TailFlow backend process (PID $$pid)."; \
 				stopped=1; \
@@ -136,7 +136,7 @@ stop:
 	fi; \
 	if [ -n "$$frontend_pids" ]; then \
 		for pid in $$frontend_pids; do \
-			if ps -p $$pid -o cmd= | grep -q "vite"; then \
+			if ps -p $$pid -o cmd= | grep -qF "$(CURDIR)/frontend/"; then \
 				kill $$pid 2>/dev/null || true; \
 				echo "Stopped TailFlow frontend process (PID $$pid)."; \
 				stopped=1; \
