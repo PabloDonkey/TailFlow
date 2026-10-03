@@ -8,7 +8,7 @@ services:
       POSTGRES_USER: ${DATABASE_USER:-tailflow}
       POSTGRES_PASSWORD: ${DATABASE_PASSWORD:?DATABASE_PASSWORD must be set in backend/.env}
     ports:
-      - "${DATABASE_PORT:-5433}:5432"
+      - "127.0.0.1:${DATABASE_PORT:-5433}:5432"
     volumes:
       - tailflow_postgres_data:/var/lib/postgresql/data
     healthcheck:
