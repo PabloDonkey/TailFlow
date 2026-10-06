@@ -1,3 +1,4 @@
+import http.client
 import json
 import threading
 import urllib.error
@@ -264,3 +265,57 @@ def test_http_serves_image_and_refuses_traversal(server: tuple[str, Path]) -> No
         with pytest.raises(urllib.error.HTTPError) as caught:
             urllib.request.urlopen(base + bad)
         assert caught.value.code in (400, 404)
+
+
+def post_raw(
+    base: str, name: str, choice: str, content_type: str | None
+) -> tuple[int, dict[str, str]]:
+    # http.client sends exactly the headers that we give it. urllib would add
+    # its own form content type when the header is missing.
+    headers = {} if content_type is None else {"Content-Type": content_type}
+    body = json.dumps({"name": name, "choice": choice})
+    connection = http.client.HTTPConnection(base.removeprefix("http://"))
+    try:
+        connection.request("POST", "/api/move", body=body, headers=headers)
+        response = connection.getresponse()
+        return response.status, json.load(response)
+    finally:
+        connection.close()
+
+
+def test_http_move_refuses_text_plain_with_415(server: tuple[str, Path]) -> None:
+    base, folder = server
+    status, body = post_raw(base, "a.png", "keep", "text/plain")
+    assert status == 415
+    assert body["error"] == "unsupported_media_type"
+    assert (folder / "a.png").exists()
+    assert not (folder / "keep").exists()
+
+
+def test_http_move_refuses_missing_content_type_with_415(
+    server: tuple[str, Path],
+) -> None:
+    base, folder = server
+    status, body = post_raw(base, "a.png", "keep", None)
+    assert status == 415
+    assert body["error"] == "unsupported_media_type"
+    assert (folder / "a.png").exists()
+    assert not (folder / "keep").exists()
+
+
+def test_http_state_artists_match_images(tmp_path: Path) -> None:
+    folder = tmp_path / "work"
+    folder.mkdir()
+    touch(folder, "Aru__1.png", "plain.png", "Bo__x__2.jpg")
+    httpd = triage.make_server(folder, "127.0.0.1", 0)
+    thread = threading.Thread(target=httpd.serve_forever, daemon=True)
+    thread.start()
+    try:
+        url = f"http://127.0.0.1:{httpd.server_address[1]}/api/state"
+        with urllib.request.urlopen(url) as response:
+            state = json.load(response)
+    finally:
+        httpd.shutdown()
+        httpd.server_close()
+    assert state["images"] == ["Aru__1.png", "Bo__x__2.jpg", "plain.png"]
+    assert state["artists"] == ["Aru", "Bo", "plain.png"]
