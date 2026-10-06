@@ -57,6 +57,10 @@ let total = 0;        // decided + still to sort, counted when the page loads
 let busy = false;     // true while a choice is sent or an image loads
 let drag = null;      // { id, x, y } while the pointer is down
 
+function showError(error) {
+  showMessage(error.message || "Cannot reach the server.");
+}
+
 function showMessage(text) {
   message.textContent = text;
   message.style.display = "block";
@@ -70,18 +74,24 @@ async function fetchState() {
   return response.json();
 }
 
+// Replace the list with the state of the server and show the first image.
+// The caller must hold `busy`, so no choice runs at the same time.
+async function applyState() {
+  const state = await fetchState();
+  images = state.images;
+  artists = state.artists;
+  const counts = state.counts;
+  decided = counts.fave + counts.keep + counts.reject;
+  total = decided + images.length;
+  await render(counts);
+}
+
 async function loadState() {
   busy = true;
   try {
-    const state = await fetchState();
-    images = state.images;
-    artists = state.artists;
-    const counts = state.counts;
-    decided = counts.fave + counts.keep + counts.reject;
-    total = decided + images.length;
-    await render(counts);
+    await applyState();
   } catch (error) {
-    showMessage(error.message || "Cannot reach the server.");
+    showError(error);
     resetCard(true);
   }
   busy = false;
@@ -109,12 +119,14 @@ function render(counts) {
   card.style.visibility = "hidden";
   const name = images[0];
   return new Promise((resolve) => {
-    const done = (event) => {
+    const done = async (event) => {
       card.removeEventListener("load", done);
       card.removeEventListener("error", done);
+      // The caller waits for this promise and holds `busy`, so the recovery
+      // finishes before any other action can start.
+      if (event.type === "error") { await recoverFromImageError(name); }
       card.style.visibility = "visible";
       resolve();
-      if (event.type === "error") { recoverFromImageError(name); }
     };
     card.addEventListener("load", done);
     card.addEventListener("error", done);
@@ -129,9 +141,9 @@ async function recoverFromImageError(name) {
   showMessage(`Cannot load ${name}.`);
   try {
     const state = await fetchState();
-    if (!state.images.includes(name)) { await loadState(); }
+    if (!state.images.includes(name)) { await applyState(); }
   } catch (error) {
-    showMessage(error.message || "Cannot reach the server.");
+    showError(error);
   }
 }
 
@@ -226,7 +238,7 @@ async function choose(choice, fromX, fromY) {
         try {
           counts = (await fetchState()).counts;
         } catch (error) {
-          showMessage(error.message || "Cannot reach the server.");
+          showError(error);
         }
       }
       await render(counts);
@@ -234,15 +246,14 @@ async function choose(choice, fromX, fromY) {
       const body = await response.json();
       if (body.error === "already_moved") {
         // Another device sorted this image. Load the list again.
-        busy = false;
-        await loadState();
+        await applyState();
       } else {
         showMessage(body.message || body.error || "The move failed.");
         resetCard(true);
       }
     }
   } catch (error) {
-    showMessage(error.message || "Cannot reach the server.");
+    showError(error);
     resetCard(true);
   }
   busy = false;

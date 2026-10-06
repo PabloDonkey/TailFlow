@@ -194,9 +194,10 @@ class TriageHandler(BaseHTTPRequestHandler):
         if urlsplit(self.path).path != "/api/move":
             self._send_json(404, {"error": "not_found"})
             return
-        # A page on another site can send a POST request without a CORS
-        # (Cross-Origin Resource Sharing) preflight check only with simple
-        # content types, such as text/plain. Require application/json, so that
+        # A page on another site can send a POST request to this server.
+        # The browser does not check that request first if the content type is
+        # simple, for example text/plain. The check is a CORS (Cross-Origin
+        # Resource Sharing) preflight check. Require application/json, so that
         # such a page cannot move files.
         content_type = self.headers.get("Content-Type", "").split(";")[0].strip()
         if content_type.lower() != "application/json":
