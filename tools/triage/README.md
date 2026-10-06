@@ -29,7 +29,8 @@ warning and listens on `127.0.0.1` only. It never listens on `0.0.0.0`.
 Mouse and touch both work. The card follows your pointer. The background
 turns red (left), green (right) or yellow (up). The color gets stronger
 as you drag. Drag past one third of the screen width (left, right) or
-height (up) to make a choice. After a shorter drag, the card goes back to the center.
+height (up) to make a choice. After a shorter drag, the card goes back to
+the center.
 
 There is no undo, no skip and no buttons. Down does nothing.
 

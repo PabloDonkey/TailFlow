@@ -47,6 +47,7 @@ ADR creation checklist:
 | ADR-009 | Test Authority and Accessibility-First E2E Policy | Accepted | 2026-04-25 |
 | ADR-010 | Claude-Native Documentation Structure | Accepted | 2026-08-01 |
 | ADR-011 | Canonical Tag Names | Accepted | 2026-08-02 |
+| ADR-012 | Standalone Tools in `tools/` | Accepted | 2026-10-06 |
 
 ---
 
@@ -426,3 +427,7 @@ The `tools/` folder holds standalone tools. Each tool has its own folder, README
 - Positive: a change to the app cannot break a tool, and a tool cannot break the app.
 - Tradeoff: a tool cannot reuse app code, so a small rule can exist twice.
 - Tradeoff: tests for a tool run with `python -m pytest tools/<name>`. They are not part of `make test`.
+
+### Related
+
+- PR #32 adds the first tool, `tools/triage/` (see `tools/triage/README.md`).

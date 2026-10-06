@@ -38,12 +38,12 @@
 const THRESHOLD = 1 / 3;
 const MAX_TILT_DEGREES = 25;
 const MOVE_OUT_MS = 250;
-// One rule for each choice: the drag axis, the sign on that axis, and the color.
+// One rule for each choice: the key, the drag axis, the sign on that axis, and the color.
 // Down has no choice, so a drag down does nothing.
 const CHOICES = {
-  reject: { axis: "x", sign: -1, color: [220, 50, 50] },
-  keep: { axis: "x", sign: 1, color: [50, 190, 80] },
-  fave: { axis: "y", sign: -1, color: [235, 200, 40] },
+  reject: { key: "ArrowLeft", axis: "x", sign: -1, color: [220, 50, 50] },
+  keep: { key: "ArrowRight", axis: "x", sign: 1, color: [50, 190, 80] },
+  fave: { key: "ArrowUp", axis: "y", sign: -1, color: [235, 200, 40] },
 };
 
 const card = document.getElementById("card");
@@ -82,18 +82,21 @@ async function loadState() {
     await render(counts);
   } catch (error) {
     showMessage(error.message || "Cannot reach the server.");
+    resetCard(true);
   }
   busy = false;
 }
 
-// Show the first image. The promise ends when the image has loaded.
+// Show the first image. The promise ends when the image has loaded or failed to load.
 // The card stays hidden until then, so the old image cannot be sorted twice.
 function render(counts) {
   resetCard(false);
   if (images.length === 0) {
-    const c = counts;
-    document.getElementById("stage").innerHTML =
-      `<div id="done">Done. Fave: ${c.fave}, Keep: ${c.keep}, Reject: ${c.reject}</div>`;
+    // Without counts (the server could not be read), show "Done." only.
+    const text = counts
+      ? `Done. Fave: ${counts.fave}, Keep: ${counts.keep}, Reject: ${counts.reject}`
+      : "Done.";
+    document.getElementById("stage").innerHTML = `<div id="done">${text}</div>`;
     document.getElementById("artist").textContent = "";
     document.getElementById("file").textContent = "";
     document.getElementById("counter").textContent = "";
@@ -104,17 +107,32 @@ function render(counts) {
   document.getElementById("counter").textContent = `${decided} / ${total}`;
   if (images[1]) { new Image().src = "/image/" + encodeURIComponent(images[1]); }
   card.style.visibility = "hidden";
+  const name = images[0];
   return new Promise((resolve) => {
-    const done = () => {
+    const done = (event) => {
       card.removeEventListener("load", done);
       card.removeEventListener("error", done);
       card.style.visibility = "visible";
       resolve();
+      if (event.type === "error") { recoverFromImageError(name); }
     };
     card.addEventListener("load", done);
     card.addEventListener("error", done);
     card.src = "/image/" + encodeURIComponent(images[0]);
   });
+}
+
+// The image did not load. Another device may have moved it, so read the list
+// again. If the image is still in the list, only show the message. This stops
+// an endless loop for a file that the server cannot read.
+async function recoverFromImageError(name) {
+  showMessage(`Cannot load ${name}.`);
+  try {
+    const state = await fetchState();
+    if (!state.images.includes(name)) { await loadState(); }
+  } catch (error) {
+    showMessage(error.message || "Cannot reach the server.");
+  }
 }
 
 // Which choice does this drag point to, and how far along is it (0 to 1 or more)?
@@ -203,7 +221,15 @@ async function choose(choice, fromX, fromY) {
       images.shift();
       artists.shift();
       decided += 1;
-      await render(images.length === 0 ? (await fetchState()).counts : null);
+      let counts = null;
+      if (images.length === 0) {
+        try {
+          counts = (await fetchState()).counts;
+        } catch (error) {
+          showMessage(error.message || "Cannot reach the server.");
+        }
+      }
+      await render(counts);
     } else {
       const body = await response.json();
       if (body.error === "already_moved") {
@@ -225,7 +251,7 @@ async function choose(choice, fromX, fromY) {
 document.addEventListener("keydown", (event) => {
   // Ignore a held key. One key press sorts one image.
   if (drag || event.repeat) { return; }
-  const choice = { ArrowRight: "keep", ArrowLeft: "reject", ArrowUp: "fave" }[event.key];
+  const choice = Object.keys(CHOICES).find((name) => CHOICES[name].key === event.key);
   if (!choice) { return; }
   event.preventDefault();
   choose(choice, 0, 0);
