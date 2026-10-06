@@ -143,6 +143,7 @@ Read the relevant document before a substantial change:
 | `docs/DATASET_WORKFLOW.md` | project/dataset filesystem convention and sync design |
 | `docs/TAG_IMPORT.md` | multi-source tag catalog import design |
 | `docs/ROADMAP.md` | deferred work |
+| `tools/triage/README.md` | standalone triage tool (swipe sorting); ADR-012 sets the `tools/` rules |
 
 ## Dev-loop tracking (`.project/`)
 

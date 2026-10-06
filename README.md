@@ -236,6 +236,7 @@ pwsh -File scripts/dev.ps1 build
 | `docs/TESTING.md` | Test layers and Playwright conventions |
 | `docs/DECISIONS.md` | Architecture decision records |
 | `docs/ROADMAP.md` | Deferred work |
+| `tools/triage/README.md` | The standalone triage tool: sort a folder of images with swipes |
 
 ## Notes
 

@@ -18,7 +18,7 @@ import sys
 import threading
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from typing import Any, cast
+from typing import Any
 from urllib.parse import unquote, urlsplit
 
 DEFAULT_PORT = 8090
@@ -128,7 +128,8 @@ def move_choice(folder: Path, name: str, choice: str) -> None:
                 shutil.move(str(source), str(target_dir / source.name))
                 moved.append(source)
         except OSError:
-            # Put back what we moved, so image and .txt stay together.
+            # Return the moved files to the root folder, so the image and its
+            # .txt file stay together.
             for source in moved:
                 shutil.move(str(target_dir / source.name), str(source))
             raise
@@ -168,6 +169,7 @@ class TriageHandler(BaseHTTPRequestHandler):
                 200,
                 {
                     "images": images,
+                    "artists": [artist_name(name) for name in images],
                     "counts": count_folders(folder),
                 },
             )
@@ -192,6 +194,12 @@ class TriageHandler(BaseHTTPRequestHandler):
         if urlsplit(self.path).path != "/api/move":
             self._send_json(404, {"error": "not_found"})
             return
+        # A web page on another site can send only simple content types
+        # without a check. Require JSON, so such a page cannot post here.
+        content_type = self.headers.get("Content-Type", "").split(";")[0].strip()
+        if content_type.lower() != "application/json":
+            self._send_json(415, {"error": "unsupported_media_type"})
+            return
         try:
             length = int(self.headers.get("Content-Length", "0"))
             payload = json.loads(self.rfile.read(length))
@@ -214,7 +222,7 @@ class TriageHandler(BaseHTTPRequestHandler):
             self._send_json(200, {"ok": True})
 
 
-def make_server(folder: Path, host: str, port: int) -> ThreadingHTTPServer:
+def make_server(folder: Path, host: str, port: int) -> TriageServer:
     return TriageServer((host, port), folder)
 
 
@@ -255,9 +263,7 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
 
-    servers = [
-        cast(TriageServer, make_server(folder, host, args.port)) for host in hosts
-    ]
+    servers = [make_server(folder, host, args.port) for host in hosts]
     for server in servers[1:]:
         threading.Thread(target=server.serve_forever, daemon=True).start()
     print(f"Folder: {folder}")

@@ -10,8 +10,9 @@ library and one HTML page. There is nothing to install or build.
 python3 tools/triage/triage.py <folder> [--port 8090]
 ```
 
-The default port is 8090. The tool prints two addresses: one for this PC
-and one for Tailscale. Open either address in a browser.
+The default port is 8090. The tool prints the address for this PC. It also
+prints the Tailscale address, if Tailscale is available. Open an address in
+a browser.
 
 The tool listens only on `127.0.0.1` and on the Tailscale IPv4 address
 (from `tailscale ip -4`). If Tailscale is not available, it prints a
@@ -28,7 +29,7 @@ warning and listens on `127.0.0.1` only. It never listens on `0.0.0.0`.
 Mouse and touch both work. The card follows your pointer. The background
 turns red (left), green (right) or yellow (up). The color gets stronger
 as you drag. Drag past one third of the screen width (left, right) or
-height (up) to make a choice. A shorter drag springs back.
+height (up) to make a choice. After a shorter drag, the card goes back to the center.
 
 There is no undo, no skip and no buttons. Down does nothing.
 

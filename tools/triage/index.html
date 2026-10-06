@@ -37,18 +37,24 @@
 // Fraction of the screen that a drag must pass to make a choice.
 const THRESHOLD = 1 / 3;
 const MAX_TILT_DEGREES = 25;
-const FLY_MS = 250;
-// Background colors: [red, green, blue].
-const COLORS = { reject: [220, 50, 50], keep: [50, 190, 80], fave: [235, 200, 40] };
+const MOVE_OUT_MS = 250;
+// One rule for each choice: the drag axis, the sign on that axis, and the color.
+// Down has no choice, so a drag down does nothing.
+const CHOICES = {
+  reject: { axis: "x", sign: -1, color: [220, 50, 50] },
+  keep: { axis: "x", sign: 1, color: [50, 190, 80] },
+  fave: { axis: "y", sign: -1, color: [235, 200, 40] },
+};
 
 const card = document.getElementById("card");
 const tint = document.getElementById("tint");
 const message = document.getElementById("message");
 
-let images = [];      // images still to sort, in order
+let images = [];      // file names still to sort, in order
+let artists = [];     // the artist of each file name, from the server
 let decided = 0;      // images already in keep/, reject/ or fave/
 let total = 0;        // decided + still to sort, counted when the page loads
-let busy = false;     // true while a choice is being sent
+let busy = false;     // true while a choice is sent or an image loads
 let drag = null;      // { id, x, y } while the pointer is down
 
 function showMessage(text) {
@@ -57,54 +63,76 @@ function showMessage(text) {
   setTimeout(() => { message.style.display = "none"; }, 4000);
 }
 
-async function loadState() {
+// Read the state from the server. Throws an Error if the request fails.
+async function fetchState() {
   const response = await fetch("/api/state");
-  const state = await response.json();
-  images = state.images;
-  const counts = state.counts;
-  decided = counts.fave + counts.keep + counts.reject;
-  total = decided + images.length;
-  render(counts);
+  if (!response.ok) { throw new Error(`The server answered ${response.status}.`); }
+  return response.json();
 }
 
-// The text before "__", or the full name if there is no "__".
-function artistName(name) {
-  const index = name.indexOf("__");
-  return index > 0 ? name.slice(0, index) : name;
+async function loadState() {
+  busy = true;
+  try {
+    const state = await fetchState();
+    images = state.images;
+    artists = state.artists;
+    const counts = state.counts;
+    decided = counts.fave + counts.keep + counts.reject;
+    total = decided + images.length;
+    await render(counts);
+  } catch (error) {
+    showMessage(error.message || "Cannot reach the server.");
+  }
+  busy = false;
 }
 
+// Show the first image. The promise ends when the image has loaded.
+// The card stays hidden until then, so the old image cannot be sorted twice.
 function render(counts) {
   resetCard(false);
   if (images.length === 0) {
-    const c = counts || { fave: 0, keep: 0, reject: 0 };
+    const c = counts;
     document.getElementById("stage").innerHTML =
       `<div id="done">Done. Fave: ${c.fave}, Keep: ${c.keep}, Reject: ${c.reject}</div>`;
     document.getElementById("artist").textContent = "";
     document.getElementById("file").textContent = "";
     document.getElementById("counter").textContent = "";
-    return;
+    return Promise.resolve();
   }
-  const current = images[0];
-  card.src = "/image/" + encodeURIComponent(current);
-  document.getElementById("artist").textContent = artistName(current);
-  document.getElementById("file").textContent = current;
+  document.getElementById("artist").textContent = artists[0];
+  document.getElementById("file").textContent = images[0];
   document.getElementById("counter").textContent = `${decided} / ${total}`;
   if (images[1]) { new Image().src = "/image/" + encodeURIComponent(images[1]); }
+  card.style.visibility = "hidden";
+  return new Promise((resolve) => {
+    const done = () => {
+      card.removeEventListener("load", done);
+      card.removeEventListener("error", done);
+      card.style.visibility = "visible";
+      resolve();
+    };
+    card.addEventListener("load", done);
+    card.addEventListener("error", done);
+    card.src = "/image/" + encodeURIComponent(images[0]);
+  });
 }
 
-// Which choice does this drag point to, and how far along is it (0 to 1+)?
+// Which choice does this drag point to, and how far along is it (0 to 1 or more)?
 function direction(dx, dy) {
-  if (dy < 0 && Math.abs(dy) > Math.abs(dx)) {
-    return { choice: "fave", progress: -dy / (window.innerHeight * THRESHOLD) };
+  const axis = Math.abs(dy) > Math.abs(dx) ? "y" : "x";
+  const delta = axis === "x" ? dx : dy;
+  const size = axis === "x" ? window.innerWidth : window.innerHeight;
+  for (const [choice, rule] of Object.entries(CHOICES)) {
+    if (rule.axis === axis && Math.sign(delta) === rule.sign) {
+      return { choice, progress: Math.abs(delta) / (size * THRESHOLD) };
+    }
   }
-  if (dx > 0) { return { choice: "keep", progress: dx / (window.innerWidth * THRESHOLD) }; }
-  if (dx < 0) { return { choice: "reject", progress: -dx / (window.innerWidth * THRESHOLD) }; }
   return { choice: null, progress: 0 };
 }
 
 function setTint(choice, progress) {
   if (!choice) { tint.style.background = "transparent"; return; }
-  const [r, g, b] = COLORS[choice];
+  const [r, g, b] = CHOICES[choice].color;
   const alpha = Math.min(1, progress) * 0.7;
   tint.style.background = `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
@@ -153,36 +181,34 @@ function endDrag(event, cancelled) {
 card.addEventListener("pointerup", (event) => endDrag(event, false));
 card.addEventListener("pointercancel", (event) => endDrag(event, true));
 
-// Fly the card off the screen, send the choice, then show the next image.
+// Move the card out of the screen, send the choice, then show the next image.
 async function choose(choice, fromX, fromY) {
   if (busy || images.length === 0) { return; }
   busy = true;
-  const current = images[0];
-  const flyTo = {
-    keep: [window.innerWidth * 1.5, fromY || 0],
-    reject: [-window.innerWidth * 1.5, fromY || 0],
-    fave: [fromX || 0, -window.innerHeight * 1.5],
-  }[choice];
-  card.style.transition = `transform ${FLY_MS}ms ease-in`;
-  moveCard(flyTo[0], flyTo[1]);
+  const rule = CHOICES[choice];
+  const far = rule.sign * (rule.axis === "x" ? window.innerWidth : window.innerHeight) * 1.5;
+  card.style.transition = `transform ${MOVE_OUT_MS}ms ease-in`;
+  if (rule.axis === "x") { moveCard(far, fromY); } else { moveCard(fromX, far); }
   setTint(choice, 1);
   try {
     const [response] = await Promise.all([
       fetch("/api/move", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: current, choice }),
+        body: JSON.stringify({ name: images[0], choice }),
       }),
-      new Promise((resolve) => setTimeout(resolve, FLY_MS)),
+      new Promise((resolve) => setTimeout(resolve, MOVE_OUT_MS)),
     ]);
     if (response.ok) {
       images.shift();
+      artists.shift();
       decided += 1;
-      render(await freshCounts());
+      await render(images.length === 0 ? (await fetchState()).counts : null);
     } else {
       const body = await response.json();
       if (body.error === "already_moved") {
         // Another device sorted this image. Load the list again.
+        busy = false;
         await loadState();
       } else {
         showMessage(body.message || body.error || "The move failed.");
@@ -190,27 +216,22 @@ async function choose(choice, fromX, fromY) {
       }
     }
   } catch (error) {
-    showMessage("Cannot reach the server.");
+    showMessage(error.message || "Cannot reach the server.");
     resetCard(true);
   }
   busy = false;
 }
 
-async function freshCounts() {
-  if (images.length > 0) { return null; }
-  const response = await fetch("/api/state");
-  return (await response.json()).counts;
-}
-
 document.addEventListener("keydown", (event) => {
-  if (drag) { return; }
+  // Ignore a held key. One key press sorts one image.
+  if (drag || event.repeat) { return; }
   const choice = { ArrowRight: "keep", ArrowLeft: "reject", ArrowUp: "fave" }[event.key];
   if (!choice) { return; }
   event.preventDefault();
   choose(choice, 0, 0);
 });
 
-loadState().catch(() => showMessage("Cannot reach the server."));
+loadState();
 </script>
 </body>
 </html>

@@ -393,3 +393,36 @@ Migration `0007` folds existing duplicates: it picks a survivor per canonical gr
 - Tradeoff: intentional casing in user-defined tags is lost — `BelzTattoo` becomes `belztattoo`. Judged acceptable because catalog convention is lowercase and the alternative is ambiguous identity.
 - Tradeoff: the merge in `0007` is lossy and its `downgrade()` is a documented no-op. Original spellings can only be recovered by re-syncing from the sidecars.
 - Limitation: the rule normalizes whitespace and case only. It does not reconcile punctuation spacing, so `pussy-cat(meme)` and `pussy-cat_(meme)` remain distinct tags. Encoding an e621-specific qualifier heuristic was judged more dangerous than leaving those as data-level typos.
+
+---
+
+## ADR-012: Standalone Tools in `tools/`
+
+**Status:** Accepted  
+**Date:** 2026-10-06
+
+### Context
+
+Pablo needs small helper programs around the LoRA workflow, for example a tool to sort a folder of images with swipes (`tools/triage/`). These programs are not part of the TailFlow app. If they use the backend, the frontend, or the database, a small tool becomes hard to run and hard to change.
+
+### Options considered
+
+- Add the tool as a route and a page in the TailFlow app.
+- Put the tool in `scripts/`, next to the setup scripts.
+- Add a `tools/` folder where each tool is a standalone program.
+
+### Decision
+
+The `tools/` folder holds standalone tools. Each tool has its own folder, README, and tests. The rules:
+
+1. A tool is separate from the app. It does not change the backend or the frontend.
+2. A tool uses only the Python standard library. It needs no install step and no build step.
+3. A tool shares no code with `backend/`.
+4. A tool does not read or write the database.
+
+### Consequences
+
+- Positive: a tool runs with `python3` and nothing else.
+- Positive: a change to the app cannot break a tool, and a tool cannot break the app.
+- Tradeoff: a tool cannot reuse app code, so a small rule can exist twice.
+- Tradeoff: tests for a tool run with `python -m pytest tools/<name>`. They are not part of `make test`.
