@@ -14,9 +14,10 @@ make run                             # db-up, migrate, uvicorn :8001, vite :5173
 make stop                            # kill only TailFlow's listeners on 8001/5173/5174
 make db-up / make db-down            # Postgres container only
 
-make test                            # = test-backend + test-frontend. Does NOT include e2e or assets.
+make test                            # = test-backend + test-frontend + test-tools. Does NOT include e2e or assets.
 make test-backend                    # pytest, in backend/
 make test-frontend                   # vitest run, in frontend/
+make test-tools                      # pytest on the standalone tools in tools/ (backend venv)
 make test-e2e                        # Playwright; mocks the API, never hits the real backend
 make test-assets                     # checksum-validate the tag CSVs in assets/
 

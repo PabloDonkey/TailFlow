@@ -2,7 +2,7 @@ SHELL := /bin/bash
 
 APP_PORT := 8001
 
-.PHONY: install run stop test test-backend test-frontend test-e2e test-assets db-up db-down
+.PHONY: install run stop test test-backend test-frontend test-tools test-e2e test-assets db-up db-down
 
 install:
 	@set -euo pipefail; \
@@ -147,7 +147,7 @@ stop:
 		echo "No TailFlow dev processes found."; \
 	fi
 
-test: test-backend test-frontend
+test: test-backend test-frontend test-tools
 
 test-backend:
 	@set -euo pipefail; \
@@ -166,6 +166,15 @@ test-frontend:
 		exit 1; \
 	fi; \
 	cd frontend && npm run test
+
+test-tools:
+	@set -euo pipefail; \
+	if [ ! -x backend/.venv/bin/python ]; then \
+		echo "Missing backend virtualenv at backend/.venv."; \
+		echo "Run: make install"; \
+		exit 1; \
+	fi; \
+	./backend/.venv/bin/python -m pytest tools/triage
 
 test-e2e:
 	@set -euo pipefail; \
